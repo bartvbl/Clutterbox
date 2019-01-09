@@ -1,6 +1,16 @@
+#include <vector>
+#include <memory>
+#include <random>
+#include <iostream>
 #include "clutterBoxExperiment.hpp"
 
-void runClutterBoxExperiment(cudaDeviceProp device_information, unsigned int sampleSetSize, float boxSize) {
+#include "experimentUtilities/filesystem.hpp"
+
+bool contains(unsigned int* haystack, unsigned int length, unsigned int needle);
+
+void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, int sampleSetSize, float boxSize) {
+	// --- Overview ---
+	//
 	// 1 Search SHREC directory for files
 	// 2 Make a sample set of n sample objects
 	// 3 Load the models in the sample set
@@ -12,4 +22,41 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, unsigned int sam
 	//    7.2 For all meshes in the box, compute spin images for all vertices
 	//    7.3 Compare the generated images to the "clutter-free" variants
 	//    7.4 Dump the distances between images
+
+
+
+	// 1 Search SHREC directory for files
+	std::cout << "Listing object directory..";
+	std::vector<std::string> fileList = listDir(objectDirectory);
+	std::cout << " (found " << fileList.size() << " files)" << std::endl;
+
+	// 2 Make a sample set of n sample objects
+	std::cout << "Selecting file sample set.." << std::endl;
+	std::default_random_engine generator;
+	std::uniform_int_distribution<unsigned int> distribution(0, fileList.size());
+
+	unsigned int* sampleIndices = new unsigned int[sampleSetSize];
+
+	for(int i = 0; i < sampleSetSize; i++) {
+		unsigned int randomIndex;
+		do {
+			randomIndex = distribution(generator);
+			sampleIndices[i] = randomIndex;
+		} while(!contains(sampleIndices, sampleSetSize, randomIndex));
+	}
+
+	for(int i = 0; i < sampleSetSize; i++) {
+		std::cout << "Sample: " << sampleIndices[i] << " -> " << fileList.at(sampleIndices[i]) << std::endl;
+	}
+
+	delete[] sampleIndices;
+}
+
+bool contains(unsigned int* haystack, unsigned int length, unsigned int needle) {
+	for(unsigned int i = 0; i < length; i++) {
+		if(haystack[i] == needle) {
+			return true;
+		}
+	}
+	return false;
 }

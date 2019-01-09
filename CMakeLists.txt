@@ -64,7 +64,13 @@ file (GLOB_RECURSE PROJECT_SOURCES src/*.cpp
                                    src/*.cxx
                                    src/*.cc
                                    src/*.c
-                                   src/*.cu)
+                                   src/*.cu
+
+                                   ../libShapeSearch/*.cpp
+                                   ../libShapeSearch/*.cxx
+                                   ../libShapeSearch/*.cc
+                                   ../libShapeSearch/*.c
+                                   ../libShapeSearch/*.cu)
 file (GLOB         PROJECT_CONFIGS CMakeLists.txt
                                    README.rst
                                   .gitignore

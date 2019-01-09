@@ -19,6 +19,9 @@ int main(int argc, const char **argv)
 	const auto& forceSpinImageSize = parser.add<float>("force-spin-image-size", "Rather than automatically selecting the spin image size based upon a specific voxel count, force the image to use a specific width.", '\0', arrrgh::Optional, 0);
 	const auto& listGPUs = parser.add<bool>("list-gpus", "List all GPU's, used for the --force-gpu parameter.", 'a', arrrgh::Optional, false);
 	const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", 'b', arrrgh::Optional, -1);
+	const auto& sampleSetSize = parser.add<int>("sample-set-size", "How many sample models the clutter box experiment should use", '\0', arrrgh::Optional, -1);
+	const auto& boxSize = parser.add<int>("box-size", "Size of the cube box for the clutter box experiment", '\0', arrrgh::Optional, -1);
+	const auto& objectDirectory = parser.add<std::string>("source-directory", "Defines the directory from which input objects are read", '\0', arrrgh::Optional, "");
 
 	try
 	{
@@ -46,7 +49,22 @@ int main(int argc, const char **argv)
 		return 0;
 	}
 
-	runClutterBoxExperiment(device_information);
+	if(sampleSetSize.value() == -1) {
+		std::cout << "Experiment requires the --sample-set-size parameter to be set" << std::endl;
+		exit(0);
+	}
+
+	if(boxSize.value() == -1) {
+		std::cout << "Experiment requires the --box-size parameter to be set" << std::endl;
+		exit(0);
+	}
+
+	if(objectDirectory.value().empty()) {
+		std::cout << "Experiment requires the --source-directory parameter to be set" << std::endl;
+		exit(0);
+	}
+
+	runClutterBoxExperiment(device_information, objectDirectory.value(), sampleSetSize.value(), boxSize.value());
 
 
 	std::cout << "Complete." << std::endl;
