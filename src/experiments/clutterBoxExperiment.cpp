@@ -2,11 +2,15 @@
 #include <memory>
 #include <random>
 #include <iostream>
+#include <shapeSearch/cpu/Mesh.h>
+#include <shapeSearch/cpu/OBJLoader.h>
+#include <utilities/stringUtils.h>
+#include <utilities/modelScaler.h>
 #include "clutterBoxExperiment.hpp"
 
 #include "experimentUtilities/filesystem.hpp"
 
-bool contains(unsigned int* haystack, unsigned int length, unsigned int needle);
+bool contains(std::vector<unsigned int> &haystack, unsigned int needle);
 
 void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, int sampleSetSize, float boxSize) {
 	// --- Overview ---
@@ -32,28 +36,46 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
 	// 2 Make a sample set of n sample objects
 	std::cout << "Selecting file sample set.." << std::endl;
-	std::default_random_engine generator;
+	std::default_random_engine generator( (unsigned int)time(0) );
 	std::uniform_int_distribution<unsigned int> distribution(0, fileList.size());
 
-	unsigned int* sampleIndices = new unsigned int[sampleSetSize];
+	std::vector<unsigned int> sampleIndices(sampleSetSize);
 
 	for(int i = 0; i < sampleSetSize; i++) {
 		unsigned int randomIndex;
 		do {
 			randomIndex = distribution(generator);
 			sampleIndices[i] = randomIndex;
-		} while(!contains(sampleIndices, sampleSetSize, randomIndex));
+		} while(!contains(sampleIndices, randomIndex));
 	}
+	std::sort(sampleIndices.begin(), sampleIndices.end());
 
+	std::vector<std::string> filePaths(sampleSetSize);
 	for(int i = 0; i < sampleSetSize; i++) {
-		std::cout << "Sample: " << sampleIndices[i] << " -> " << fileList.at(sampleIndices[i]) << std::endl;
+		filePaths[i] = objectDirectory + (endsWith(objectDirectory, "/") ? "" : "/") + fileList.at(sampleIndices[i]);
+		std::cout << "Sample: " << sampleIndices[i] << " -> " << filePaths.at(i) << std::endl;
 	}
 
-	delete[] sampleIndices;
+	// 3 Load the models in the sample set
+	std::cout << "Loading sample models.." << std::endl;
+	std::vector<HostMesh> sampleMeshes(sampleSetSize);
+	for(int i = 0; i < sampleSetSize; i++) {
+		sampleMeshes.at(i) = hostLoadOBJ(filePaths.at(i), VERTICES_NORMALS);
+	}
+
+	// 4 Scale all models to fit in a 1x1x1 sphere
+	std::cout << "Scaling meshes.." << std::endl;
+	std::vector<HostMesh> scaledMeshes(sampleSetSize);
+	for(int i = 0; i < sampleSetSize; i++) {
+		scaledMeshes.at(i) = scaleMesh(sampleMeshes.at(i), 1);
+	}
+
+	// 5 Compute (quasi) spin images for all models in the sample set
+
 }
 
-bool contains(unsigned int* haystack, unsigned int length, unsigned int needle) {
-	for(unsigned int i = 0; i < length; i++) {
+bool contains(std::vector<unsigned int> &haystack, unsigned int needle) {
+	for(unsigned int i = 0; i < haystack.size(); i++) {
 		if(haystack[i] == needle) {
 			return true;
 		}
