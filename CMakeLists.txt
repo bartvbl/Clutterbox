@@ -5,7 +5,6 @@ cmake_minimum_required (VERSION 3.0)
 
 set(CUDAHOSTCXX /usr/bin/g++-6)
 set(CMAKE_CUDA_HOST_COMPILER /usr/bin/g++-6)
-set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
 
 project (qsiverification CXX CUDA)
 
@@ -45,13 +44,16 @@ INCLUDE(FindCUDA)
 list(APPEND CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -gencode arch=compute_52,code=\"sm_52,compute_52\" -lcurand -lineinfo)
 set(CUDA_VERBOSE_BUILD ON)
 
+# libShapeSearch
+add_subdirectory(../libShapeSearch ${CMAKE_CURRENT_BINARY_DIR}/libShapeSearch)
+
 
 #
 # Include Paths
 #
 include_directories (
   src/
-  ../libShapeSearch/src/
+  ../libShapeSearch/src
 )
 
 #
@@ -64,13 +66,7 @@ file (GLOB_RECURSE PROJECT_SOURCES src/*.cpp
                                    src/*.cxx
                                    src/*.cc
                                    src/*.c
-                                   src/*.cu
-
-                                   ../libShapeSearch/*.cpp
-                                   ../libShapeSearch/*.cxx
-                                   ../libShapeSearch/*.cc
-                                   ../libShapeSearch/*.c
-                                   ../libShapeSearch/*.cu)
+                                   src/*.cu)
 file (GLOB         PROJECT_CONFIGS CMakeLists.txt
                                    README.rst
                                   .gitignore
@@ -90,4 +86,4 @@ add_executable (${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
                                 ${VENDORS_SOURCES})
 
 
-target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart)
+target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart ShapeSearch)

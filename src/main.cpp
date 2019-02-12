@@ -10,6 +10,8 @@
 
 cudaDeviceProp setCurrentCUDADevice(bool listOnly, int forceGPU);
 
+const int DEFAULT_SPIN_IMAGE_WIDTH = 64;
+
 int main(int argc, const char **argv)
 {
 	arrrgh::parser parser("qsiverification", "Generates and compares spin images on the GPU");
@@ -22,6 +24,7 @@ int main(int argc, const char **argv)
 	const auto& sampleSetSize = parser.add<int>("sample-set-size", "How many sample models the clutter box experiment should use", '\0', arrrgh::Optional, -1);
 	const auto& boxSize = parser.add<int>("box-size", "Size of the cube box for the clutter box experiment", '\0', arrrgh::Optional, -1);
 	const auto& objectDirectory = parser.add<std::string>("source-directory", "Defines the directory from which input objects are read", '\0', arrrgh::Optional, "");
+	const auto& spinImageWidth = parser.add<int>("spin-image-width", "The width and height of the generated spin image, measured in pixels", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
 
 	try
 	{
@@ -64,7 +67,7 @@ int main(int argc, const char **argv)
 		exit(0);
 	}
 
-	runClutterBoxExperiment(device_information, objectDirectory.value(), sampleSetSize.value(), boxSize.value());
+	runClutterBoxExperiment(device_information, objectDirectory.value(), sampleSetSize.value(), boxSize.value(), spinImageWidth.value());
 
 
 	std::cout << "Complete." << std::endl;

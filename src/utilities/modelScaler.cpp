@@ -1,3 +1,4 @@
+#include <cmath>
 #include "modelScaler.h"
 
 HostMesh scaleMesh(HostMesh input, float radius) {
@@ -27,7 +28,7 @@ HostMesh scaleMesh(HostMesh input, float radius) {
 		maxDistance = std::max(maxDistance, length);
 	}
 
-	HostMesh scaledMesh(input.vertexCount, input.indexCount, input.dataFormat);
+	HostMesh scaledMesh(input.vertexCount, input.indexCount);
 
 	double scaleFactor = (1.0 / maxDistance) * radius;
 

@@ -2,17 +2,21 @@
 #include <memory>
 #include <random>
 #include <iostream>
-#include <shapeSearch/cpu/Mesh.h>
-#include <shapeSearch/cpu/OBJLoader.h>
+#include <shapeSearch/cpu/types/HostMesh.h>
+#include <shapeSearch/utilities/OBJLoader.h>
 #include <utilities/stringUtils.h>
 #include <utilities/modelScaler.h>
+#include <shapeSearch/cpu/MSIGenerator.h>
+#include <algorithm>
+#include <shapeSearch/cpu/types/CPURasterisationSettings.h>
+#include <shapeSearch/cpu/QSIGenerator.hpp>
 #include "clutterBoxExperiment.hpp"
 
-#include "experimentUtilities/filesystem.hpp"
+#include "experimentUtilities/listDir.h"
 
 bool contains(std::vector<unsigned int> &haystack, unsigned int needle);
 
-void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, int sampleSetSize, float boxSize) {
+void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, int sampleSetSize, float boxSize, int spinImageWidthPixels) {
 	// --- Overview ---
 	//
 	// 1 Search SHREC directory for files
@@ -60,7 +64,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	std::cout << "Loading sample models.." << std::endl;
 	std::vector<HostMesh> sampleMeshes(sampleSetSize);
 	for(int i = 0; i < sampleSetSize; i++) {
-		sampleMeshes.at(i) = hostLoadOBJ(filePaths.at(i), VERTICES_NORMALS);
+		sampleMeshes.at(i) = hostLoadOBJ(filePaths.at(i));
 	}
 
 	// 4 Scale all models to fit in a 1x1x1 sphere
@@ -71,6 +75,37 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	}
 
 	// 5 Compute (quasi) spin images for all models in the sample set
+	std::cout << "Computing reference QSI images.." << std::endl;
+	std::vector<array<unsigned int>> originalDescriptors(sampleSetSize);
+	for(int i = 0; i < sampleSetSize; i++) {
+		std::cout << "\tComputing " << (i+1) << "/" << sampleSetSize << std::endl;
+		CPURasterisationSettings settings;
+		settings.mesh = scaledMeshes.at(i);
+		originalDescriptors.at(i) = hostGenerateQSIAllVertices(settings);
+	}
+
+	// 6 Create a box of SxSxS units
+	std::cout << "Creating a scene.." << std::endl;
+	unsigned int totalVertexCount = 0;
+	unsigned int totalIndexCount = 0;
+	for(int i = 0; i < sampleSetSize; i++) {
+		totalVertexCount += scaledMeshes.at(i).vertexCount;
+		totalIndexCount += scaledMeshes.at(i).indexCount;
+	}
+	std::vector<unsigned int> box(boxSize);
+	HostMesh boxScene(totalVertexCount, totalIndexCount);
+
+	// 7 for all combinations (non-reused) models:
+	std::cout << "Performing experiment                                                                                                                                                                                                                                              .." << std::endl;
+	std::uniform_int_distribution<unsigned int> boxDistribution(0, sampleSetSize);
+	unsigned int sceneVertexPointer = 0;
+	unsigned int sceneIndexPointer = 0;
+	for(unsigned int i = 0; i < sampleSetSize; i++) {
+		// Subtracting i ensures the chosen index ranges between 0 and the number of remaining unselected samples
+		unsigned int chosenIndex = boxDistribution(generator) - i;
+
+	}
+
 
 }
 

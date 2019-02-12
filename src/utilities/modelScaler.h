@@ -1,5 +1,5 @@
 #pragma once
 
-#include <shapeSearch/cpu/Mesh.h>
+#include <shapeSearch/cpu/types/HostMesh.h>
 
 HostMesh scaleMesh(HostMesh input, float radius);
