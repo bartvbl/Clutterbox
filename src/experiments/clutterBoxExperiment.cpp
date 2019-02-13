@@ -1,22 +1,28 @@
+#include "clutterBoxExperiment.hpp"
+
 #include <vector>
 #include <memory>
 #include <random>
 #include <iostream>
-#include <shapeSearch/cpu/types/HostMesh.h>
-#include <shapeSearch/utilities/OBJLoader.h>
+#include <algorithm>
+
 #include <utilities/stringUtils.h>
 #include <utilities/modelScaler.h>
+
+#include <shapeSearch/cpu/types/HostMesh.h>
+#include <shapeSearch/utilities/OBJLoader.h>
 #include <shapeSearch/cpu/MSIGenerator.h>
-#include <algorithm>
-#include <shapeSearch/cpu/types/CPURasterisationSettings.h>
-#include <shapeSearch/cpu/QSIGenerator.hpp>
-#include "clutterBoxExperiment.hpp"
+#include <shapeSearch/gpu/types/DeviceMesh.h>
+#include <shapeSearch/gpu/CopyMeshHostToDevice.h>
+#include <shapeSearch/gpu/quasiSpinImageGenerator.cuh>
+
+#include "clutterBox/clutterBoxKernels.cuh"
 
 #include "experimentUtilities/listDir.h"
 
 bool contains(std::vector<unsigned int> &haystack, unsigned int needle);
 
-void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, int sampleSetSize, float boxSize, int spinImageWidthPixels) {
+void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, int sampleSetSize, float boxSize, int spinImageWidth) {
 	// --- Overview ---
 	//
 	// 1 Search SHREC directory for files
@@ -74,17 +80,21 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 		scaledMeshes.at(i) = scaleMesh(sampleMeshes.at(i), 1);
 	}
 
-	// 5 Compute (quasi) spin images for all models in the sample set
+    // 5 Copy meshes to GPU
+	std::vector<DeviceMesh> scaledMeshesOnGPU(sampleSetSize);
+	for(int i = 0; i < sampleSetSize; i++) {
+	    scaledMeshesOnGPU.at(i) = copyMeshToGPU(scaledMeshes.at(i));
+	}
+
+	// 6 Compute (quasi) spin images for all models in the sample set
 	std::cout << "Computing reference QSI images.." << std::endl;
 	std::vector<array<unsigned int>> originalDescriptors(sampleSetSize);
 	for(int i = 0; i < sampleSetSize; i++) {
 		std::cout << "\tComputing " << (i+1) << "/" << sampleSetSize << std::endl;
-		CPURasterisationSettings settings;
-		settings.mesh = scaledMeshes.at(i);
-		originalDescriptors.at(i) = hostGenerateQSIAllVertices(settings);
+        generateQuasiSpinImages(scaledMeshesOnGPU.at(i), device_information, 3.0f);
 	}
 
-	// 6 Create a box of SxSxS units
+	// 7 Create a box of SxSxS units
 	std::cout << "Creating a scene.." << std::endl;
 	unsigned int totalVertexCount = 0;
 	unsigned int totalIndexCount = 0;
@@ -95,7 +105,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	std::vector<unsigned int> box(boxSize);
 	HostMesh boxScene(totalVertexCount, totalIndexCount);
 
-	// 7 for all combinations (non-reused) models:
+	// 8 for all combinations (non-reused) models:
 	std::cout << "Performing experiment                                                                                                                                                                                                                                              .." << std::endl;
 	std::uniform_int_distribution<unsigned int> boxDistribution(0, sampleSetSize);
 	unsigned int sceneVertexPointer = 0;
@@ -104,6 +114,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 		// Subtracting i ensures the chosen index ranges between 0 and the number of remaining unselected samples
 		unsigned int chosenIndex = boxDistribution(generator) - i;
 
+		// 7.1 Copy
 	}
 
 
