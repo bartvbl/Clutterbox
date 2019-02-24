@@ -15,6 +15,7 @@
 #include <shapeSearch/gpu/types/DeviceMesh.h>
 #include <shapeSearch/gpu/CopyMeshHostToDevice.h>
 #include <shapeSearch/gpu/quasiSpinImageGenerator.cuh>
+#include <experiments/clutterBox/clutterBoxUtilities.h>
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
@@ -22,7 +23,7 @@
 
 bool contains(std::vector<unsigned int> &haystack, unsigned int needle);
 
-void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, int sampleSetSize, float boxSize, int spinImageWidth) {
+void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, unsigned int sampleSetSize, float boxSize, unsigned int experimentRepetitions, int spinImageWidth) {
 	// --- Overview ---
 	//
 	// 1 Search SHREC directory for files
@@ -51,7 +52,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
 	std::vector<unsigned int> sampleIndices(sampleSetSize);
 
-	for(int i = 0; i < sampleSetSize; i++) {
+	for(unsigned int i = 0; i < sampleSetSize; i++) {
 		unsigned int randomIndex;
 		do {
 			randomIndex = distribution(generator);
@@ -61,7 +62,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	std::sort(sampleIndices.begin(), sampleIndices.end());
 
 	std::vector<std::string> filePaths(sampleSetSize);
-	for(int i = 0; i < sampleSetSize; i++) {
+	for(unsigned int i = 0; i < sampleSetSize; i++) {
 		filePaths[i] = objectDirectory + (endsWith(objectDirectory, "/") ? "" : "/") + fileList.at(sampleIndices[i]);
 		std::cout << "Sample: " << sampleIndices[i] << " -> " << filePaths.at(i) << std::endl;
 	}
@@ -69,53 +70,60 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	// 3 Load the models in the sample set
 	std::cout << "Loading sample models.." << std::endl;
 	std::vector<HostMesh> sampleMeshes(sampleSetSize);
-	for(int i = 0; i < sampleSetSize; i++) {
+	for(unsigned int i = 0; i < sampleSetSize; i++) {
 		sampleMeshes.at(i) = hostLoadOBJ(filePaths.at(i));
 	}
 
 	// 4 Scale all models to fit in a 1x1x1 sphere
 	std::cout << "Scaling meshes.." << std::endl;
 	std::vector<HostMesh> scaledMeshes(sampleSetSize);
-	for(int i = 0; i < sampleSetSize; i++) {
+	for(unsigned int i = 0; i < sampleSetSize; i++) {
 		scaledMeshes.at(i) = scaleMesh(sampleMeshes.at(i), 1);
 	}
 
     // 5 Copy meshes to GPU
 	std::vector<DeviceMesh> scaledMeshesOnGPU(sampleSetSize);
-	for(int i = 0; i < sampleSetSize; i++) {
+	for(unsigned int i = 0; i < sampleSetSize; i++) {
 	    scaledMeshesOnGPU.at(i) = copyMeshToGPU(scaledMeshes.at(i));
 	}
 
-	// 6 Compute (quasi) spin images for all models in the sample set
-	std::cout << "Computing reference QSI images.." << std::endl;
-	std::vector<array<unsigned int>> originalDescriptors(sampleSetSize);
-	for(int i = 0; i < sampleSetSize; i++) {
-		std::cout << "\tComputing " << (i+1) << "/" << sampleSetSize << std::endl;
-        generateQuasiSpinImages(scaledMeshesOnGPU.at(i), device_information, 3.0f);
-	}
+	std::uniform_int_distribution<float> boxDistribution(0, 1);
+    std::random_device rd;
+    std::default_random_engine randomGenerator = std::default_random_engine {rd()};
 
-	// 7 Create a box of SxSxS units
-	std::cout << "Creating a scene.." << std::endl;
-	unsigned int totalVertexCount = 0;
-	unsigned int totalIndexCount = 0;
-	for(int i = 0; i < sampleSetSize; i++) {
-		totalVertexCount += scaledMeshes.at(i).vertexCount;
-		totalIndexCount += scaledMeshes.at(i).indexCount;
-	}
-	std::vector<unsigned int> box(boxSize);
-	HostMesh boxScene(totalVertexCount, totalIndexCount);
+    for(unsigned int experiment = 0; experiment < experimentRepetitions; experiment++) {
+    	std::cout << "Running experiment iteration " << experiment << std::endl;
 
-	// 8 for all combinations (non-reused) models:
-	std::cout << "Performing experiment                                                                                                                                                                                                                                              .." << std::endl;
-	std::uniform_int_distribution<unsigned int> boxDistribution(0, sampleSetSize);
-	unsigned int sceneVertexPointer = 0;
-	unsigned int sceneIndexPointer = 0;
-	for(unsigned int i = 0; i < sampleSetSize; i++) {
-		// Subtracting i ensures the chosen index ranges between 0 and the number of remaining unselected samples
-		unsigned int chosenIndex = boxDistribution(generator) - i;
+    	// Shuffle the list. First mesh is now our "reference".
+        std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), randomGenerator);
 
-		// 7.1 Copy
-	}
+		// Compute spin image for reference model
+		array<unsigned int> referenceImages = generateQuasiSpinImages(scaledMeshesOnGPU.at(0), device_information, spinImageWidth);
+
+        // Combine meshes into one larger scene
+        DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
+
+		// Randomly transform objects
+		randomlyTransformMeshes(boxScene, scaledMeshesOnGPU, randomGenerator);
+
+	    // Generate images for increasingly more complex scenes
+		unsigned int vertexCount = 0;
+	    for(unsigned int i = 0; i < sampleSetSize; i++) {
+			// Making the generation algorithm believe the scene is smaller than it really is
+	    	vertexCount += scaledMeshesOnGPU.at(i).vertexCount;
+			boxScene.vertexCount = vertexCount;
+
+			// Generating images
+			array<unsigned int> sampleImages = generateQuasiSpinImages(boxScene, device_information, spinImageWidth);
+
+			// Comparing them to the reference ones
+			float distance = compareQuasiSpinImages(referenceImages, sampleImages);
+
+		}
+
+	    freeDeviceMesh(boxScene);
+    }
+
 
 
 }
