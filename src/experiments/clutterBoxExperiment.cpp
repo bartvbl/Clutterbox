@@ -15,6 +15,7 @@
 #include <shapeSearch/gpu/types/DeviceMesh.h>
 #include <shapeSearch/gpu/CopyMeshHostToDevice.h>
 #include <shapeSearch/gpu/quasiSpinImageGenerator.cuh>
+#include <shapeSearch/gpu/quasiSpinImageComparator.cuh>
 #include <experiments/clutterBox/clutterBoxUtilities.h>
 
 #include "clutterBox/clutterBoxKernels.cuh"
@@ -87,7 +88,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	    scaledMeshesOnGPU.at(i) = copyMeshToGPU(scaledMeshes.at(i));
 	}
 
-	std::uniform_int_distribution<float> boxDistribution(0, 1);
+	std::uniform_real_distribution<float> boxDistribution(0, 1);
     std::random_device rd;
     std::default_random_engine randomGenerator = std::default_random_engine {rd()};
 
@@ -117,7 +118,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 			array<unsigned int> sampleImages = generateQuasiSpinImages(boxScene, device_information, spinImageWidth);
 
 			// Comparing them to the reference ones
-			float distance = compareQuasiSpinImages(referenceImages, sampleImages);
+			array<float> distances = compareDescriptorsElementWise(referenceImages, sampleImages, vertexCount);
 
 		}
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+#include <random>
 #include <shapeSearch/gpu/types/DeviceMesh.h>
 
 void scaleMeshOnGPU(DeviceMesh mesh, float targetRadius);
