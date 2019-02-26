@@ -99,7 +99,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), randomGenerator);
 
 		// Compute spin image for reference model
-		array<unsigned int> referenceImages = generateQuasiSpinImages(scaledMeshesOnGPU.at(0), device_information, spinImageWidth);
+		array<unsigned int> device_referenceImages = generateQuasiSpinImages(scaledMeshesOnGPU.at(0), device_information, spinImageWidth);
 
         // Combine meshes into one larger scene
         DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
@@ -115,14 +115,17 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 			boxScene.vertexCount = vertexCount;
 
 			// Generating images
-			array<unsigned int> sampleImages = generateQuasiSpinImages(boxScene, device_information, spinImageWidth);
+			array<unsigned int> device_sampleImages = generateQuasiSpinImages(boxScene, device_information, spinImageWidth);
 
 			// Comparing them to the reference ones
-			array<float> distances = compareDescriptorsElementWise(referenceImages, sampleImages, vertexCount);
+			array<float> distances = compareDescriptorsElementWise(device_referenceImages, device_sampleImages, vertexCount);
+
+			cudaFree(device_sampleImages.content);
 
 		}
 
 	    freeDeviceMesh(boxScene);
+	    cudaFree(device_referenceImages.content);
     }
 
 
