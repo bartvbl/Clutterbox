@@ -32,7 +32,7 @@ HostMesh scaleMesh(HostMesh input, float radius) {
 
 	double scaleFactor = (1.0 / maxDistance) * radius;
 
-	for(int i = 0; i < input.vertexCount; i++) {
+	for(unsigned int i = 0; i < input.vertexCount; i++) {
 		scaledMesh.vertices[i].x = float((double(input.vertices[i].x) - averageX) * scaleFactor);
 		scaledMesh.vertices[i].y = float((double(input.vertices[i].y) - averageY) * scaleFactor);
 		scaledMesh.vertices[i].z = float((double(input.vertices[i].z) - averageZ) * scaleFactor);

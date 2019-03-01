@@ -54,6 +54,7 @@ add_subdirectory(../libShapeSearch ${CMAKE_CURRENT_BINARY_DIR}/libShapeSearch)
 include_directories (
   src/
   ../libShapeSearch/src
+  lib/glm
 )
 
 #

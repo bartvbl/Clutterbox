@@ -22,6 +22,18 @@
 
 #include "experimentUtilities/listDir.h"
 
+
+// TODO list:
+// - implementation that searches in the clutter box images for reference images
+//      - Create a histogram based on at which rank each image appears
+// - The measure's independent variable should not be number of objects, but rather the number of triangles in the scene
+// - How do I manage samples in the scene for spin images? Certain number of samples per triangle?
+// - What is the effect of different spin image sizes?
+// - In order to limit VRAM usage, as well as get a better signal to noise ratio (due to aliasing) on the images, we should only use models with less than a certain number of vertices.
+// -
+
+
+
 bool contains(std::vector<unsigned int> &haystack, unsigned int needle);
 
 void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, unsigned int sampleSetSize, float boxSize, unsigned int experimentRepetitions, int spinImageWidth) {
@@ -105,7 +117,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
 
 		// Randomly transform objects
-		randomlyTransformMeshes(boxScene, scaledMeshesOnGPU, randomGenerator);
+		randomlyTransformMeshes(boxScene, boxSize, scaledMeshesOnGPU, randomGenerator);
 
 	    // Generate images for increasingly more complex scenes
 		unsigned int vertexCount = 0;
@@ -118,7 +130,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 			array<unsigned int> device_sampleImages = generateQuasiSpinImages(boxScene, device_information, spinImageWidth);
 
 			// Comparing them to the reference ones
-			array<float> distances = compareDescriptorsElementWise(device_referenceImages, device_sampleImages, vertexCount);
+			array<float> distances = compareDescriptorsAgainstThemselves(device_referenceImages, device_sampleImages, vertexCount);
 
 			cudaFree(device_sampleImages.content);
 
@@ -133,7 +145,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 }
 
 bool contains(std::vector<unsigned int> &haystack, unsigned int needle) {
-	for(unsigned int i = 0; i < haystack.size(); i++) {
+	or(unsigned int i = 0; i < haystack.size(); i++) {
 		if(haystack[i] == needle) {
 			return true;
 		}
