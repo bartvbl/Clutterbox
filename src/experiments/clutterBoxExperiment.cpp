@@ -15,8 +15,9 @@
 #include <shapeSearch/gpu/types/DeviceMesh.h>
 #include <shapeSearch/gpu/CopyMeshHostToDevice.h>
 #include <shapeSearch/gpu/quasiSpinImageGenerator.cuh>
-#include <shapeSearch/gpu/quasiSpinImageComparator.cuh>
+#include <shapeSearch/gpu/quasiSpinImageSearcher.cuh>
 #include <experiments/clutterBox/clutterBoxUtilities.h>
+#include <fstream>
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
@@ -52,15 +53,15 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	//    7.4 Dump the distances between images
 
 
+    // 1 Search SHREC directory for files
+    std::cout << "Listing object directory..";
+    std::vector<std::string> fileList = listDir(objectDirectory);
+    std::cout << " (found " << fileList.size() << " files)" << std::endl;
 
-	// 1 Search SHREC directory for files
-	std::cout << "Listing object directory..";
-	std::vector<std::string> fileList = listDir(objectDirectory);
-	std::cout << " (found " << fileList.size() << " files)" << std::endl;
-
-	// 2 Make a sample set of n sample objects
-	std::cout << "Selecting file sample set.." << std::endl;
-	std::default_random_engine generator( (unsigned int)time(0) );
+    // 2 Make a sample set of n sample objects
+    std::cout << "Selecting file sample set.." << std::endl;
+    std::random_device rd;
+    std::default_random_engine generator(40);//{rd()};
 	std::uniform_int_distribution<unsigned int> distribution(0, fileList.size());
 
 	std::vector<unsigned int> sampleIndices(sampleSetSize);
@@ -100,37 +101,74 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	    scaledMeshesOnGPU.at(i) = copyMeshToGPU(scaledMeshes.at(i));
 	}
 
-	std::uniform_real_distribution<float> boxDistribution(0, 1);
-    std::random_device rd;
-    std::default_random_engine randomGenerator = std::default_random_engine {rd()};
-
     for(unsigned int experiment = 0; experiment < experimentRepetitions; experiment++) {
-    	std::cout << "Running experiment iteration " << experiment << std::endl;
+    	std::cout << "Running experiment iteration " << (experiment+1) << "/" << experimentRepetitions << std::endl;
 
     	// Shuffle the list. First mesh is now our "reference".
-        std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), randomGenerator);
+        std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), generator);
 
 		// Compute spin image for reference model
+		std::cout << "\tGenerating reference QSI images.." << std::endl;
 		array<unsigned int> device_referenceImages = generateQuasiSpinImages(scaledMeshesOnGPU.at(0), device_information, spinImageWidth);
 
         // Combine meshes into one larger scene
         DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
 
 		// Randomly transform objects
-		randomlyTransformMeshes(boxScene, boxSize, scaledMeshesOnGPU, randomGenerator);
+		randomlyTransformMeshes(boxScene, boxSize, scaledMeshesOnGPU, generator);
 
-	    // Generate images for increasingly more complex scenes
-		unsigned int vertexCount = 0;
-	    for(unsigned int i = 0; i < sampleSetSize; i++) {
+		size_t vertexCount = 0;
+		size_t referenceMeshVertexCount = scaledMeshesOnGPU.at(0).vertexCount;
+
+		// Generate images for increasingly more complex scenes
+		for(unsigned int i = 0; i < sampleSetSize; i++) {
+			std::cout << "\tProcessing mesh sample " << (i+1) << "/" << sampleSetSize << std::endl;
 			// Making the generation algorithm believe the scene is smaller than it really is
 	    	vertexCount += scaledMeshesOnGPU.at(i).vertexCount;
 			boxScene.vertexCount = vertexCount;
 
 			// Generating images
+			std::cout << "\t\tGenerating QSI images.. (" << vertexCount << " images)" << std::endl;
 			array<unsigned int> device_sampleImages = generateQuasiSpinImages(boxScene, device_information, spinImageWidth);
 
+            std::vector<unsigned int> histogram;
+            histogram.resize(33);
+            std::fill(histogram.begin(), histogram.end(), 0);
+
 			// Comparing them to the reference ones
-			array<float> distances = compareDescriptorsAgainstThemselves(device_referenceImages, device_sampleImages, vertexCount);
+			array<ImageSearchResults> searchResults = findDescriptorsInHaystack(device_referenceImages, referenceMeshVertexCount, device_sampleImages, vertexCount);
+
+            std::ofstream indicesFile;
+            std::ofstream scoresFile;
+            indicesFile.open("indices.txt");
+            scoresFile.open("scores.txt");
+
+			float average = 0;
+			for(size_t image = 0; image < vertexCount; image++) {
+			    for(unsigned int i = 0; i < 32; i++) {
+                    indicesFile << searchResults.content[image].resultIndices[i] << (i == 31 ? "\r\n" : ", ");
+                    scoresFile << searchResults.content[image].resultScores[i] << (i == 31 ? "\r\n" : ", ");
+			    }
+
+			    unsigned int topSearchResult = 0;
+			    for(; topSearchResult < 32; topSearchResult++) {
+                    if(searchResults.content[image].resultIndices[topSearchResult] == image) {
+                        break;
+                    }
+			    }
+
+			    histogram.at(topSearchResult)++;
+			    average += (float(topSearchResult) - average) / float(image + 1);
+			}
+
+            indicesFile.close();
+			scoresFile.close();
+
+			std::cout << "\t\tITERATION AVERAGE: " << average << std::endl;
+
+			for(unsigned int histogramEntry = 0; histogramEntry < histogram.size(); histogramEntry++) {
+			    std::cout << "\t\t\t" << histogramEntry << " -> " << histogram.at(histogramEntry) << std::endl;
+			}
 
 			cudaFree(device_sampleImages.content);
 
@@ -145,7 +183,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 }
 
 bool contains(std::vector<unsigned int> &haystack, unsigned int needle) {
-	or(unsigned int i = 0; i < haystack.size(); i++) {
+	for(unsigned int i = 0; i < haystack.size(); i++) {
 		if(haystack[i] == needle) {
 			return true;
 		}

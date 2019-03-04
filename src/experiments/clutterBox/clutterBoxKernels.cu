@@ -64,14 +64,17 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
         float distanceY = maxDistance * randomGenerator();
         float distanceZ = maxDistance * randomGenerator();
 
+        glm::mat4 randomRotationTransformation(1.0);
+        randomRotationTransformation = glm::rotate(randomRotationTransformation, yaw,   glm::vec3(0, 0, 1));
+        randomRotationTransformation = glm::rotate(randomRotationTransformation, pitch, glm::vec3(0, 1, 0));
+        randomRotationTransformation = glm::rotate(randomRotationTransformation, roll,  glm::vec3(1, 0, 0));
+
         glm::mat4 randomTransformation(1.0);
         randomTransformation = glm::translate(randomTransformation, glm::vec3(distanceX, distanceY, distanceZ));
-        randomTransformation = glm::rotate(randomTransformation, yaw,   glm::vec3(0, 0, 1));
-        randomTransformation = glm::rotate(randomTransformation, pitch, glm::vec3(0, 1, 0));
-        randomTransformation = glm::rotate(randomTransformation, roll,  glm::vec3(1, 0, 0));
+        randomTransformation = randomRotationTransformation * randomTransformation;
 
         randomTransformations.at(i) = randomTransformation;
-        randomNormalTransformations.at(i) = glm::inverseTranspose(randomTransformation);
+        randomNormalTransformations.at(i) = randomRotationTransformation;
 
         currentEndIndex += device_meshList.at(i).vertexCount;
         meshEndIndices.at(i) = currentEndIndex;
