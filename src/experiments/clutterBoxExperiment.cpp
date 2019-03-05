@@ -18,6 +18,8 @@
 #include <shapeSearch/gpu/quasiSpinImageSearcher.cuh>
 #include <experiments/clutterBox/clutterBoxUtilities.h>
 #include <fstream>
+#include <shapeSearch/gpu/copyDescriptorsToHost.h>
+#include <shapeSearch/utilities/spinImageDumper.h>
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
@@ -25,8 +27,6 @@
 
 
 // TODO list:
-// - implementation that searches in the clutter box images for reference images
-//      - Create a histogram based on at which rank each image appears
 // - The measure's independent variable should not be number of objects, but rather the number of triangles in the scene
 // - How do I manage samples in the scene for spin images? Certain number of samples per triangle?
 // - What is the effect of different spin image sizes?
@@ -85,14 +85,14 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	std::cout << "Loading sample models.." << std::endl;
 	std::vector<HostMesh> sampleMeshes(sampleSetSize);
 	for(unsigned int i = 0; i < sampleSetSize; i++) {
-		sampleMeshes.at(i) = hostLoadOBJ(filePaths.at(i));
+		sampleMeshes.at(i) = hostLoadOBJ(filePaths.at(i), true);
 	}
 
 	// 4 Scale all models to fit in a 1x1x1 sphere
 	std::cout << "Scaling meshes.." << std::endl;
 	std::vector<HostMesh> scaledMeshes(sampleSetSize);
 	for(unsigned int i = 0; i < sampleSetSize; i++) {
-		scaledMeshes.at(i) = scaleMesh(sampleMeshes.at(i), 1);
+		scaledMeshes.at(i) = fitMeshInsideSphereOfRadius(sampleMeshes.at(i), 1);
 	}
 
     // 5 Copy meshes to GPU
@@ -109,7 +109,10 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
 		// Compute spin image for reference model
 		std::cout << "\tGenerating reference QSI images.." << std::endl;
-		array<unsigned int> device_referenceImages = generateQuasiSpinImages(scaledMeshesOnGPU.at(0), device_information, spinImageWidth);
+		array<newSpinImagePixelType> device_referenceImages = generateQuasiSpinImages(scaledMeshesOnGPU.at(0), device_information, spinImageWidth);
+
+		array<newSpinImagePixelType> debug_host_referenceImages = copyQSIDescriptorsToHost(device_referenceImages, scaledMeshesOnGPU.at(0).vertexCount);
+        dumpImages(debug_host_referenceImages, "reference.png", true, 70);
 
         // Combine meshes into one larger scene
         DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
@@ -129,7 +132,10 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
 			// Generating images
 			std::cout << "\t\tGenerating QSI images.. (" << vertexCount << " images)" << std::endl;
-			array<unsigned int> device_sampleImages = generateQuasiSpinImages(boxScene, device_information, spinImageWidth);
+			array<newSpinImagePixelType> device_sampleImages = generateQuasiSpinImages(boxScene, device_information, spinImageWidth);
+
+			array<newSpinImagePixelType> host_sampleImages = copyQSIDescriptorsToHost(device_sampleImages, scaledMeshesOnGPU.at(0).vertexCount);
+			dumpImages(host_sampleImages, "sample.png", true, 70);
 
             std::vector<unsigned int> histogram;
             histogram.resize(33);
@@ -161,7 +167,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
 			        if(lastEquivalentScore != searchResultScore) {
 			            lastEquivalentScore = searchResultScore;
-			            lastEquivalentIndex = searchResultIndex;
+			            lastEquivalentIndex = topSearchResult;
 			        }
 
                     if(searchResultIndex == image) {

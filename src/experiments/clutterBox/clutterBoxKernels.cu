@@ -1,4 +1,5 @@
 #include "clutterBoxKernels.cuh"
+#include <iostream>
 
 #define GLM_FORCE_CXX98
 #include <glm/glm.hpp>
@@ -9,7 +10,7 @@
 #include "nvidia/helper_cuda.h"
 #include <cuda_runtime.h>
 
-__global__ void transformMeshes(glm::mat4* transformations, glm::mat4* normalMatrices, size_t* endIndices, DeviceMesh scene) {
+__global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMatrices, size_t* endIndices, DeviceMesh scene) {
     size_t threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(threadIndex >= scene.vertexCount) {
@@ -27,16 +28,15 @@ __global__ void transformMeshes(glm::mat4* transformations, glm::mat4* normalMat
     vertex.z = scene.vertices_z[threadIndex];
     vertex.w = 1.0;
 
-    glm::vec4 normal;
+    glm::vec3 normal;
     normal.x = scene.normals_x[threadIndex];
     normal.y = scene.normals_y[threadIndex];
     normal.z = scene.normals_z[threadIndex];
-    normal.w = 0.0;
 
     glm::vec4 transformedVertex = transformations[transformationIndex] * vertex;
-    glm::vec4 transformedNormal = normalMatrices[transformationIndex] * normal;
+    glm::vec3 transformedNormal = normalMatrices[transformationIndex] * normal;
 
-    transformedNormal = glm::normalize(transformedNormal);
+    //transformedNormal = glm::normalize(transformedNormal);
 
     scene.vertices_x[threadIndex] = transformedVertex.x;
     scene.vertices_y[threadIndex] = transformedVertex.y;
@@ -53,28 +53,34 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
     size_t currentEndIndex = 0;
 
     std::vector<glm::mat4> randomTransformations(device_meshList.size());
-    std::vector<glm::mat4> randomNormalTransformations(device_meshList.size());
+    std::vector<glm::mat3> randomNormalTransformations(device_meshList.size());
+
+    std::uniform_real_distribution<float> distribution(0, 1);
 
     for(unsigned int i = 0; i < device_meshList.size(); i++) {
-        float yaw = float(randomGenerator() * 2.0 * M_PI);
-        float pitch = float((randomGenerator() - 0.5) * M_PI);
-        float roll = float(randomGenerator() * 2.0 * M_PI);
+        float yaw = float(distribution(randomGenerator) * 2.0 * M_PI);
+        float pitch = float((distribution(randomGenerator) - 0.5) * M_PI);
+        float roll = float(distribution(randomGenerator) * 2.0 * M_PI);
 
-        float distanceX = maxDistance * randomGenerator();
-        float distanceY = maxDistance * randomGenerator();
-        float distanceZ = maxDistance * randomGenerator();
+        float distanceX = maxDistance * distribution(randomGenerator);
+        float distanceY = maxDistance * distribution(randomGenerator);
+        float distanceZ = maxDistance * distribution(randomGenerator);
+
+        std::cout << "Random Transform: maxDistance(" << maxDistance << ") -> distance(" << distanceX << ", " << distanceY << ", "<< distanceZ << ") "
+        << "rotation(" << yaw << ", " << pitch << ", "<< roll << ")"
+                << std::endl;
 
         glm::mat4 randomRotationTransformation(1.0);
-        randomRotationTransformation = glm::rotate(randomRotationTransformation, yaw,   glm::vec3(0, 0, 1));
-        randomRotationTransformation = glm::rotate(randomRotationTransformation, pitch, glm::vec3(0, 1, 0));
-        randomRotationTransformation = glm::rotate(randomRotationTransformation, roll,  glm::vec3(1, 0, 0));
+        //randomRotationTransformation = glm::rotate(randomRotationTransformation, yaw,   glm::vec3(0, 0, 1));
+        //randomRotationTransformation = glm::rotate(randomRotationTransformation, pitch, glm::vec3(0, 1, 0));
+        //randomRotationTransformation = glm::rotate(randomRotationTransformation, roll,  glm::vec3(1, 0, 0));
 
         glm::mat4 randomTransformation(1.0);
         randomTransformation = glm::translate(randomTransformation, glm::vec3(distanceX, distanceY, distanceZ));
-        randomTransformation = randomRotationTransformation * randomTransformation;
+        randomTransformation = randomTransformation * randomRotationTransformation;
 
         randomTransformations.at(i) = randomTransformation;
-        randomNormalTransformations.at(i) = randomRotationTransformation;
+        randomNormalTransformations.at(i) = glm::inverseTranspose(glm::mat3(randomRotationTransformation));
 
         currentEndIndex += device_meshList.at(i).vertexCount;
         meshEndIndices.at(i) = currentEndIndex;
@@ -85,9 +91,10 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
     checkCudaErrors(cudaMalloc(&device_transformations, transformationBufferSize));
     checkCudaErrors(cudaMemcpy(device_transformations, randomTransformations.data(), transformationBufferSize, cudaMemcpyHostToDevice));
 
-    glm::mat4* device_normalMatrices;
-    checkCudaErrors(cudaMalloc(&device_normalMatrices, transformationBufferSize));
-    checkCudaErrors(cudaMemcpy(device_normalMatrices, randomNormalTransformations.data(), transformationBufferSize, cudaMemcpyHostToDevice));
+    glm::mat3* device_normalMatrices;
+    size_t normalMatrixBufferSize = device_meshList.size() * sizeof(glm::mat3);
+    checkCudaErrors(cudaMalloc(&device_normalMatrices, normalMatrixBufferSize));
+    checkCudaErrors(cudaMemcpy(device_normalMatrices, randomNormalTransformations.data(), normalMatrixBufferSize, cudaMemcpyHostToDevice));
 
     size_t* device_endIndices;
     size_t startIndexBufferSize = device_meshList.size() * sizeof(size_t);
@@ -102,5 +109,6 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
     checkCudaErrors(cudaGetLastError());
 
     cudaFree(device_transformations);
+    cudaFree(device_normalMatrices);
     cudaFree(device_endIndices);
 }
