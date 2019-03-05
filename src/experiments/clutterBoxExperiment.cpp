@@ -144,21 +144,33 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             scoresFile.open("scores.txt");
 
 			float average = 0;
+
 			for(size_t image = 0; image < vertexCount; image++) {
-			    for(unsigned int i = 0; i < 32; i++) {
+                for(unsigned int i = 0; i < 32; i++) {
                     indicesFile << searchResults.content[image].resultIndices[i] << (i == 31 ? "\r\n" : ", ");
                     scoresFile << searchResults.content[image].resultScores[i] << (i == 31 ? "\r\n" : ", ");
 			    }
 
+                float lastEquivalentScore = searchResults.content[image].resultScores[0];
+                size_t lastEquivalentIndex = 0;
+
 			    unsigned int topSearchResult = 0;
 			    for(; topSearchResult < 32; topSearchResult++) {
-                    if(searchResults.content[image].resultIndices[topSearchResult] == image) {
+			        float searchResultScore = searchResults.content[image].resultScores[topSearchResult];
+			        size_t searchResultIndex = searchResults.content[image].resultIndices[topSearchResult];
+
+			        if(lastEquivalentScore != searchResultScore) {
+			            lastEquivalentScore = searchResultScore;
+			            lastEquivalentIndex = searchResultIndex;
+			        }
+
+                    if(searchResultIndex == image) {
                         break;
                     }
 			    }
 
-			    histogram.at(topSearchResult)++;
-			    average += (float(topSearchResult) - average) / float(image + 1);
+			    histogram.at(lastEquivalentIndex)++;
+			    average += (float(lastEquivalentIndex) - average) / float(image + 1);
 			}
 
             indicesFile.close();
