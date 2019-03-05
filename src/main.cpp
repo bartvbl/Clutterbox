@@ -10,7 +10,7 @@
 
 cudaDeviceProp setCurrentCUDADevice(bool listOnly, int forceGPU);
 
-const int DEFAULT_SPIN_IMAGE_WIDTH = 64;
+const float DEFAULT_SPIN_IMAGE_WIDTH = 1;
 
 int main(int argc, const char **argv)
 {
@@ -24,7 +24,7 @@ int main(int argc, const char **argv)
 	const auto& sampleSetSize = parser.add<int>("sample-set-size", "How many sample models the clutter box experiment should use", '\0', arrrgh::Optional, -1);
 	const auto& boxSize = parser.add<int>("box-size", "Size of the cube box for the clutter box experiment", '\0', arrrgh::Optional, -1);
 	const auto& objectDirectory = parser.add<std::string>("source-directory", "Defines the directory from which input objects are read", '\0', arrrgh::Optional, "");
-	const auto& spinImageWidth = parser.add<int>("spin-image-width", "The width and height of the generated spin image, measured in pixels", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
+	const auto& spinImageWidth = parser.add<float>("spin-image-width", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
 	const auto& experimentRepetitions = parser.add<int>("repetition-count", "The number of times each experiment should be repeated", '\0', arrrgh::Optional, 1);
 
 
