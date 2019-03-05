@@ -2,4 +2,4 @@
 
 #include <shapeSearch/cpu/types/HostMesh.h>
 
-HostMesh scaleMesh(HostMesh input, float radius);
+HostMesh fitMeshInsideSphereOfRadius(HostMesh input, float radius);

@@ -1,7 +1,8 @@
 #include <cmath>
+#include <iostream>
 #include "modelScaler.h"
 
-HostMesh scaleMesh(HostMesh input, float radius) {
+HostMesh fitMeshInsideSphereOfRadius(HostMesh input, float radius) {
 	double averageX = 0;
 	double averageY = 0;
 	double averageZ = 0;
@@ -10,12 +11,12 @@ HostMesh scaleMesh(HostMesh input, float radius) {
 	for(unsigned int i = 0; i < input.vertexCount; i++) {
 		float3_cpu vertex = input.vertices[i];
 
-		averageX = ((float(i) * averageX) + vertex.x) / double(i + 1);
-		averageY = ((float(i) * averageY) + vertex.y) / double(i + 1);
-		averageZ = ((float(i) * averageZ) + vertex.z) / double(i + 1);
+		averageX += (vertex.x - averageX) / float(i + 1);
+		averageY += (vertex.y - averageY) / float(i + 1);
+		averageZ += (vertex.z - averageZ) / float(i + 1);
 	}
 
-	double maxDistance = std::numeric_limits<double>::max();
+	double maxDistance = -std::numeric_limits<double>::max();
 
 	for(unsigned int i = 0; i < input.vertexCount; i++) {
 		float3_cpu vertex = input.vertices[i];
@@ -28,9 +29,11 @@ HostMesh scaleMesh(HostMesh input, float radius) {
 		maxDistance = std::max(maxDistance, length);
 	}
 
+
 	HostMesh scaledMesh(input.vertexCount, input.indexCount);
 
-	double scaleFactor = (1.0 / maxDistance) * radius;
+	double scaleFactor = (radius / maxDistance);
+	std::cout << "Scale Mesh: maxDistance(" << maxDistance << ") scale(" << scaleFactor << ") avgCoord(" << averageX << ", " << averageY << ", " << averageZ << ")" << std::endl;
 
 	for(unsigned int i = 0; i < input.vertexCount; i++) {
 		scaledMesh.vertices[i].x = float((double(input.vertices[i].x) - averageX) * scaleFactor);
