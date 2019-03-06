@@ -93,6 +93,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	std::vector<HostMesh> scaledMeshes(sampleSetSize);
 	for(unsigned int i = 0; i < sampleSetSize; i++) {
 		scaledMeshes.at(i) = fitMeshInsideSphereOfRadius(sampleMeshes.at(i), 1);
+		freeHostMesh(sampleMeshes.at(i));
 	}
 
     // 5 Copy meshes to GPU
