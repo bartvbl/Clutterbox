@@ -36,7 +36,7 @@ __global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMat
     glm::vec4 transformedVertex = transformations[transformationIndex] * vertex;
     glm::vec3 transformedNormal = normalMatrices[transformationIndex] * normal;
 
-    //transformedNormal = glm::normalize(transformedNormal);
+    transformedNormal = glm::normalize(transformedNormal);
 
     scene.vertices_x[threadIndex] = transformedVertex.x;
     scene.vertices_y[threadIndex] = transformedVertex.y;
@@ -51,6 +51,17 @@ __global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMat
 void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<DeviceMesh> device_meshList, std::default_random_engine randomGenerator) {
     std::vector<size_t> meshEndIndices(device_meshList.size());
     size_t currentEndIndex = 0;
+
+    float* debug_hostNormalsX = new float[scene.vertexCount];
+    float* debug_hostNormalsY = new float[scene.vertexCount];
+    float* debug_hostNormalsZ = new float[scene.vertexCount];
+    cudaMemcpy(debug_hostNormalsX, scene.normals_x, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(debug_hostNormalsY, scene.normals_y, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(debug_hostNormalsZ, scene.normals_z, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
+
+    for(int i = 0; i < scene.vertexCount; i++) {
+        std::cout << "(" << debug_hostNormalsX[i] << ", " << debug_hostNormalsY[i] << ", " << debug_hostNormalsZ[i] << ")" << std::endl;
+    }
 
     std::vector<glm::mat4> randomTransformations(device_meshList.size());
     std::vector<glm::mat3> randomNormalTransformations(device_meshList.size());
@@ -71,16 +82,16 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
                 << std::endl;
 
         glm::mat4 randomRotationTransformation(1.0);
-        //randomRotationTransformation = glm::rotate(randomRotationTransformation, yaw,   glm::vec3(0, 0, 1));
-        //randomRotationTransformation = glm::rotate(randomRotationTransformation, pitch, glm::vec3(0, 1, 0));
-        //randomRotationTransformation = glm::rotate(randomRotationTransformation, roll,  glm::vec3(1, 0, 0));
+        randomRotationTransformation = glm::rotate(randomRotationTransformation, yaw,   glm::vec3(0, 0, 1));
+        randomRotationTransformation = glm::rotate(randomRotationTransformation, pitch, glm::vec3(0, 1, 0));
+        randomRotationTransformation = glm::rotate(randomRotationTransformation, roll,  glm::vec3(1, 0, 0));
 
         glm::mat4 randomTransformation(1.0);
         randomTransformation = glm::translate(randomTransformation, glm::vec3(distanceX, distanceY, distanceZ));
         randomTransformation = randomTransformation * randomRotationTransformation;
 
         randomTransformations.at(i) = randomTransformation;
-        randomNormalTransformations.at(i) = glm::inverseTranspose(glm::mat3(randomRotationTransformation));
+        randomNormalTransformations.at(i) = glm::mat3(glm::inverseTranspose(randomTransformation));
 
         currentEndIndex += device_meshList.at(i).vertexCount;
         meshEndIndices.at(i) = currentEndIndex;
