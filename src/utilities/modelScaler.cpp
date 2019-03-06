@@ -32,6 +32,9 @@ HostMesh fitMeshInsideSphereOfRadius(HostMesh input, float radius) {
 
 	HostMesh scaledMesh(input.vertexCount, input.indexCount);
 
+    std::copy(input.normals, input.normals + scaledMesh.vertexCount, scaledMesh.normals);
+    std::copy(input.indices, input.indices + scaledMesh.indexCount, scaledMesh.indices);
+
 	double scaleFactor = (radius / maxDistance);
 	std::cout << "Scale Mesh: maxDistance(" << maxDistance << ") scale(" << scaleFactor << ") avgCoord(" << averageX << ", " << averageY << ", " << averageZ << ")" << std::endl;
 
