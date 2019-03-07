@@ -138,42 +138,16 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             array<newSpinImagePixelType> device_sampleImages = generateQuasiSpinImages(boxScene, device_information,
                                                                                        spinImageWidth);
 
-            std::vector<unsigned int> histogram;
-            histogram.resize(33);
-            std::fill(histogram.begin(), histogram.end(), 0);
 
             // Comparing them to the reference ones
-            array<ImageSearchResults> searchResults = findDescriptorsInHaystack(device_referenceImages,
+            array<ImageSearchResults> searchResults = findDescriptorsInHaystack(device_referenceQSIImages,
                                                                                 referenceMeshVertexCount,
                                                                                 device_sampleImages,
                                                                                 vertexCount);
 
-            float average = 0;
+            std::vector<unsigned int> histogram = computeSearchResultHistogram(vertexCount, searchResults);
 
-            for (size_t image = 0; image < vertexCount; image++) {
-                float lastEquivalentScore = searchResults.content[image].resultScores[0];
-                size_t lastEquivalentIndex = 0;
 
-                unsigned int topSearchResult = 0;
-                for (; topSearchResult < 32; topSearchResult++) {
-                    float searchResultScore = searchResults.content[image].resultScores[topSearchResult];
-                    size_t searchResultIndex = searchResults.content[image].resultIndices[topSearchResult];
-
-                    if (lastEquivalentScore != searchResultScore) {
-                        lastEquivalentScore = searchResultScore;
-                        lastEquivalentIndex = topSearchResult;
-                    }
-
-                    if (searchResultIndex == image) {
-                        break;
-                    }
-                }
-
-                histogram.at(lastEquivalentIndex)++;
-                average += (float(lastEquivalentIndex) - average) / float(image + 1);
-            }
-
-            std::cout << "\t\tITERATION AVERAGE: " << average << std::endl;
 
             for (unsigned int histogramEntry = 0; histogramEntry < histogram.size(); histogramEntry++) {
                 std::cout << "\t\t\t" << histogramEntry << " -> " << histogram.at(histogramEntry) << std::endl;
@@ -186,9 +160,41 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         freeDeviceMesh(boxScene);
         cudaFree(device_referenceImages.content);
     }
+}
 
+std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const array<ImageSearchResults> &searchResults) {
+    std::vector<unsigned int> histogram;
+    histogram.resize(33);
+    std::fill(histogram.begin(), histogram.end(), 0);
+    float average = 0;
 
+    for (size_t image = 0; image < vertexCount; image++) {
 
+        float lastEquivalentScore = searchResults.content[image].resultScores[0];
+        size_t lastEquivalentIndex = 0;
+
+        unsigned int topSearchResult = 0;
+        for (; topSearchResult < 32; topSearchResult++) {
+            float searchResultScore = searchResults.content[image].resultScores[topSearchResult];
+            size_t searchResultIndex = searchResults.content[image].resultIndices[topSearchResult];
+
+            if (lastEquivalentScore != searchResultScore) {
+                lastEquivalentScore = searchResultScore;
+                lastEquivalentIndex = topSearchResult;
+            }
+
+            if (searchResultIndex == image) {
+                break;
+            }
+        }
+
+        histogram.at(lastEquivalentIndex)++;
+        average += (float(lastEquivalentIndex) - average) / float(image + 1);
+    }
+
+    std::cout << "\t\tITERATION AVERAGE: " << average << std::endl;
+
+    return histogram;
 }
 
 bool contains(std::vector<unsigned int> &haystack, unsigned int needle) {
