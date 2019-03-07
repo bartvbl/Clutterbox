@@ -117,11 +117,6 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                                                                                       device_information,
                                                                                       spinImageWidth);
 
-        /*array<newSpinImagePixelType> debug_host_referenceImages = copyQSIDescriptorsToHost(device_referenceImages,
-                                                                                           scaledMeshesOnGPU.at(
-                                                                                                   0).vertexCount);
-        dumpImages(debug_host_referenceImages, "reference.png", true, 40);*/
-
         // Combine meshes into one larger scene
         DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
 
@@ -143,10 +138,6 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             array<newSpinImagePixelType> device_sampleImages = generateQuasiSpinImages(boxScene, device_information,
                                                                                        spinImageWidth);
 
-            /*array<newSpinImagePixelType> host_sampleImages = copyQSIDescriptorsToHost(device_sampleImages,
-                                                                                      referenceMeshVertexCount);
-            dumpImages(host_sampleImages, "sample.png", true, 40);*/
-
             std::vector<unsigned int> histogram;
             histogram.resize(33);
             std::fill(histogram.begin(), histogram.end(), 0);
@@ -157,19 +148,9 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                                                                                 device_sampleImages,
                                                                                 vertexCount);
 
-            std::ofstream indicesFile;
-            std::ofstream scoresFile;
-            indicesFile.open("indices.txt");
-            scoresFile.open("scores.txt");
-
             float average = 0;
 
             for (size_t image = 0; image < vertexCount; image++) {
-                for (unsigned int i = 0; i < 32; i++) {
-                    indicesFile << searchResults.content[image].resultIndices[i] << (i == 31 ? "\r\n" : ", ");
-                    scoresFile << searchResults.content[image].resultScores[i] << (i == 31 ? "\r\n" : ", ");
-                }
-
                 float lastEquivalentScore = searchResults.content[image].resultScores[0];
                 size_t lastEquivalentIndex = 0;
 
@@ -191,9 +172,6 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                 histogram.at(lastEquivalentIndex)++;
                 average += (float(lastEquivalentIndex) - average) / float(image + 1);
             }
-
-            indicesFile.close();
-            scoresFile.close();
 
             std::cout << "\t\tITERATION AVERAGE: " << average << std::endl;
 
