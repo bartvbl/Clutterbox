@@ -52,17 +52,6 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
     std::vector<size_t> meshEndIndices(device_meshList.size());
     size_t currentEndIndex = 0;
 
-    float* debug_hostNormalsX = new float[scene.vertexCount];
-    float* debug_hostNormalsY = new float[scene.vertexCount];
-    float* debug_hostNormalsZ = new float[scene.vertexCount];
-    cudaMemcpy(debug_hostNormalsX, scene.normals_x, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(debug_hostNormalsY, scene.normals_y, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(debug_hostNormalsZ, scene.normals_z, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
-
-    for(int i = 0; i < scene.vertexCount; i++) {
-        std::cout << "(" << debug_hostNormalsX[i] << ", " << debug_hostNormalsY[i] << ", " << debug_hostNormalsZ[i] << ")" << std::endl;
-    }
-
     std::vector<glm::mat4> randomTransformations(device_meshList.size());
     std::vector<glm::mat3> randomNormalTransformations(device_meshList.size());
 
@@ -77,10 +66,6 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
         float distanceY = maxDistance * distribution(randomGenerator);
         float distanceZ = maxDistance * distribution(randomGenerator);
 
-        std::cout << "Random Transform: maxDistance(" << maxDistance << ") -> distance(" << distanceX << ", " << distanceY << ", "<< distanceZ << ") "
-        << "rotation(" << yaw << ", " << pitch << ", "<< roll << ")"
-                << std::endl;
-
         glm::mat4 randomRotationTransformation(1.0);
         randomRotationTransformation = glm::rotate(randomRotationTransformation, yaw,   glm::vec3(0, 0, 1));
         randomRotationTransformation = glm::rotate(randomRotationTransformation, pitch, glm::vec3(0, 1, 0));
@@ -91,7 +76,7 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
         randomTransformation = randomTransformation * randomRotationTransformation;
 
         randomTransformations.at(i) = randomTransformation;
-        randomNormalTransformations.at(i) = glm::mat3(glm::inverseTranspose(randomTransformation));
+        randomNormalTransformations.at(i) = glm::mat3(randomRotationTransformation);
 
         currentEndIndex += device_meshList.at(i).vertexCount;
         meshEndIndices.at(i) = currentEndIndex;
@@ -118,6 +103,39 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
 
     cudaDeviceSynchronize();
     checkCudaErrors(cudaGetLastError());
+
+    /*float* debug_hostNormalsX_after = new float[scene.vertexCount];
+    float* debug_hostNormalsY_after = new float[scene.vertexCount];
+    float* debug_hostNormalsZ_after = new float[scene.vertexCount];
+    cudaMemcpy(debug_hostNormalsX_after, scene.normals_x, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(debug_hostNormalsY_after, scene.normals_y, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(debug_hostNormalsZ_after, scene.normals_z, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
+
+    float* debug_hostVerticesX_after = new float[scene.vertexCount];
+    float* debug_hostVerticesY_after = new float[scene.vertexCount];
+    float* debug_hostVerticesZ_after = new float[scene.vertexCount];
+    cudaMemcpy(debug_hostVerticesX_after, scene.vertices_x, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(debug_hostVerticesY_after, scene.vertices_y, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(debug_hostVerticesZ_after, scene.vertices_z, scene.vertexCount * sizeof(float), cudaMemcpyDeviceToHost);
+
+    std::ofstream indicesFile;
+    indicesFile.open("after.obj");
+
+    for(int i = 0; i < scene.vertexCount; i++) {
+        //std::cout << "(" << debug_hostNormalsX[i] << ", " << debug_hostNormalsY[i] << ", " << debug_hostNormalsZ[i] << ") -> "
+        //          << "(" << debug_hostNormalsX_after[i] << ", " << debug_hostNormalsY_after[i] << ", " << debug_hostNormalsZ_after[i] << ")\t\t\t\t"
+        //        << "(" << debug_hostVerticesX[i] << ", " << debug_hostVerticesY[i] << ", " << debug_hostVerticesZ[i] << ") -> "
+        //        << "(" << debug_hostVerticesX_after[i] << ", " << debug_hostVerticesY_after[i] << ", " << debug_hostVerticesZ_after[i] << ")"<< std::endl;
+        indicesFile << "v " << debug_hostVerticesX_after[i] << " " << debug_hostVerticesY_after[i] << " " << debug_hostVerticesZ_after[i] << std::endl;
+    }
+    for(int i = 0; i < scene.vertexCount; i++) {
+        indicesFile << "vn " << debug_hostNormalsX_after[i] << " " << debug_hostNormalsY_after[i] << " " << debug_hostNormalsZ_after[i] << std::endl;
+    }
+    for(int i = 0; i < scene.vertexCount; i += 3) {
+        indicesFile << "f " << (i+1) << "//" << (i+1) << " " << (i+2) << "//" << (i+2) << " " << (i+3) << "//" << (i+3) << std::endl;
+    }
+
+    indicesFile.close();*/
 
     cudaFree(device_transformations);
     cudaFree(device_normalMatrices);
