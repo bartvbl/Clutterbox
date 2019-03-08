@@ -174,6 +174,9 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             cudaFree(device_sampleQSIImages.content);
             cudaFree(device_sampleSpinImages.content);
 
+            delete[] QSIsearchResults.content;
+            delete[] SpinImageSearchResults.content;
+
         }
 
         freeDeviceMesh(boxScene);
