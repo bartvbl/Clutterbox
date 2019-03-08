@@ -66,7 +66,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         // 2 Make a sample set of n sample objects
         std::cout << "Selecting file sample set.." << std::endl;
         std::random_device rd;
-        std::default_random_engine generator(45);//{rd()};
+        std::default_random_engine generator(41);//{rd()};
         std::uniform_int_distribution<unsigned int> distribution(0, fileList.size());
 
         std::vector<unsigned int> sampleIndices(sampleSetSize);
@@ -115,14 +115,16 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), generator);
 
         // Compute spin image for reference model
-        std::cout << "\tGenerating reference images.." << std::endl;
+        std::cout << "\tGenerating reference QSI images.." << std::endl;
         array<newSpinImagePixelType> device_referenceQSIImages = generateQuasiSpinImages(scaledMeshesOnGPU.at(0),
                                                                                          device_information,
                                                                                          spinImageWidth);
+        std::cout << "\tGenerating reference spin images.." << std::endl;
         array<classicSpinImagePixelType> device_referenceSpinImages = generateSpinImages(scaledMeshesOnGPU.at(0),
                                                                                          device_information,
                                                                                          spinImageWidth,
                                                                                          1000000);
+        //dumpImages(copySpinImageDescriptorsToHost(device_referenceSpinImages, scaledMeshesOnGPU.at(0).vertexCount), "reference_spin.png", true, 70);
 
         // Combine meshes into one larger scene
         DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
@@ -141,14 +143,16 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             boxScene.vertexCount = vertexCount;
 
             // Generating images
-            std::cout << "\t\tGenerating images.. (" << vertexCount << " images)" << std::endl;
+            std::cout << "\t\tGenerating QSI images.. (" << vertexCount << " images)" << std::endl;
             array<newSpinImagePixelType> device_sampleQSIImages = generateQuasiSpinImages(boxScene,
                                                                                           device_information,
                                                                                           spinImageWidth);
+            std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images)" << std::endl;
             array<classicSpinImagePixelType> device_sampleSpinImages = generateSpinImages(boxScene,
                                                                                           device_information,
                                                                                           spinImageWidth,
                                                                                           1000000);
+            //dumpImages(copySpinImageDescriptorsToHost(device_sampleSpinImages, boxScene.vertexCount), "sample_spin.png", true, 70);
 
 
             // Comparing them to the reference ones
