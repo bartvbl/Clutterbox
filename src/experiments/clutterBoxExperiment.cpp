@@ -15,6 +15,7 @@
 #include <shapeSearch/gpu/types/DeviceMesh.h>
 #include <shapeSearch/gpu/CopyMeshHostToDevice.h>
 #include <shapeSearch/gpu/quasiSpinImageGenerator.cuh>
+#include <shapeSearch/gpu/spinImageGenerator.cuh>
 #include <shapeSearch/gpu/quasiSpinImageSearcher.cuh>
 #include <experiments/clutterBox/clutterBoxUtilities.h>
 #include <fstream>
@@ -36,6 +37,8 @@
 
 
 bool contains(std::vector<unsigned int> &haystack, unsigned int needle);
+
+std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const array<ImageSearchResults> &searchResults);
 
 void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, unsigned int sampleSetSize, float boxSize, unsigned int experimentRepetitions, int spinImageWidth) {
 	// --- Overview ---
@@ -112,10 +115,14 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), generator);
 
         // Compute spin image for reference model
-        std::cout << "\tGenerating reference QSI images.." << std::endl;
-        array<newSpinImagePixelType> device_referenceImages = generateQuasiSpinImages(scaledMeshesOnGPU.at(0),
-                                                                                      device_information,
-                                                                                      spinImageWidth);
+        std::cout << "\tGenerating reference images.." << std::endl;
+        array<newSpinImagePixelType> device_referenceQSIImages = generateQuasiSpinImages(scaledMeshesOnGPU.at(0),
+                                                                                         device_information,
+                                                                                         spinImageWidth);
+        array<classicSpinImagePixelType> device_referenceSpinImages = generateSpinImages(scaledMeshesOnGPU.at(0),
+                                                                                         device_information,
+                                                                                         spinImageWidth,
+                                                                                         1000000);
 
         // Combine meshes into one larger scene
         DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
@@ -134,31 +141,44 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             boxScene.vertexCount = vertexCount;
 
             // Generating images
-            std::cout << "\t\tGenerating QSI images.. (" << vertexCount << " images)" << std::endl;
-            array<newSpinImagePixelType> device_sampleImages = generateQuasiSpinImages(boxScene, device_information,
-                                                                                       spinImageWidth);
+            std::cout << "\t\tGenerating images.. (" << vertexCount << " images)" << std::endl;
+            array<newSpinImagePixelType> device_sampleQSIImages = generateQuasiSpinImages(boxScene,
+                                                                                          device_information,
+                                                                                          spinImageWidth);
+            array<classicSpinImagePixelType> device_sampleSpinImages = generateSpinImages(boxScene,
+                                                                                          device_information,
+                                                                                          spinImageWidth,
+                                                                                          1000000);
 
 
             // Comparing them to the reference ones
-            array<ImageSearchResults> searchResults = findDescriptorsInHaystack(device_referenceQSIImages,
-                                                                                referenceMeshVertexCount,
-                                                                                device_sampleImages,
-                                                                                vertexCount);
+            array<ImageSearchResults> QSIsearchResults = findDescriptorsInHaystack(
+                    device_referenceQSIImages,
+                    referenceMeshVertexCount,
+                    device_sampleQSIImages,
+                    vertexCount);
+            array<ImageSearchResults> SpinImageSearchResults = findDescriptorsInHaystack(
+                    device_referenceSpinImages,
+                    referenceMeshVertexCount,
+                    device_sampleSpinImages,
+                    vertexCount);
 
-            std::vector<unsigned int> histogram = computeSearchResultHistogram(vertexCount, searchResults);
+            std::vector<unsigned int> QSIHistogram = computeSearchResultHistogram(vertexCount, QSIsearchResults);
+            std::vector<unsigned int> SIHistogram = computeSearchResultHistogram(vertexCount, SpinImageSearchResults);
 
 
-
-            for (unsigned int histogramEntry = 0; histogramEntry < histogram.size(); histogramEntry++) {
-                std::cout << "\t\t\t" << histogramEntry << " -> " << histogram.at(histogramEntry) << std::endl;
+            for (unsigned int histogramEntry = 0; histogramEntry < QSIHistogram.size(); histogramEntry++) {
+                std::cout << "\t\t\t" << histogramEntry << " -> " << QSIHistogram.at(histogramEntry) << "\t\t" << SIHistogram.at(histogramEntry) << std::endl;
             }
 
-            cudaFree(device_sampleImages.content);
+            cudaFree(device_sampleQSIImages.content);
+            cudaFree(device_sampleSpinImages.content);
 
         }
 
         freeDeviceMesh(boxScene);
-        cudaFree(device_referenceImages.content);
+        cudaFree(device_referenceQSIImages.content);
+        cudaFree(device_referenceSpinImages.content);
     }
 }
 
