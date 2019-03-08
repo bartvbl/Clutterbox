@@ -163,8 +163,8 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                     device_sampleSpinImages,
                     vertexCount);
 
-            std::vector<unsigned int> QSIHistogram = computeSearchResultHistogram(vertexCount, QSIsearchResults);
-            std::vector<unsigned int> SIHistogram = computeSearchResultHistogram(vertexCount, SpinImageSearchResults);
+            std::vector<unsigned int> QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
+            std::vector<unsigned int> SIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, SpinImageSearchResults);
 
 
             for (unsigned int histogramEntry = 0; histogramEntry < QSIHistogram.size(); histogramEntry++) {
