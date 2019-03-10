@@ -191,7 +191,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
 std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const array<ImageSearchResults> &searchResults) {
     std::vector<unsigned int> histogram;
-    histogram.resize(33);
+    histogram.resize(SEARCH_RESULT_COUNT + 1);
     std::fill(histogram.begin(), histogram.end(), 0);
     float average = 0;
 
@@ -201,7 +201,7 @@ std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const
         size_t lastEquivalentIndex = 0;
 
         unsigned int topSearchResult = 0;
-        for (; topSearchResult < 32; topSearchResult++) {
+        for (; topSearchResult < SEARCH_RESULT_COUNT; topSearchResult++) {
             float searchResultScore = searchResults.content[image].resultScores[topSearchResult];
             size_t searchResultIndex = searchResults.content[image].resultIndices[topSearchResult];
 
