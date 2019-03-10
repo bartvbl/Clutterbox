@@ -202,6 +202,7 @@ std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const
         size_t lastEquivalentIndex = 0;
 
         unsigned int topSearchResult = 0;
+        bool foundMatch = false;
         for (; topSearchResult < SEARCH_RESULT_COUNT; topSearchResult++) {
             float searchResultScore = searchResults.content[image].resultScores[topSearchResult];
             size_t searchResultIndex = searchResults.content[image].resultIndices[topSearchResult];
@@ -212,8 +213,13 @@ std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const
             }
 
             if (searchResultIndex == image) {
+                foundMatch = true;
                 break;
             }
+        }
+
+        if(!foundMatch) {
+            lastEquivalentIndex = SEARCH_RESULT_COUNT;
         }
 
         histogram.at(lastEquivalentIndex)++;
