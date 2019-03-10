@@ -66,7 +66,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         // 2 Make a sample set of n sample objects
         std::cout << "Selecting file sample set.." << std::endl;
         std::random_device rd;
-        std::default_random_engine generator(41);//{rd()};
+        std::default_random_engine generator{rd()};
         std::uniform_int_distribution<unsigned int> distribution(0, fileList.size());
 
         std::vector<unsigned int> sampleIndices(sampleSetSize);
