@@ -161,25 +161,26 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                     referenceMeshVertexCount,
                     device_sampleQSIImages,
                     vertexCount);
+            std::vector<unsigned int> QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
+            cudaFree(device_sampleQSIImages.content);
+            delete[] QSIsearchResults.content;
+
             array<ImageSearchResults> SpinImageSearchResults = findDescriptorsInHaystack(
                     device_referenceSpinImages,
                     referenceMeshVertexCount,
                     device_sampleSpinImages,
                     vertexCount);
 
-            std::vector<unsigned int> QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
             std::vector<unsigned int> SIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, SpinImageSearchResults);
+            cudaFree(device_sampleSpinImages.content);
+            delete[] SpinImageSearchResults.content;
 
 
             for (unsigned int histogramEntry = 0; histogramEntry < QSIHistogram.size(); histogramEntry++) {
                 std::cout << "\t\t\t" << histogramEntry << " -> " << QSIHistogram.at(histogramEntry) << "\t\t" << SIHistogram.at(histogramEntry) << std::endl;
             }
 
-            cudaFree(device_sampleQSIImages.content);
-            cudaFree(device_sampleSpinImages.content);
 
-            delete[] QSIsearchResults.content;
-            delete[] SpinImageSearchResults.content;
 
         }
 
