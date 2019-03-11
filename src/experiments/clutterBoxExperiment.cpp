@@ -16,11 +16,12 @@
 #include <shapeSearch/gpu/CopyMeshHostToDevice.h>
 #include <shapeSearch/gpu/quasiSpinImageGenerator.cuh>
 #include <shapeSearch/gpu/spinImageGenerator.cuh>
-#include <shapeSearch/gpu/quasiSpinImageSearcher.cuh>
+#include <shapeSearch/gpu/spinImageSearcher.cuh>
 #include <experiments/clutterBox/clutterBoxUtilities.h>
 #include <fstream>
 #include <shapeSearch/gpu/copyDescriptorsToHost.h>
 #include <shapeSearch/utilities/spinImageDumper.h>
+#include <shapeSearch/utilities/searchResultDumper.h>
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
@@ -66,7 +67,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         // 2 Make a sample set of n sample objects
         std::cout << "Selecting file sample set.." << std::endl;
         std::random_device rd;
-        std::default_random_engine generator{rd()};
+        std::default_random_engine generator(41);//{rd()};
         std::uniform_int_distribution<unsigned int> distribution(0, fileList.size());
 
         std::vector<unsigned int> sampleIndices(sampleSetSize);
@@ -162,6 +163,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                     device_sampleQSIImages,
                     vertexCount);
             std::vector<unsigned int> QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
+            dumpSearchResults(QSIsearchResults, vertexCount, "scores.txt");
             cudaFree(device_sampleQSIImages.content);
             delete[] QSIsearchResults.content;
 
