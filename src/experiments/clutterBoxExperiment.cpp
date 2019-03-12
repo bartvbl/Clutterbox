@@ -202,6 +202,7 @@ std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const
 
         float lastEquivalentScore = searchResults.content[image].resultScores[0];
         size_t lastEquivalentIndex = 0;
+        size_t rank = 0;
 
         unsigned int topSearchResult = 0;
         bool foundMatch = false;
@@ -210,6 +211,7 @@ std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const
             size_t searchResultIndex = searchResults.content[image].resultIndices[topSearchResult];
 
             if (lastEquivalentScore != searchResultScore) {
+                rank++;
                 lastEquivalentScore = searchResultScore;
                 lastEquivalentIndex = topSearchResult;
             }
@@ -222,10 +224,11 @@ std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const
 
         if(!foundMatch) {
             lastEquivalentIndex = SEARCH_RESULT_COUNT;
+            rank = SEARCH_RESULT_COUNT;
         }
 
-        histogram.at(lastEquivalentIndex)++;
-        average += (float(lastEquivalentIndex) - average) / float(image + 1);
+        histogram.at(rank)++;
+        average += (float(rank) - average) / float(image + 1);
     }
 
     std::cout << "\t\tITERATION AVERAGE: " << average << std::endl;
