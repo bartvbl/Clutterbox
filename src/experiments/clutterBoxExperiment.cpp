@@ -41,6 +41,69 @@ bool contains(std::vector<unsigned int> &haystack, unsigned int needle);
 
 std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const array<ImageSearchResults> &searchResults);
 
+std::vector<std::string> generateRandomFileList(const std::string &objectDirectory, unsigned int sampleSetSize,
+                                                std::default_random_engine &generator) {
+
+    std::vector<std::string> filePaths(sampleSetSize);
+
+    // 1 Search SHREC directory for files
+    std::cout << "Listing object directory..";
+    std::vector<std::string> fileList = listDir(objectDirectory);
+    std::cout << " (found " << fileList.size() << " files)" << std::endl;
+    std::uniform_int_distribution<unsigned int> distribution(0, fileList.size());
+
+    std::vector<unsigned int> sampleIndices(sampleSetSize);
+
+    for (unsigned int i = 0; i < sampleSetSize; i++) {
+        unsigned int randomIndex;
+        do {
+            randomIndex = distribution(generator);
+            sampleIndices[i] = randomIndex;
+        } while (!contains(sampleIndices, randomIndex));
+    }
+
+    sort(sampleIndices.begin(), sampleIndices.end());
+    for (unsigned int i = 0; i < sampleSetSize; i++) {
+        filePaths[i] = objectDirectory + (endsWith(objectDirectory, "/") ? "" : "/") + fileList.at(sampleIndices[i]);
+        std::cout << "Sample: " << sampleIndices[i] << " -> " << filePaths.at(i) << std::endl;
+    }
+
+    return filePaths;
+}
+
+void dumpResultsFile(std::string outputFile, size_t seed, std::vector<std::vector<unsigned int>> QSIHistograms, std::vector<std::vector<unsigned int>> SIHistograms, const std::string &sourceFileDirectory, unsigned int sampleSetSize, float boxSize) {
+    std::cout << "Dumping results file.." << std::endl;
+
+    std::default_random_engine generator{seed};
+
+    std::vector<std::string> chosenFiles = generateRandomFileList(sourceFileDirectory, sampleSetSize, generator);
+
+    std::shuffle(std::begin(chosenFiles), std::end(chosenFiles), generator);
+
+    for(std::string file : chosenFiles) {
+        std::cout << "File: " << file << std::endl;
+    }
+
+    std::uniform_real_distribution<float> distribution(0, 1);
+
+    for(unsigned int i = 0; i < sampleSetSize; i++) {
+        float yaw = float(distribution(generator) * 2.0 * M_PI);
+        float pitch = float((distribution(generator) - 0.5) * M_PI);
+        float roll = float(distribution(generator) * 2.0 * M_PI);
+
+        float distanceX = boxSize * distribution(generator);
+        float distanceY = boxSize * distribution(generator);
+        float distanceZ = boxSize * distribution(generator);
+    }
+
+    std::vector<HostMesh> sampleMeshes(sampleSetSize);
+    for (unsigned int i = 0; i < sampleSetSize; i++) {
+        sampleMeshes.at(i) = hostLoadOBJ(chosenFiles.at(i), true);
+    }
+}
+
+
+
 void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, unsigned int sampleSetSize, float boxSize, unsigned int experimentRepetitions, float spinImageWidth) {
 	// --- Overview ---
 	//
@@ -57,36 +120,22 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	//    7.4 Dump the distances between images
 
 
-    // 1 Search SHREC directory for files
-    std::cout << "Listing object directory..";
-    std::vector<std::string> fileList = listDir(objectDirectory);
-    std::cout << " (found " << fileList.size() << " files)" << std::endl;
+
 
     for(unsigned int experiment = 0; experiment < experimentRepetitions; experiment++) {
 
+        std::vector<std::vector<unsigned int>> QSIHistograms;
+        std::vector<std::vector<unsigned int>> spinImageHistograms;
+
+
+
         // 2 Make a sample set of n sample objects
         std::cout << "Selecting file sample set.." << std::endl;
+
         std::random_device rd;
-        std::default_random_engine generator(41);//{rd()};
-        std::uniform_int_distribution<unsigned int> distribution(0, fileList.size());
-
-        std::vector<unsigned int> sampleIndices(sampleSetSize);
-
-        for (unsigned int i = 0; i < sampleSetSize; i++) {
-            unsigned int randomIndex;
-            do {
-                randomIndex = distribution(generator);
-                sampleIndices[i] = randomIndex;
-            } while (!contains(sampleIndices, randomIndex));
-        }
-        std::sort(sampleIndices.begin(), sampleIndices.end());
-
-        std::vector<std::string> filePaths(sampleSetSize);
-        for (unsigned int i = 0; i < sampleSetSize; i++) {
-            filePaths[i] =
-                    objectDirectory + (endsWith(objectDirectory, "/") ? "" : "/") + fileList.at(sampleIndices[i]);
-            std::cout << "Sample: " << sampleIndices[i] << " -> " << filePaths.at(i) << std::endl;
-        }
+        size_t randomSeed = rd();
+        std::default_random_engine generator{randomSeed};
+        std::vector<std::string> filePaths = generateRandomFileList(objectDirectory, sampleSetSize, generator);
 
         // 3 Load the models in the sample set
         std::cout << "Loading sample models.." << std::endl;
@@ -163,9 +212,10 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                     device_sampleQSIImages,
                     vertexCount);
             std::vector<unsigned int> QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
-            dumpSearchResults(QSIsearchResults, vertexCount, "scores.txt");
             cudaFree(device_sampleQSIImages.content);
             delete[] QSIsearchResults.content;
+
+            //dumpSearchResults(QSIsearchResults, vertexCount, "scores.txt");
 
             array<ImageSearchResults> SpinImageSearchResults = findDescriptorsInHaystack(
                     device_referenceSpinImages,
@@ -182,13 +232,16 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                 std::cout << "\t\t\t" << histogramEntry << " -> " << QSIHistogram.at(histogramEntry) << "\t\t" << SIHistogram.at(histogramEntry) << std::endl;
             }
 
-
+            QSIHistograms.push_back(QSIHistogram);
+            spinImageHistograms.push_back(SIHistogram);
 
         }
 
         freeDeviceMesh(boxScene);
         cudaFree(device_referenceQSIImages.content);
         cudaFree(device_referenceSpinImages.content);
+
+        dumpResultsFile("output_dump.txt", randomSeed, QSIHistograms, spinImageHistograms, objectDirectory, sampleSetSize, boxSize);
     }
 }
 
