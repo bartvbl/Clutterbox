@@ -36,6 +36,19 @@
 // - In order to limit VRAM usage, as well as get a better signal to noise ratio (due to aliasing) on the images, we should only use models with less than a certain number of vertices.
 // -
 
+std::string getCurrentDateTimeString() {
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer[80];
+
+    time (&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    strftime(buffer, sizeof(buffer), "%d-%m-%Y %H-%M-%S", timeinfo);
+    return std::string(buffer);
+
+}
+
 std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const array<ImageSearchResults> &searchResults);
 
 std::vector<std::string> generateRandomFileList(const std::string &objectDirectory, unsigned int sampleSetSize,
@@ -277,7 +290,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         cudaFree(device_referenceQSIImages.content);
         cudaFree(device_referenceSpinImages.content);
 
-        dumpResultsFile("output_dump.txt", randomSeed, QSIHistograms, spinImageHistograms, objectDirectory, sampleSetSize, boxSize, spinImageWidth, generator());
+        dumpResultsFile("../output/" + getCurrentDateTimeString() + ".txt", randomSeed, QSIHistograms, spinImageHistograms, objectDirectory, sampleSetSize, boxSize, spinImageWidth, generator());
     }
 }
 
