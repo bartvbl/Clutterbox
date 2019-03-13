@@ -122,14 +122,14 @@ void dumpResultsFile(std::string outputFile, size_t seed, std::vector<std::vecto
     }
     for(unsigned int i = 0; i < sampleSetSize; i++) {
         outFile << "QSIHistogram " << i << ": ";
-        for(unsigned int item = 0; item < SEARCH_RESULT_COUNT; item++) {
-            outFile << QSIHistograms.at(i).at(item) << (item == SEARCH_RESULT_COUNT - 1 ? "\r\n" : ", ");
+        for(unsigned int item = 0; item < SEARCH_RESULT_COUNT + 1; item++) {
+            outFile << QSIHistograms.at(i).at(item) << (item == SEARCH_RESULT_COUNT ? "\r\n" : ", ");
         }
     }
     for(unsigned int i = 0; i < sampleSetSize; i++) {
         outFile << "SIHistogram " << i << ": ";
-        for(unsigned int item = 0; item < SEARCH_RESULT_COUNT; item++) {
-            outFile << SIHistograms.at(i).at(item) << (item == SEARCH_RESULT_COUNT - 1 ? "\r\n" : ", ");
+        for(unsigned int item = 0; item < SEARCH_RESULT_COUNT + 1; item++) {
+            outFile << SIHistograms.at(i).at(item) << (item == SEARCH_RESULT_COUNT ? "\r\n" : ", ");
         }
     }
 
