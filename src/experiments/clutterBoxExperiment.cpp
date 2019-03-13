@@ -167,20 +167,15 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 	//    7.3 Compare the generated images to the "clutter-free" variants
 	//    7.4 Dump the distances between images
 
-
-
-
     for(unsigned int experiment = 0; experiment < experimentRepetitions; experiment++) {
 
         std::vector<std::vector<unsigned int>> QSIHistograms;
         std::vector<std::vector<unsigned int>> spinImageHistograms;
 
-
-
         std::cout << "Selecting file sample set.." << std::endl;
 
         std::random_device rd;
-        size_t randomSeed = rd();
+        size_t randomSeed = rd(); //52
         std::default_random_engine generator{randomSeed};
         // 1 Search SHREC directory for files
         // 2 Make a sample set of n sample objects
@@ -223,7 +218,8 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                                                                                          device_information,
                                                                                          spinImageWidth,
                                                                                          1000000);
-        //dumpImages(copySpinImageDescriptorsToHost(device_referenceSpinImages, scaledMeshesOnGPU.at(0).vertexCount), "reference_spin.png", true, 70);
+        //dumpImages(copyQSIDescriptorsToHost(device_referenceQSIImages, scaledMeshesOnGPU.at(0).vertexCount), "debug_reference_qsi.png", true, 50);
+        //dumpImages(copySpinImageDescriptorsToHost(device_referenceSpinImages, scaledMeshesOnGPU.at(0).vertexCount), "debug_reference_si.png", true, 50);
 
         // Combine meshes into one larger scene
         DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
@@ -246,12 +242,9 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             array<newSpinImagePixelType> device_sampleQSIImages = generateQuasiSpinImages(boxScene,
                                                                                           device_information,
                                                                                           spinImageWidth);
-            std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images)" << std::endl;
-            array<classicSpinImagePixelType> device_sampleSpinImages = generateSpinImages(boxScene,
-                                                                                          device_information,
-                                                                                          spinImageWidth,
-                                                                                          1000000);
-            //dumpImages(copySpinImageDescriptorsToHost(device_sampleSpinImages, boxScene.vertexCount), "sample_spin.png", true, 70);
+
+            //dumpImages(copyQSIDescriptorsToHost(device_sampleQSIImages, boxScene.vertexCount), "debug_sample_qsi.png", true, 50);
+            //dumpImages(copySpinImageDescriptorsToHost(device_sampleSpinImages, boxScene.vertexCount), "debug_sample_si.png", true, 50);
 
 
             // Comparing them to the reference ones
@@ -264,13 +257,20 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             cudaFree(device_sampleQSIImages.content);
             delete[] QSIsearchResults.content;
 
-            //dumpSearchResults(QSIsearchResults, vertexCount, "scores.txt");
 
+
+            std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images)" << std::endl;
+            array<classicSpinImagePixelType> device_sampleSpinImages = generateSpinImages(boxScene,
+                                                                                          device_information,
+                                                                                          spinImageWidth,
+                                                                                          1000000);
             array<ImageSearchResults> SpinImageSearchResults = findDescriptorsInHaystack(
                     device_referenceSpinImages,
                     referenceMeshVertexCount,
                     device_sampleSpinImages,
                     vertexCount);
+
+            //dumpSearchResults(SpinImageSearchResults, vertexCount, "siscores.txt");
 
             std::vector<unsigned int> SIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, SpinImageSearchResults);
             cudaFree(device_sampleSpinImages.content);
