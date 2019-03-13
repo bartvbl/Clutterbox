@@ -36,10 +36,6 @@
 // - In order to limit VRAM usage, as well as get a better signal to noise ratio (due to aliasing) on the images, we should only use models with less than a certain number of vertices.
 // -
 
-
-
-bool contains(std::vector<unsigned int> &haystack, unsigned int needle);
-
 std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const array<ImageSearchResults> &searchResults);
 
 std::vector<std::string> generateRandomFileList(const std::string &objectDirectory, unsigned int sampleSetSize,
@@ -327,13 +323,4 @@ std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const
     std::cout << "\t\tITERATION AVERAGE: " << average << std::endl;
 
     return histogram;
-}
-
-bool contains(std::vector<unsigned int> &haystack, unsigned int needle) {
-	for(unsigned int i = 0; i < haystack.size(); i++) {
-		if(haystack[i] == needle) {
-			return true;
-		}
-	}
-	return false;
 }
