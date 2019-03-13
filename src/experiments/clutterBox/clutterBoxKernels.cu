@@ -48,7 +48,7 @@ __global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMat
 
 }
 
-void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<DeviceMesh> device_meshList, std::default_random_engine randomGenerator) {
+void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<DeviceMesh> device_meshList, std::default_random_engine &randomGenerator) {
     std::vector<size_t> meshEndIndices(device_meshList.size());
     size_t currentEndIndex = 0;
 
@@ -65,6 +65,8 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
         float distanceX = maxDistance * distribution(randomGenerator);
         float distanceY = maxDistance * distribution(randomGenerator);
         float distanceZ = maxDistance * distribution(randomGenerator);
+
+        std::cout << "Rotation: (" << yaw << ", " << pitch << ", "<< roll << "), Translation: (" << distanceX << ", "<< distanceY << ", "<< distanceZ << ")" << std::endl;
 
         glm::mat4 randomRotationTransformation(1.0);
         randomRotationTransformation = glm::rotate(randomRotationTransformation, yaw,   glm::vec3(0, 0, 1));
