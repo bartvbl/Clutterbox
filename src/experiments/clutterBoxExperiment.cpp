@@ -248,12 +248,12 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
 
             // Comparing them to the reference ones
-            array<ImageSearchResults> QSIsearchResults = findDescriptorsInHaystack(
+            array<size_t> QSIsearchResults = computeSearchResultRanks(
                     device_referenceQSIImages,
                     referenceMeshVertexCount,
                     device_sampleQSIImages,
                     vertexCount);
-            std::vector<unsigned int> QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
+            //std::vector<unsigned int> QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
             cudaFree(device_sampleQSIImages.content);
             delete[] QSIsearchResults.content;
 
@@ -264,7 +264,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                                                                                           device_information,
                                                                                           spinImageWidth,
                                                                                           1000000);
-            array<ImageSearchResults> SpinImageSearchResults = findDescriptorsInHaystack(
+            array<size_t> SpinImageSearchResults = computeSearchResultRanks(
                     device_referenceSpinImages,
                     referenceMeshVertexCount,
                     device_sampleSpinImages,
@@ -272,14 +272,14 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
             //dumpSearchResults(SpinImageSearchResults, vertexCount, "siscores.txt");
 
-            std::vector<unsigned int> SIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, SpinImageSearchResults);
+            //std::vector<unsigned int> SIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, SpinImageSearchResults);
             cudaFree(device_sampleSpinImages.content);
             delete[] SpinImageSearchResults.content;
 
 
-            for (unsigned int histogramEntry = 0; histogramEntry < QSIHistogram.size(); histogramEntry++) {
+            /*for (unsigned int histogramEntry = 0; histogramEntry < QSIHistogram.size(); histogramEntry++) {
                 std::cout << "\t\t\t" << histogramEntry << " -> " << QSIHistogram.at(histogramEntry) << "\t\t" << SIHistogram.at(histogramEntry) << std::endl;
-            }
+            }*/
 
             QSIHistograms.push_back(QSIHistogram);
             spinImageHistograms.push_back(SIHistogram);
