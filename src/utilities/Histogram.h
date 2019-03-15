@@ -10,7 +10,7 @@ private:
     void ensureKeyExists(unsigned int key, std::map<unsigned int, size_t> &map) const;
 
 public:
-    void count(unsigned int key);
+    void count(size_t key);
     Histogram merge(Histogram other);
     std::string toJSON();
 

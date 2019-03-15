@@ -25,7 +25,7 @@ Histogram Histogram::merge(Histogram other) {
     return mergedHistogram;
 }
 
-void Histogram::count(unsigned int key) {
+void Histogram::count(size_t key) {
     ensureKeyExists(key, contents);
     contents[key]++;
 }
@@ -46,5 +46,5 @@ std::string Histogram::toJSON() {
     }
     ss << "}" << std::endl;
 
-    return std::__cxx11::string();
+    return ss.str();
 }

@@ -23,6 +23,8 @@
 #include <shapeSearch/utilities/spinImageDumper.h>
 #include <shapeSearch/utilities/searchResultDumper.h>
 #include <glm/vec3.hpp>
+#include <map>
+#include <utilities/Histogram.h>
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
@@ -49,7 +51,7 @@ std::string getCurrentDateTimeString() {
 
 }
 
-std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const array<ImageSearchResults> &searchResults);
+Histogram computeSearchResultHistogram(size_t vertexCount, const array<size_t> &searchResults);
 
 std::vector<std::string> generateRandomFileList(const std::string &objectDirectory, unsigned int sampleSetSize,
                                                 std::default_random_engine &generator) {
@@ -70,7 +72,7 @@ std::vector<std::string> generateRandomFileList(const std::string &objectDirecto
     return filePaths;
 }
 
-void dumpResultsFile(std::string outputFile, size_t seed, std::vector<std::vector<unsigned int>> QSIHistograms, std::vector<std::vector<unsigned int>> SIHistograms, const std::string &sourceFileDirectory, unsigned int sampleSetSize, float boxSize, float spinImageWidth, size_t assertionRandomToken) {
+void dumpResultsFile(std::string outputFile, size_t seed, std::vector<Histogram> QSIHistograms, std::vector<Histogram> SIHistograms, const std::string &sourceFileDirectory, unsigned int sampleSetSize, float boxSize, float spinImageWidth, size_t assertionRandomToken) {
     std::cout << "Dumping results file.." << std::endl;
 
     std::default_random_engine generator{seed};
@@ -111,7 +113,7 @@ void dumpResultsFile(std::string outputFile, size_t seed, std::vector<std::vecto
     }
 
     std::ofstream outFile(outputFile);
-    outFile << "v1" << std::endl;
+    outFile << "v2" << std::endl;
     outFile << "seed: " << seed << std::endl;
     outFile << "sampleSetSize: " << sampleSetSize << std::endl;
     outFile << "boxSize: " << boxSize << std::endl;
@@ -130,16 +132,12 @@ void dumpResultsFile(std::string outputFile, size_t seed, std::vector<std::vecto
         outFile << "translation: " << translation.x << ", " << translation.y << ", " << translation.z << std::endl;
     }
     for(unsigned int i = 0; i < sampleSetSize; i++) {
-        outFile << "QSIHistogram " << i << ": ";
-        for(unsigned int item = 0; item < SEARCH_RESULT_COUNT + 1; item++) {
-            outFile << QSIHistograms.at(i).at(item) << (item == SEARCH_RESULT_COUNT ? "\r\n" : ", ");
-        }
+        outFile << "QSIHistogram " << i << ": " << std::endl;
+        outFile << QSIHistograms.at(i).toJSON() << std::endl;
     }
     for(unsigned int i = 0; i < sampleSetSize; i++) {
-        outFile << "SIHistogram " << i << ": ";
-        for(unsigned int item = 0; item < SEARCH_RESULT_COUNT + 1; item++) {
-            outFile << SIHistograms.at(i).at(item) << (item == SEARCH_RESULT_COUNT ? "\r\n" : ", ");
-        }
+        outFile << "SIHistogram " << i << ": " << std::endl;
+        outFile << SIHistograms.at(i).toJSON() << std::endl;
     }
 
 
@@ -169,13 +167,13 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
     for(unsigned int experiment = 0; experiment < experimentRepetitions; experiment++) {
 
-        std::vector<std::vector<unsigned int>> QSIHistograms;
-        std::vector<std::vector<unsigned int>> spinImageHistograms;
+        std::vector<Histogram> QSIHistograms;
+        std::vector<Histogram> spinImageHistograms;
 
         std::cout << "Selecting file sample set.." << std::endl;
 
         std::random_device rd;
-        size_t randomSeed = rd(); //52
+        size_t randomSeed = 1423903341;//rd(); //52
         std::default_random_engine generator{randomSeed};
         // 1 Search SHREC directory for files
         // 2 Make a sample set of n sample objects
@@ -218,9 +216,6 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                                                                                          device_information,
                                                                                          spinImageWidth,
                                                                                          1000000);
-        //dumpImages(copyQSIDescriptorsToHost(device_referenceQSIImages, scaledMeshesOnGPU.at(0).vertexCount), "debug_reference_qsi.png", true, 50);
-        //dumpImages(copySpinImageDescriptorsToHost(device_referenceSpinImages, scaledMeshesOnGPU.at(0).vertexCount), "debug_reference_si.png", true, 50);
-
         // Combine meshes into one larger scene
         DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
 
@@ -243,9 +238,6 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                                                                                           device_information,
                                                                                           spinImageWidth);
 
-            //dumpImages(copyQSIDescriptorsToHost(device_sampleQSIImages, boxScene.vertexCount), "debug_sample_qsi.png", true, 50);
-            //dumpImages(copySpinImageDescriptorsToHost(device_sampleSpinImages, boxScene.vertexCount), "debug_sample_si.png", true, 50);
-
 
             // Comparing them to the reference ones
             array<size_t> QSIsearchResults = computeSearchResultRanks(
@@ -253,7 +245,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                     referenceMeshVertexCount,
                     device_sampleQSIImages,
                     vertexCount);
-            //std::vector<unsigned int> QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
+            Histogram QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
             cudaFree(device_sampleQSIImages.content);
             delete[] QSIsearchResults.content;
 
@@ -269,17 +261,9 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                     referenceMeshVertexCount,
                     device_sampleSpinImages,
                     vertexCount);
-
-            //dumpSearchResults(SpinImageSearchResults, vertexCount, "siscores.txt");
-
-            //std::vector<unsigned int> SIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, SpinImageSearchResults);
+            Histogram SIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, SpinImageSearchResults);
             cudaFree(device_sampleSpinImages.content);
             delete[] SpinImageSearchResults.content;
-
-
-            /*for (unsigned int histogramEntry = 0; histogramEntry < QSIHistogram.size(); histogramEntry++) {
-                std::cout << "\t\t\t" << histogramEntry << " -> " << QSIHistogram.at(histogramEntry) << "\t\t" << SIHistogram.at(histogramEntry) << std::endl;
-            }*/
 
             QSIHistograms.push_back(QSIHistogram);
             spinImageHistograms.push_back(SIHistogram);
@@ -294,42 +278,17 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
     }
 }
 
-std::vector<unsigned int> computeSearchResultHistogram(size_t vertexCount, const array<ImageSearchResults> &searchResults) {
-    std::vector<unsigned int> histogram;
-    histogram.resize(SEARCH_RESULT_COUNT + 1);
-    std::fill(histogram.begin(), histogram.end(), 0);
+
+
+Histogram computeSearchResultHistogram(size_t vertexCount, const array<size_t> &searchResults) {
+
+    Histogram histogram;
+
     float average = 0;
 
     for (size_t image = 0; image < vertexCount; image++) {
-
-        float lastEquivalentScore = searchResults.content[image].resultScores[0];
-        size_t lastEquivalentIndex = 0;
-        size_t rank = 0;
-
-        unsigned int topSearchResult = 0;
-        bool foundMatch = false;
-        for (; topSearchResult < SEARCH_RESULT_COUNT; topSearchResult++) {
-            float searchResultScore = searchResults.content[image].resultScores[topSearchResult];
-            size_t searchResultIndex = searchResults.content[image].resultIndices[topSearchResult];
-
-            if (lastEquivalentScore != searchResultScore) {
-                rank++;
-                lastEquivalentScore = searchResultScore;
-                lastEquivalentIndex = topSearchResult;
-            }
-
-            if (searchResultIndex == image) {
-                foundMatch = true;
-                break;
-            }
-        }
-
-        if(!foundMatch) {
-            lastEquivalentIndex = SEARCH_RESULT_COUNT;
-            rank = SEARCH_RESULT_COUNT;
-        }
-
-        histogram.at(rank)++;
+        size_t rank = searchResults.content[image];
+        histogram.count(rank);
         average += (float(rank) - average) / float(image + 1);
     }
 
