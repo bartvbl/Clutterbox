@@ -174,7 +174,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         std::cout << "Selecting file sample set.." << std::endl;
 
         std::random_device rd;
-        size_t randomSeed = rd();
+        size_t randomSeed = 52;//rd();
         std::default_random_engine generator{randomSeed};
         // 1 Search SHREC directory for files
         // 2 Make a sample set of n sample objects
@@ -229,6 +229,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
         size_t vertexCount = 0;
         size_t referenceMeshVertexCount = scaledMeshesOnGPU.at(0).vertexCount;
+        array<classicSpinImagePixelType> hostReferenceImages = copySpinImageDescriptorsToHost(device_referenceSpinImages, referenceMeshVertexCount);
 
         // Generate images for increasingly more complex scenes
         for (unsigned int i = 0; i < sampleSetSize; i++) {
@@ -262,9 +263,10 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                                                                                           device_information,
                                                                                           spinImageWidth,
                                                                                           spinImageSampleCount);
-            array<classicSpinImagePixelType> hostDescriptors = copySpinImageDescriptorsToHost(device_sampleSpinImages, 1000);
+            array<classicSpinImagePixelType> hostDescriptors = copySpinImageDescriptorsToHost(device_sampleSpinImages, std::min(int(referenceMeshVertexCount), 1000));
             std::stringstream ss;
-            hostDescriptors.length = 1000;
+            dumpSearchResults(ShapeSearchCPU::findDescriptorsInHaystack(hostReferenceImages, referenceMeshVertexCount, hostDescriptors, vertexCount), "out_cpu.txt");
+            hostDescriptors.length = std::min(int(referenceMeshVertexCount), 1000);
             ss << "spinImage_" << i << ".png";
             dumpImages(hostDescriptors, ss.str(), true, 50);
             delete[] hostDescriptors.content;
