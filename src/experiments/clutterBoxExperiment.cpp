@@ -25,6 +25,7 @@
 #include <glm/vec3.hpp>
 #include <map>
 #include <utilities/Histogram.h>
+#include <sstream>
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
@@ -246,6 +247,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                     device_sampleQSIImages,
                     vertexCount);
             Histogram QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
+            std::cout << QSIHistogram.toJSON() << std::endl;
             cudaFree(device_sampleQSIImages.content);
             delete[] QSIsearchResults.content;
 
@@ -262,6 +264,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                     device_sampleSpinImages,
                     vertexCount);
             Histogram SIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, SpinImageSearchResults);
+            std::cout << SIHistogram.toJSON() << std::endl;
             cudaFree(device_sampleSpinImages.content);
             delete[] SpinImageSearchResults.content;
 
