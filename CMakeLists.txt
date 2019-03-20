@@ -45,7 +45,7 @@ list(APPEND CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -gencode arch=compute_52,code=\"s
 set(CUDA_VERBOSE_BUILD ON)
 
 # libShapeSearch
-add_subdirectory(../libShapeSearch ${CMAKE_CURRENT_BINARY_DIR}/libShapeSearch)
+add_subdirectory(../libShapeSearch ${CMAKE_CURRENT_BINARY_DIR}/libSpinImage)
 
 
 #
@@ -87,4 +87,4 @@ add_executable (${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
                                 ${VENDORS_SOURCES})
 
 
-target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart ShapeSearch)
+target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart SpinImage)

@@ -8,23 +8,24 @@
 
 #include <utilities/stringUtils.h>
 #include <utilities/modelScaler.h>
+#include <utilities/Histogram.h>
 
-#include <shapeSearch/cpu/types/HostMesh.h>
-#include <shapeSearch/utilities/OBJLoader.h>
-#include <shapeSearch/cpu/MSIGenerator.h>
-#include <shapeSearch/gpu/types/DeviceMesh.h>
-#include <shapeSearch/gpu/CopyMeshHostToDevice.h>
-#include <shapeSearch/gpu/quasiSpinImageGenerator.cuh>
-#include <shapeSearch/gpu/spinImageGenerator.cuh>
-#include <shapeSearch/gpu/spinImageSearcher.cuh>
+#include <spinImage/cpu/types/HostMesh.h>
+#include <spinImage/utilities/OBJLoader.h>
+#include <spinImage/cpu/MSIGenerator.h>
+#include <spinImage/gpu/types/DeviceMesh.h>
+#include <spinImage/utilities/copy/hostMeshToDevice.h>
+#include <spinImage/gpu/quasiSpinImageGenerator.cuh>
+#include <spinImage/gpu/spinImageGenerator.cuh>
+#include <spinImage/gpu/spinImageSearcher.cuh>
+#include <spinImage/utilities/copy/deviceDescriptorsToHost.h>
+#include <spinImage/utilities/dumpers/spinImageDumper.h>
+#include <spinImage/utilities/dumpers/searchResultDumper.h>
+
 #include <experiments/clutterBox/clutterBoxUtilities.h>
 #include <fstream>
-#include <shapeSearch/gpu/copyDescriptorsToHost.h>
-#include <shapeSearch/utilities/spinImageDumper.h>
-#include <shapeSearch/utilities/searchResultDumper.h>
 #include <glm/vec3.hpp>
 #include <map>
-#include <utilities/Histogram.h>
 #include <sstream>
 
 #include "clutterBox/clutterBoxKernels.cuh"
@@ -104,7 +105,7 @@ void dumpResultsFile(std::string outputFile, size_t seed, std::vector<Histogram>
 
     std::vector<HostMesh> sampleMeshes(sampleSetSize);
     for (unsigned int i = 0; i < sampleSetSize; i++) {
-        sampleMeshes.at(i) = hostLoadOBJ(chosenFiles.at(i), true);
+        sampleMeshes.at(i) = SpinImage::utilities::loadOBJ(chosenFiles.at(i), true);
     }
 
     size_t finalCheckToken = generator();
@@ -145,7 +146,7 @@ void dumpResultsFile(std::string outputFile, size_t seed, std::vector<Histogram>
     outFile.close();
 
     for (unsigned int i = 0; i < sampleSetSize; i++) {
-        freeHostMesh(sampleMeshes.at(i));
+        SpinImage::cpu::freeHostMesh(sampleMeshes.at(i));
     }
 }
 
@@ -184,7 +185,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         std::cout << "Loading sample models.." << std::endl;
         std::vector<HostMesh> sampleMeshes(sampleSetSize);
         for (unsigned int i = 0; i < sampleSetSize; i++) {
-            sampleMeshes.at(i) = hostLoadOBJ(filePaths.at(i), true);
+            sampleMeshes.at(i) = SpinImage::utilities::loadOBJ(filePaths.at(i), true);
         }
 
         // 4 Scale all models to fit in a 1x1x1 sphere
@@ -192,13 +193,13 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         std::vector<HostMesh> scaledMeshes(sampleSetSize);
         for (unsigned int i = 0; i < sampleSetSize; i++) {
             scaledMeshes.at(i) = fitMeshInsideSphereOfRadius(sampleMeshes.at(i), 1);
-            freeHostMesh(sampleMeshes.at(i));
+            SpinImage::cpu::freeHostMesh(sampleMeshes.at(i));
         }
 
         // 5 Copy meshes to GPU
         std::vector<DeviceMesh> scaledMeshesOnGPU(sampleSetSize);
         for (unsigned int i = 0; i < sampleSetSize; i++) {
-            scaledMeshesOnGPU.at(i) = copyMeshToGPU(scaledMeshes.at(i));
+            scaledMeshesOnGPU.at(i) = SpinImage::copy::hostMeshToDevice(scaledMeshes.at(i));
         }
 
 
@@ -213,11 +214,11 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
         // Compute spin image for reference model
         std::cout << "\tGenerating reference QSI images.. (" << scaledMeshesOnGPU.at(0).vertexCount << " images)" << std::endl;
-        array<newSpinImagePixelType> device_referenceQSIImages = generateQuasiSpinImages(scaledMeshesOnGPU.at(0),
+        array<quasiSpinImagePixelType> device_referenceQSIImages = SpinImage::gpu::generateQuasiSpinImages(scaledMeshesOnGPU.at(0),
                                                                                          device_information,
                                                                                          spinImageWidth);
         std::cout << "\tGenerating reference spin images.." << std::endl;
-        array<classicSpinImagePixelType> device_referenceSpinImages = generateSpinImages(scaledMeshesOnGPU.at(0),
+        array<spinImagePixelType> device_referenceSpinImages = SpinImage::gpu::generateSpinImages(scaledMeshesOnGPU.at(0),
                                                                                          device_information,
                                                                                          spinImageWidth,
                                                                                          spinImageSampleCount);
@@ -229,7 +230,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
         size_t vertexCount = 0;
         size_t referenceMeshVertexCount = scaledMeshesOnGPU.at(0).vertexCount;
-        array<classicSpinImagePixelType> hostReferenceImages = copySpinImageDescriptorsToHost(device_referenceSpinImages, referenceMeshVertexCount);
+        array<spinImagePixelType> hostReferenceImages = SpinImage::copy::spinImageDescriptorsToHost(device_referenceSpinImages, referenceMeshVertexCount);
 
         // Generate images for increasingly more complex scenes
         for (unsigned int i = 0; i < sampleSetSize; i++) {
@@ -240,13 +241,13 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
             // Generating images
             std::cout << "\t\tGenerating QSI images.. (" << vertexCount << " images)" << std::endl;
-            array<newSpinImagePixelType> device_sampleQSIImages = generateQuasiSpinImages(boxScene,
+            array<quasiSpinImagePixelType> device_sampleQSIImages = SpinImage::gpu::generateQuasiSpinImages(boxScene,
                                                                                           device_information,
                                                                                           spinImageWidth);
 
 
             // Comparing them to the reference ones
-            array<size_t> QSIsearchResults = computeSearchResultRanks(
+            array<size_t> QSIsearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceQSIImages,
                     referenceMeshVertexCount,
                     device_sampleQSIImages,
@@ -259,18 +260,18 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
 
             std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images)" << std::endl;
-            array<classicSpinImagePixelType> device_sampleSpinImages = generateSpinImages(boxScene,
+            array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(boxScene,
                                                                                           device_information,
                                                                                           spinImageWidth,
                                                                                           spinImageSampleCount);
-            array<classicSpinImagePixelType> hostDescriptors = copySpinImageDescriptorsToHost(device_sampleSpinImages, std::min(int(referenceMeshVertexCount), 1000));
+            array<spinImagePixelType> hostDescriptors = SpinImage::copy::spinImageDescriptorsToHost(device_sampleSpinImages, std::min(int(referenceMeshVertexCount), 1000));
             std::stringstream ss;
-            dumpSearchResults(ShapeSearchCPU::findDescriptorsInHaystack(hostReferenceImages, referenceMeshVertexCount, hostDescriptors, vertexCount), "out_cpu.txt");
+            SpinImage::dump::searchResults(SpinImage::cpu::findDescriptorsInHaystack(hostReferenceImages, referenceMeshVertexCount, hostDescriptors, vertexCount), "out_cpu.txt");
             hostDescriptors.length = std::min(int(referenceMeshVertexCount), 1000);
             ss << "spinImage_" << i << ".png";
-            dumpImages(hostDescriptors, ss.str(), true, 50);
+            SpinImage::dump::descriptors(hostDescriptors, ss.str(), true, 50);
             delete[] hostDescriptors.content;
-            array<size_t> SpinImageSearchResults = computeSearchResultRanks(
+            array<size_t> SpinImageSearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceSpinImages,
                     referenceMeshVertexCount,
                     device_sampleSpinImages,
