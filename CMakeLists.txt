@@ -41,7 +41,7 @@ find_package(CUDA REQUIRED)
 
 INCLUDE(FindCUDA)
 
-list(APPEND CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -gencode arch=compute_52,code=\"sm_52,compute_52\" -lcurand -lineinfo)
+list(APPEND CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -gencode arch=compute_61,code=\"sm_61,compute_61\" -lcurand -lineinfo)
 set(CUDA_VERBOSE_BUILD ON)
 
 # libShapeSearch

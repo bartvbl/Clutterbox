@@ -175,7 +175,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         std::cout << "Selecting file sample set.." << std::endl;
 
         std::random_device rd;
-        size_t randomSeed = 52;//rd();
+        size_t randomSeed = rd();
         std::default_random_engine generator{randomSeed};
         // 1 Search SHREC directory for files
         // 2 Make a sample set of n sample objects
@@ -230,7 +230,6 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
         size_t vertexCount = 0;
         size_t referenceMeshVertexCount = scaledMeshesOnGPU.at(0).vertexCount;
-        array<spinImagePixelType> hostReferenceImages = SpinImage::copy::spinImageDescriptorsToHost(device_referenceSpinImages, referenceMeshVertexCount);
 
         // Generate images for increasingly more complex scenes
         for (unsigned int i = 0; i < sampleSetSize; i++) {
@@ -239,48 +238,42 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             vertexCount += scaledMeshesOnGPU.at(i).vertexCount;
             boxScene.vertexCount = vertexCount;
 
-            // Generating images
+
+
+            // Generating quasi spin images
             std::cout << "\t\tGenerating QSI images.. (" << vertexCount << " images)" << std::endl;
             array<quasiSpinImagePixelType> device_sampleQSIImages = SpinImage::gpu::generateQuasiSpinImages(boxScene,
                                                                                           device_information,
                                                                                           spinImageWidth);
-
-
-            // Comparing them to the reference ones
             array<size_t> QSIsearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceQSIImages,
                     referenceMeshVertexCount,
                     device_sampleQSIImages,
                     vertexCount);
             Histogram QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
-            std::cout << QSIHistogram.toJSON() << std::endl;
             cudaFree(device_sampleQSIImages.content);
             delete[] QSIsearchResults.content;
 
 
 
+            // Generating spin images
             std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images)" << std::endl;
             array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(boxScene,
                                                                                           device_information,
                                                                                           spinImageWidth,
                                                                                           spinImageSampleCount);
-            array<spinImagePixelType> hostDescriptors = SpinImage::copy::spinImageDescriptorsToHost(device_sampleSpinImages, std::min(int(referenceMeshVertexCount), 1000));
-            std::stringstream ss;
-            SpinImage::dump::searchResults(SpinImage::cpu::findDescriptorsInHaystack(hostReferenceImages, referenceMeshVertexCount, hostDescriptors, vertexCount), "out_cpu.txt");
-            hostDescriptors.length = std::min(int(referenceMeshVertexCount), 1000);
-            ss << "spinImage_" << i << ".png";
-            SpinImage::dump::descriptors(hostDescriptors, ss.str(), true, 50);
-            delete[] hostDescriptors.content;
             array<size_t> SpinImageSearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceSpinImages,
                     referenceMeshVertexCount,
                     device_sampleSpinImages,
                     vertexCount);
             Histogram SIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, SpinImageSearchResults);
-            std::cout << SIHistogram.toJSON() << std::endl;
             cudaFree(device_sampleSpinImages.content);
             delete[] SpinImageSearchResults.content;
 
+
+
+            // Storing results
             QSIHistograms.push_back(QSIHistogram);
             spinImageHistograms.push_back(SIHistogram);
 
