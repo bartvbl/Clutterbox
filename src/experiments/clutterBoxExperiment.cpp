@@ -53,7 +53,7 @@ std::string getCurrentDateTimeString() {
 
 }
 
-Histogram computeSearchResultHistogram(size_t vertexCount, const array<size_t> &searchResults);
+Histogram computeSearchResultHistogram(size_t vertexCount, const array<unsigned int> &searchResults);
 
 std::vector<std::string> generateRandomFileList(const std::string &objectDirectory, unsigned int sampleSetSize,
                                                 std::default_random_engine &generator) {
@@ -245,7 +245,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             array<quasiSpinImagePixelType> device_sampleQSIImages = SpinImage::gpu::generateQuasiSpinImages(boxScene,
                                                                                           device_information,
                                                                                           spinImageWidth);
-            array<size_t> QSIsearchResults = SpinImage::gpu::computeSearchResultRanks(
+            array<unsigned int> QSIsearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceQSIImages,
                     referenceMeshVertexCount,
                     device_sampleQSIImages,
@@ -262,7 +262,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                                                                                           device_information,
                                                                                           spinImageWidth,
                                                                                           spinImageSampleCount);
-            array<size_t> SpinImageSearchResults = SpinImage::gpu::computeSearchResultRanks(
+            array<unsigned int> SpinImageSearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceSpinImages,
                     referenceMeshVertexCount,
                     device_sampleSpinImages,
@@ -289,14 +289,14 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
 
 
-Histogram computeSearchResultHistogram(size_t vertexCount, const array<size_t> &searchResults) {
+Histogram computeSearchResultHistogram(size_t vertexCount, const array<unsigned int> &searchResults) {
 
     Histogram histogram;
 
     float average = 0;
 
     for (size_t image = 0; image < vertexCount; image++) {
-        size_t rank = searchResults.content[image];
+        unsigned int rank = searchResults.content[image];
         histogram.count(rank);
         average += (float(rank) - average) / float(image + 1);
     }
