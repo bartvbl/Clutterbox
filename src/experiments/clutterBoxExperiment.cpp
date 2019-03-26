@@ -151,6 +151,8 @@ void dumpResultsFile(std::string outputFile, size_t seed, std::vector<Histogram>
 }
 
 
+const inline size_t computeSpinImageSampleCount(size_t &vertexCount) {
+    return std::max((size_t)1000000, (size_t) (30 * vertexCount)); }
 
 void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, unsigned int sampleSetSize, float boxSize, unsigned int experimentRepetitions, float spinImageWidth) {
 	// --- Overview ---
@@ -209,7 +211,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         // Shuffle the list. First mesh is now our "reference".
         std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), generator);
 
-        size_t spinImageSampleCount = std::max((size_t)1000000, (size_t) (30 * scaledMeshesOnGPU.at(0).vertexCount));
+        size_t spinImageSampleCount = computeSpinImageSampleCount(scaledMeshesOnGPU.at(0).vertexCount);
         std::cout << "\tUsing sample count: " << spinImageSampleCount << std::endl;
 
         // Compute spin image for reference model
@@ -257,7 +259,8 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
 
             // Generating spin images
-            std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images)" << std::endl;
+            spinImageSampleCount = computeSpinImageSampleCount(vertexCount);
+            std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
             array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(boxScene,
                                                                                           device_information,
                                                                                           spinImageWidth,
