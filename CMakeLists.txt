@@ -85,6 +85,10 @@ source_group ("sources" FILES ${PROJECT_SOURCES})
 add_executable (${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
                                 ${PROJECT_SHADERS} ${PROJECT_CONFIGS}
                                 ${VENDORS_SOURCES})
+set_target_properties(${PROJECT_NAME} PROPERTIES
+        CUDA_SEPARABLE_COMPILATION ON
+        POSITION_INDEPENDENT_CODE ON
+        CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
 
-target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart SpinImage)
+target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart SpinImage cudadevrt)
