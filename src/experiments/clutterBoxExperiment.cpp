@@ -188,6 +188,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         std::vector<HostMesh> sampleMeshes(sampleSetSize);
         for (unsigned int i = 0; i < sampleSetSize; i++) {
             sampleMeshes.at(i) = SpinImage::utilities::loadOBJ(filePaths.at(i), true);
+            std::cout << "\tMesh " << i << ": " << sampleMeshes.at(i).vertexCount << " vertices" << std::endl;
         }
 
         // 4 Scale all models to fit in a 1x1x1 sphere
@@ -199,6 +200,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         }
 
         // 5 Copy meshes to GPU
+        std::cout << "Copying meshes to device.." << std::endl;
         std::vector<DeviceMesh> scaledMeshesOnGPU(sampleSetSize);
         for (unsigned int i = 0; i < sampleSetSize; i++) {
             scaledMeshesOnGPU.at(i) = SpinImage::copy::hostMeshToDevice(scaledMeshes.at(i));
