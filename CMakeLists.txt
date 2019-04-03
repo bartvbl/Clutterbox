@@ -41,7 +41,7 @@ find_package(CUDA REQUIRED)
 
 INCLUDE(FindCUDA)
 
-list(APPEND CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -gencode arch=compute_61,code=\"sm_61,compute_61\" -lcurand -lineinfo)
+set(CUDA_NVCC_FLAGS -arch=sm_61 -gencode arch=compute_61,code=\"sm_61,compute_61\" -lcurand -lineinfo)
 set(CUDA_VERBOSE_BUILD ON)
 
 # libShapeSearch
@@ -85,10 +85,6 @@ source_group ("sources" FILES ${PROJECT_SOURCES})
 add_executable (${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
                                 ${PROJECT_SHADERS} ${PROJECT_CONFIGS}
                                 ${VENDORS_SOURCES})
-set_target_properties(${PROJECT_NAME} PROPERTIES
-        CUDA_SEPARABLE_COMPILATION ON
-        POSITION_INDEPENDENT_CODE ON
-        CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
 
 target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart SpinImage cudadevrt)
