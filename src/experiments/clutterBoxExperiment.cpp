@@ -218,12 +218,22 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
         // Compute spin image for reference model
         std::cout << "\tGenerating reference QSI images.. (" << scaledMeshesOnGPU.at(0).vertexCount << " images)" << std::endl;
-        array<quasiSpinImagePixelType> device_referenceQSIImages = SpinImage::gpu::generateQuasiSpinImages(scaledMeshesOnGPU.at(0),
-                                                                                         spinImageWidth);
-        std::cout << "\tGenerating reference spin images.." << std::endl;
-        array<spinImagePixelType> device_referenceSpinImages = SpinImage::gpu::generateSpinImages(scaledMeshesOnGPU.at(0),
+        SpinImage::debug::QSIRunInfo qsiReferenceRunInfo;
+        array<quasiSpinImagePixelType> device_referenceQSIImages = SpinImage::gpu::generateQuasiSpinImages(
+                                                                                         scaledMeshesOnGPU.at(0),
                                                                                          spinImageWidth,
-                                                                                         spinImageSampleCount);
+                                                                                         &qsiReferenceRunInfo);
+        std::cout << "\t\tExecution time: " << qsiReferenceRunInfo.generationTimeSeconds << std::endl;
+
+        std::cout << "\tGenerating reference spin images.." << std::endl;
+        SpinImage::debug::SIRunInfo siReferenceRunInfo;
+        array<spinImagePixelType> device_referenceSpinImages = SpinImage::gpu::generateSpinImages(
+                                                                                         scaledMeshesOnGPU.at(0),
+                                                                                         spinImageWidth,
+                                                                                         spinImageSampleCount,
+                                                                                         &siReferenceRunInfo);
+        std::cout << "\t\tExecution time: " << siReferenceRunInfo.generationTimeSeconds << std::endl;
+
         // Combine meshes into one larger scene
         DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
 
@@ -268,14 +278,14 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             spinImageSampleCount = computeSpinImageSampleCount(vertexCount);
             std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
             SpinImage::debug::SIRunInfo siSampleRunInfo;
-            std::cout << "\t\t\tTimings: (total " << siSampleRunInfo.totalExecutionTimeSeconds
-                      << ", initialisation " << siSampleRunInfo.initialisationTimeSeconds
-                      << ", sampling " << siSampleRunInfo.meshSamplingTimeSeconds
-                      << ", generation " << siSampleRunInfo.generationTimeSeconds << ")" << std::endl;
             array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(boxScene,
                                                                                           spinImageWidth,
                                                                                           spinImageSampleCount,
                                                                                           &siSampleRunInfo);
+            std::cout << "\t\t\tTimings: (total " << siSampleRunInfo.totalExecutionTimeSeconds
+                      << ", initialisation " << siSampleRunInfo.initialisationTimeSeconds
+                      << ", sampling " << siSampleRunInfo.meshSamplingTimeSeconds
+                      << ", generation " << siSampleRunInfo.generationTimeSeconds << ")" << std::endl;
             array<unsigned int> SpinImageSearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceSpinImages,
                     referenceMeshVertexCount,
