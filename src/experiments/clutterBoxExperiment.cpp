@@ -325,10 +325,11 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             spinImageSampleCount = computeSpinImageSampleCount(vertexCount);
             std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
             SpinImage::debug::SIRunInfo siSampleRunInfo;
-            array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(boxScene,
-                                                                                          spinImageWidth,
-                                                                                          spinImageSampleCount,
-                                                                                          &siSampleRunInfo);
+            array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(
+                    boxScene,
+                    spinImageWidth,
+                    spinImageSampleCount,
+                    &siSampleRunInfo);
             SIRuns.push_back(siSampleRunInfo);
             std::cout << "\t\t\tTimings: (total " << siSampleRunInfo.totalExecutionTimeSeconds
                       << ", initialisation " << siSampleRunInfo.initialisationTimeSeconds
@@ -366,14 +367,23 @@ Histogram computeSearchResultHistogram(size_t vertexCount, const array<unsigned 
     Histogram histogram;
 
     float average = 0;
+    unsigned int lowerRanks[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     for (size_t image = 0; image < vertexCount; image++) {
         unsigned int rank = searchResults.content[image];
         histogram.count(rank);
         average += (float(rank) - average) / float(image + 1);
+
+        if(rank < 10) {
+            lowerRanks[rank]++;
+        }
     }
 
-    std::cout << "\t\tITERATION AVERAGE: " << average << std::endl;
+    std::cout << "\t\t\tTop 10 counts: ";
+    for(int i = 0; i < 10; i++) {
+        std::cout << lowerRanks[i] << ((i < 9) ? ", " : "");
+    }
+    std::cout << " -> average: " << average << std::endl;
 
     return histogram;
 }
