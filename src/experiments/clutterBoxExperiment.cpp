@@ -28,6 +28,7 @@
 #include <glm/vec3.hpp>
 #include <map>
 #include <sstream>
+#include <algorithm>
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
@@ -177,6 +178,18 @@ void dumpResultsFile(std::string outputFile, size_t seed, std::vector<Histogram>
 const inline size_t computeSpinImageSampleCount(size_t &vertexCount) {
     return std::max((size_t)1000000, (size_t) (30 * vertexCount)); }
 
+void dumpSpinImages(std::string filename, array<spinImagePixelType> device_descriptors) {
+    array<float> hostDescriptors = SpinImage::copy::spinImageDescriptorsToHost(device_descriptors, std::min(device_descriptors.length, (size_t)2500));
+    SpinImage::dump::descriptors(hostDescriptors, filename, true, 50);
+    delete[] hostDescriptors.content;
+}
+
+void dumpQuasiSpinImages(std::string filename, array<quasiSpinImagePixelType> device_descriptors) {
+    array<quasiSpinImagePixelType > hostDescriptors = SpinImage::copy::QSIDescriptorsToHost(device_descriptors, std::min(device_descriptors.length, (size_t)2500));
+    SpinImage::dump::descriptors(hostDescriptors, filename, true, 50);
+    delete[] hostDescriptors.content;
+}
+
 void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, unsigned int sampleSetSize, float boxSize, unsigned int experimentRepetitions, float spinImageWidth) {
 	// --- Overview ---
 	//
@@ -248,6 +261,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                                                                                          scaledMeshesOnGPU.at(0),
                                                                                          spinImageWidth,
                                                                                          &qsiReferenceRunInfo);
+        dumpQuasiSpinImages("qsi_verification.png", device_referenceQSIImages);
         QSIRuns.push_back(qsiReferenceRunInfo);
         std::cout << "\t\tExecution time: " << qsiReferenceRunInfo.generationTimeSeconds << std::endl;
 
@@ -258,6 +272,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                                                                                          spinImageWidth,
                                                                                          spinImageSampleCount,
                                                                                          &siReferenceRunInfo);
+        dumpSpinImages("si_verification.png", device_referenceSpinImages);
         SIRuns.push_back(siReferenceRunInfo);
         std::cout << "\t\tExecution time: " << siReferenceRunInfo.generationTimeSeconds << std::endl;
 
