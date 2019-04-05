@@ -179,13 +179,17 @@ const inline size_t computeSpinImageSampleCount(size_t &vertexCount) {
     return std::max((size_t)1000000, (size_t) (30 * vertexCount)); }
 
 void dumpSpinImages(std::string filename, array<spinImagePixelType> device_descriptors) {
-    array<float> hostDescriptors = SpinImage::copy::spinImageDescriptorsToHost(device_descriptors, std::min(device_descriptors.length, (size_t)2500));
+    size_t arrayLength = std::min(device_descriptors.length, (size_t)2500);
+    array<float> hostDescriptors = SpinImage::copy::spinImageDescriptorsToHost(device_descriptors, arrayLength);
+    hostDescriptors.length = arrayLength;
     SpinImage::dump::descriptors(hostDescriptors, filename, true, 50);
     delete[] hostDescriptors.content;
 }
 
 void dumpQuasiSpinImages(std::string filename, array<quasiSpinImagePixelType> device_descriptors) {
+    size_t arrayLength = std::min(device_descriptors.length, (size_t)2500);
     array<quasiSpinImagePixelType > hostDescriptors = SpinImage::copy::QSIDescriptorsToHost(device_descriptors, std::min(device_descriptors.length, (size_t)2500));
+    hostDescriptors.length = arrayLength;
     SpinImage::dump::descriptors(hostDescriptors, filename, true, 50);
     delete[] hostDescriptors.content;
 }
