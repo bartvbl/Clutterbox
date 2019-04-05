@@ -219,11 +219,9 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         // Compute spin image for reference model
         std::cout << "\tGenerating reference QSI images.. (" << scaledMeshesOnGPU.at(0).vertexCount << " images)" << std::endl;
         array<quasiSpinImagePixelType> device_referenceQSIImages = SpinImage::gpu::generateQuasiSpinImages(scaledMeshesOnGPU.at(0),
-                                                                                         device_information,
                                                                                          spinImageWidth);
         std::cout << "\tGenerating reference spin images.." << std::endl;
         array<spinImagePixelType> device_referenceSpinImages = SpinImage::gpu::generateSpinImages(scaledMeshesOnGPU.at(0),
-                                                                                         device_information,
                                                                                          spinImageWidth,
                                                                                          spinImageSampleCount);
         // Combine meshes into one larger scene
@@ -247,7 +245,6 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             // Generating quasi spin images
             std::cout << "\t\tGenerating QSI images.. (" << vertexCount << " images)" << std::endl;
             array<quasiSpinImagePixelType> device_sampleQSIImages = SpinImage::gpu::generateQuasiSpinImages(boxScene,
-                                                                                          device_information,
                                                                                           spinImageWidth);
             array<unsigned int> QSIsearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceQSIImages,
@@ -264,7 +261,6 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             spinImageSampleCount = computeSpinImageSampleCount(vertexCount);
             std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
             array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(boxScene,
-                                                                                          device_information,
                                                                                           spinImageWidth,
                                                                                           spinImageSampleCount);
             array<unsigned int> SpinImageSearchResults = SpinImage::gpu::computeSearchResultRanks(
