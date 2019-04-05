@@ -244,8 +244,15 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
 
             // Generating quasi spin images
             std::cout << "\t\tGenerating QSI images.. (" << vertexCount << " images)" << std::endl;
-            array<quasiSpinImagePixelType> device_sampleQSIImages = SpinImage::gpu::generateQuasiSpinImages(boxScene,
-                                                                                          spinImageWidth);
+            SpinImage::debug::QSIRunInfo qsiSampleRunInfo;
+            array<quasiSpinImagePixelType> device_sampleQSIImages = SpinImage::gpu::generateQuasiSpinImages(
+                    boxScene,
+                    spinImageWidth,
+                    &qsiSampleRunInfo);
+            std::cout << "\t\t\tTimings: (total " << qsiSampleRunInfo.totalExecutionTimeSeconds
+                      << ", scaling " << qsiSampleRunInfo.meshScaleTimeSeconds
+                      << ", redistribution " << qsiSampleRunInfo.redistributionTimeSeconds
+                      << ", generation " << qsiSampleRunInfo.generationTimeSeconds << ")" << std::endl;
             array<unsigned int> QSIsearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceQSIImages,
                     referenceMeshVertexCount,
@@ -260,9 +267,15 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
             // Generating spin images
             spinImageSampleCount = computeSpinImageSampleCount(vertexCount);
             std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
+            SpinImage::debug::SIRunInfo siSampleRunInfo;
+            std::cout << "\t\t\tTimings: (total " << siSampleRunInfo.totalExecutionTimeSeconds
+                      << ", initialisation " << siSampleRunInfo.initialisationTimeSeconds
+                      << ", sampling " << siSampleRunInfo.meshSamplingTimeSeconds
+                      << ", generation " << siSampleRunInfo.generationTimeSeconds << ")" << std::endl;
             array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(boxScene,
                                                                                           spinImageWidth,
-                                                                                          spinImageSampleCount);
+                                                                                          spinImageSampleCount,
+                                                                                          &siSampleRunInfo);
             array<unsigned int> SpinImageSearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceSpinImages,
                     referenceMeshVertexCount,
