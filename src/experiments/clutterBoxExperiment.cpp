@@ -76,7 +76,20 @@ std::vector<std::string> generateRandomFileList(const std::string &objectDirecto
     return filePaths;
 }
 
-void dumpResultsFile(std::string outputFile, size_t seed, std::vector<Histogram> QSIHistograms, std::vector<Histogram> SIHistograms, const std::string &sourceFileDirectory, unsigned int sampleSetSize, float boxSize, float spinImageWidth, size_t assertionRandomToken, std::vector<SpinImage::debug::QSIRunInfo> QSIRuns, std::vector<SpinImage::debug::SIRunInfo> SIRuns) {
+void dumpResultsFile(
+        std::string outputFile,
+        size_t seed,
+        std::vector<Histogram> QSIHistograms,
+        std::vector<Histogram> SIHistograms,
+        const std::string &sourceFileDirectory,
+        unsigned int sampleSetSize,
+        float boxSize,
+        float spinImageWidth,
+        size_t assertionRandomToken,
+        std::vector<SpinImage::debug::QSIRunInfo> QSIRuns,
+        std::vector<SpinImage::debug::SIRunInfo> SIRuns,
+        std::vector<SpinImage::debug::QSISearchRunInfo> QSISearchRuns,
+        std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns) {
     std::cout << "Dumping results file.." << std::endl;
 
     std::default_random_engine generator{seed};
@@ -117,46 +130,73 @@ void dumpResultsFile(std::string outputFile, size_t seed, std::vector<Histogram>
     }
 
     std::ofstream outFile(outputFile);
-    outFile << "v3" << std::endl;
+    outFile << "v5" << std::endl;
     outFile << "seed: " << seed << std::endl;
     outFile << "sampleSetSize: " << sampleSetSize << std::endl;
     outFile << "boxSize: " << boxSize << std::endl;
     outFile << "spinImageWidth: " << spinImageWidth << std::endl;
+    outFile << "spinImageWidthPixels: " << spinImageWidthPixels << std::endl;
     outFile << "searchResultCount: " << SEARCH_RESULT_COUNT << std::endl;
+    outFile << std::endl;
     for(const std::string &file : chosenFiles) {
         outFile << "file: " << file << std::endl;
     }
+    outFile << std::endl;
     for(const HostMesh &mesh : sampleMeshes) {
         outFile << "vertexCount: " << mesh.vertexCount << std::endl;
     }
+    outFile << std::endl;
     for(const glm::vec3 &rotation : rotations) {
         outFile << "rotation: " << rotation.x << ", " << rotation.y << ", " << rotation.z << std::endl;
     }
+    outFile << std::endl;
     for(const glm::vec3 &translation : translations) {
         outFile << "translation: " << translation.x << ", " << translation.y << ", " << translation.z << std::endl;
     }
+    outFile << std::endl;
     int index = 0;
     outFile << "runtimes QSI\tTotal\tScale\tRedist\tGeneration" << std::endl;
     for(const SpinImage::debug::QSIRunInfo &run : QSIRuns) {
         outFile << "runtime QSI ";
-        if(index == 0) { outFile << "ref:"; } else { outFile << index << ":"; }
+        if(index == 0) { outFile << "r:"; } else { outFile << index << ":"; }
         outFile << "\t" << run.totalExecutionTimeSeconds
                 << "\t" << run.meshScaleTimeSeconds
                 << "\t" << run.redistributionTimeSeconds
                 << "\t" << run.generationTimeSeconds << std::endl;
         index++;
     }
+    outFile << std::endl;
     index = 0;
     outFile << "runtimes SI\t\tTotal\tInit\tSample\tGeneration" << std::endl;
     for(const SpinImage::debug::SIRunInfo &run : SIRuns) {
         outFile << "runtime SI ";
-        if(index == 0) { outFile << "ref:"; } else { outFile << index << ":"; }
+        if(index == 0) { outFile << "r:"; } else { outFile << index << ":"; }
         outFile << "\t" << run.totalExecutionTimeSeconds
                 << "\t" << run.initialisationTimeSeconds
                 << "\t" << run.meshSamplingTimeSeconds
                 << "\t" << run.generationTimeSeconds << std::endl;
         index++;
     }
+    outFile << std::endl;
+    index = 0;
+    outFile << "runtimes QSI search\tTotal\tSearch" << std::endl;
+    for(const SpinImage::debug::QSISearchRunInfo &run : QSISearchRuns) {
+        outFile << "runtime QSI " << index << ":";
+        outFile << "\t\t" << run.totalExecutionTimeSeconds
+                << "\t" << run.searchExecutionTimeSeconds << std::endl;
+        index++;
+    }
+    outFile << std::endl;
+    index = 0;
+    outFile << "runtimes SI search\tTotal\tAverage\tSearch" << std::endl;
+    for(const SpinImage::debug::SISearchRunInfo &run : SISearchRuns) {
+        outFile << "runtime SI " << index << ":";
+        outFile << "\t\t" << run.totalExecutionTimeSeconds
+                << "\t" << run.averagingExecutionTimeSeconds
+                << "\t" << run.searchExecutionTimeSeconds << std::endl;
+        index++;
+    }
+    outFile << std::endl;
     for(unsigned int i = 0; i < sampleSetSize; i++) {
         outFile << "QSIHistogram " << i << ": " << std::endl;
         outFile << QSIHistograms.at(i).toJSON() << std::endl;
@@ -215,6 +255,8 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         std::vector<Histogram> spinImageHistograms;
         std::vector<SpinImage::debug::QSIRunInfo> QSIRuns;
         std::vector<SpinImage::debug::SIRunInfo> SIRuns;
+        std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns;
+        std::vector<SpinImage::debug::QSISearchRunInfo> QSISearchRuns;
 
         std::cout << "Selecting file sample set.." << std::endl;
 
@@ -310,11 +352,17 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                       << ", scaling " << qsiSampleRunInfo.meshScaleTimeSeconds
                       << ", redistribution " << qsiSampleRunInfo.redistributionTimeSeconds
                       << ", generation " << qsiSampleRunInfo.generationTimeSeconds << ")" << std::endl;
+            std::cout << "\t\tSearching in quasi spin images.." << std::endl;
+            SpinImage::debug::QSISearchRunInfo qsiSearchRun;
             array<unsigned int> QSIsearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceQSIImages,
                     referenceMeshVertexCount,
                     device_sampleQSIImages,
-                    vertexCount);
+                    vertexCount,
+                    &qsiSearchRun);
+            QSISearchRuns.push_back(qsiSearchRun);
+            std::cout << "\t\t\tTimings: (total " << qsiSearchRun.totalExecutionTimeSeconds
+                      << ", searching " << qsiSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
             Histogram QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
             cudaFree(device_sampleQSIImages.content);
             delete[] QSIsearchResults.content;
@@ -335,11 +383,18 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                       << ", initialisation " << siSampleRunInfo.initialisationTimeSeconds
                       << ", sampling " << siSampleRunInfo.meshSamplingTimeSeconds
                       << ", generation " << siSampleRunInfo.generationTimeSeconds << ")" << std::endl;
+            std::cout << "\t\tSearching in spin images.." << std::endl;
+            SpinImage::debug::SISearchRunInfo siSearchRun;
             array<unsigned int> SpinImageSearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceSpinImages,
                     referenceMeshVertexCount,
                     device_sampleSpinImages,
-                    vertexCount);
+                    vertexCount,
+                    &siSearchRun);
+            SISearchRuns.push_back(siSearchRun);
+            std::cout << "\t\t\tTimings: (total " << siSearchRun.totalExecutionTimeSeconds
+                      << ", averaging " << siSearchRun.averagingExecutionTimeSeconds
+                      << ", searching " << siSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
             Histogram SIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, SpinImageSearchResults);
             cudaFree(device_sampleSpinImages.content);
             delete[] SpinImageSearchResults.content;
@@ -356,7 +411,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         cudaFree(device_referenceQSIImages.content);
         cudaFree(device_referenceSpinImages.content);
 
-        dumpResultsFile("../output/" + getCurrentDateTimeString() + ".txt", randomSeed, QSIHistograms, spinImageHistograms, objectDirectory, sampleSetSize, boxSize, spinImageWidth, generator(), QSIRuns, SIRuns);
+        dumpResultsFile("../output/" + getCurrentDateTimeString() + ".txt", randomSeed, QSIHistograms, spinImageHistograms, objectDirectory, sampleSetSize, boxSize, spinImageWidth, generator(), QSIRuns, SIRuns, QSISearchRuns, SISearchRuns);
     }
 }
 
