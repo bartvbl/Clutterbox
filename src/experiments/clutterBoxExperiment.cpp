@@ -380,10 +380,13 @@ Histogram computeSearchResultHistogram(size_t vertexCount, const array<unsigned 
     }
 
     std::cout << "\t\t\tTop 10 counts: ";
+    int top10Count = 0;
     for(int i = 0; i < 10; i++) {
         std::cout << lowerRanks[i] << ((i < 9) ? ", " : "");
+        top10Count += lowerRanks[i];
     }
-    std::cout << " -> average: " << average << std::endl;
+    std::cout << " -> average: " << average << ", (" << (double(lowerRanks[0]) / double(vertexCount))*100.0 << "% at rank 0, " << (double(top10Count) / double(vertexCount))*100.0 << "% in top 10)" << std::endl;
+
 
     return histogram;
 }
