@@ -402,6 +402,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                       << ", redistribution " << qsiSampleRunInfo.redistributionTimeSeconds
                       << ", generation " << qsiSampleRunInfo.generationTimeSeconds << ")" << std::endl;
             std::cout << "\t\tSearching in quasi spin images.." << std::endl;
+            dumpQuasiSpinImages("qsi_sample_" + std::to_string(i) + ".png", device_sampleQSIImages);
             SpinImage::debug::QSISearchRunInfo qsiSearchRun;
             array<unsigned int> QSIsearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceQSIImages,
@@ -433,6 +434,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
                       << ", sampling " << siSampleRunInfo.meshSamplingTimeSeconds
                       << ", generation " << siSampleRunInfo.generationTimeSeconds << ")" << std::endl;
             std::cout << "\t\tSearching in spin images.." << std::endl;
+            dumpSpinImages("si_sample_" + std::to_string(i) + ".png", device_sampleSpinImages);
             SpinImage::debug::SISearchRunInfo siSearchRun;
             array<unsigned int> SpinImageSearchResults = SpinImage::gpu::computeSearchResultRanks(
                     device_referenceSpinImages,
