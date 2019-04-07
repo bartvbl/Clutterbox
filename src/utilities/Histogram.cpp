@@ -30,7 +30,7 @@ void Histogram::count(size_t key) {
     contents[key]++;
 }
 
-std::string Histogram::toJSON() {
+std::string Histogram::toJSON(int indentLevel) {
     std::vector<unsigned int> keys;
     for (auto &content : contents) {
         keys.push_back(content.first);
@@ -40,11 +40,30 @@ std::string Histogram::toJSON() {
 
     std::stringstream ss;
 
-    ss << "{" << std::endl;
-    for (auto &key : keys) {
-        ss << "\t\"" << key << "\": " << contents[key] << "," << std::endl;
+
+    for(int i = 0; i < indentLevel; i++) {
+        ss << "\t";
     }
-    ss << "}" << std::endl;
+    ss << "{" << std::endl;
+    int index = 0;
+    for(int i = 0; i < indentLevel + 1; i++) {
+        ss << "\t";
+    }
+    for (auto &key : keys) {
+        ss << "\"" << key << "\": " << contents[key] << (index == keys.size() - 1 ? "" : ",") << "\t";
+        index++;
+        if(index > 0 && index % 10 == 0) {
+            ss << std::endl;
+            for(int i = 0; i < indentLevel + 1; i++) {
+                ss << "\t";
+            }
+        }
+    }
+    ss << std::endl;
+    for(int i = 0; i < indentLevel; i++) {
+        ss << "\t";
+    }
+    ss << "}";
 
     return ss.str();
 }

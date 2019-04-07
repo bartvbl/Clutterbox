@@ -130,82 +130,131 @@ void dumpResultsFile(
     }
 
     std::ofstream outFile(outputFile);
-    outFile << "v5" << std::endl;
-    outFile << "seed: " << seed << std::endl;
-    outFile << "sampleSetSize: " << sampleSetSize << std::endl;
-    outFile << "boxSize: " << boxSize << std::endl;
-    outFile << "spinImageWidth: " << spinImageWidth << std::endl;
-    outFile << "spinImageWidthPixels: " << spinImageWidthPixels << std::endl;
-    outFile << "searchResultCount: " << SEARCH_RESULT_COUNT << std::endl;
+    outFile << "{" << std::endl;
+    outFile << "\t\"version\": \"v6\"," << std::endl;
+    outFile << "\t\"seed\": " << seed << "," << std::endl;
+    outFile << "\t\"sampleSetSize\": " << sampleSetSize << "," << std::endl;
+    outFile << "\t\"boxSize\": " << boxSize << "," << std::endl;
+    outFile << "\t\"spinImageWidth\": " << spinImageWidth << "," << std::endl;
+    outFile << "\t\"spinImageWidthPixels\": " << spinImageWidthPixels << "," << std::endl;
+    outFile << "\t\"searchResultCount\": " << SEARCH_RESULT_COUNT << "," << std::endl;
     outFile << std::endl;
-    for(const std::string &file : chosenFiles) {
-        outFile << "file: " << file << std::endl;
+    outFile << "\t\"inputFiles\": [" << std::endl;
+    for(unsigned int i = 0; i < chosenFiles.size(); i++) {
+        outFile << "\t\t\"" << chosenFiles.at(i) << "\"" << ((i == chosenFiles.size() -1) ? "" : ", ") << std::endl;
     }
-    outFile << std::endl;
-    for(const HostMesh &mesh : sampleMeshes) {
-        outFile << "vertexCount: " << mesh.vertexCount << std::endl;
+    outFile << "\t]," << std::endl << std::endl;
+    outFile << "\t\"vertexCounts\": [";
+    for(unsigned int i = 0; i < sampleMeshes.size(); i++) {
+        outFile << sampleMeshes.at(i).vertexCount << ((i == sampleMeshes.size() -1) ? "" : ", ");
     }
-    outFile << std::endl;
-    for(const glm::vec3 &rotation : rotations) {
-        outFile << "rotation: " << rotation.x << ", " << rotation.y << ", " << rotation.z << std::endl;
+    outFile << "]," << std::endl << std::endl;
+    outFile << "\t\"rotations\": [" << std::endl;
+    for(unsigned int i = 0; i < rotations.size(); i++) {
+        outFile << "\t\t[" << rotations.at(i).x << ", " << rotations.at(i).y << ", " << rotations.at(i).z << "]" << ((i == rotations.size() -1) ? "" : ",") << std::endl;
     }
-    outFile << std::endl;
-    for(const glm::vec3 &translation : translations) {
-        outFile << "translation: " << translation.x << ", " << translation.y << ", " << translation.z << std::endl;
+    outFile << "\t]," << std::endl << std::endl;
+    outFile << "\t\"translations\": [" << std::endl;
+    for(unsigned int i = 0; i < translations.size(); i++) {
+        outFile << "\t\t[" << translations.at(i).x << ", " << translations.at(i).y << ", " << translations.at(i).z << "]" << ((i == translations.size() -1) ? "" : ",") << std::endl;
     }
-    outFile << std::endl;
-    int index = 0;
-    outFile << "runtimes QSI\tTotal\tScale\tRedist\tGeneration" << std::endl;
-    for(const SpinImage::debug::QSIRunInfo &run : QSIRuns) {
-        outFile << "runtime QSI ";
-        if(index == 0) { outFile << "r:"; } else { outFile << index << ":"; }
-        outFile << "\t" << run.totalExecutionTimeSeconds
-                << "\t" << run.meshScaleTimeSeconds
-                << "\t" << run.redistributionTimeSeconds
-                << "\t" << run.generationTimeSeconds << std::endl;
-        index++;
-    }
-    outFile << std::endl;
-    index = 0;
-    outFile << "runtimes SI\t\tTotal\tInit\tSample\tGeneration" << std::endl;
-    for(const SpinImage::debug::SIRunInfo &run : SIRuns) {
-        outFile << "runtime SI ";
-        if(index == 0) { outFile << "r:"; } else { outFile << index << ":"; }
-        outFile << "\t" << run.totalExecutionTimeSeconds
-                << "\t" << run.initialisationTimeSeconds
-                << "\t" << run.meshSamplingTimeSeconds
-                << "\t" << run.generationTimeSeconds << std::endl;
-        index++;
-    }
-    outFile << std::endl;
-    index = 0;
-    outFile << "runtimes QSI search\tTotal\tSearch" << std::endl;
-    for(const SpinImage::debug::QSISearchRunInfo &run : QSISearchRuns) {
-        outFile << "runtime QSI " << index << ":";
-        outFile << "\t\t" << run.totalExecutionTimeSeconds
-                << "\t" << run.searchExecutionTimeSeconds << std::endl;
-        index++;
-    }
-    outFile << std::endl;
-    index = 0;
-    outFile << "runtimes SI search\tTotal\tAverage\tSearch" << std::endl;
-    for(const SpinImage::debug::SISearchRunInfo &run : SISearchRuns) {
-        outFile << "runtime SI " << index << ":";
-        outFile << "\t\t" << run.totalExecutionTimeSeconds
-                << "\t" << run.averagingExecutionTimeSeconds
-                << "\t" << run.searchExecutionTimeSeconds << std::endl;
-        index++;
-    }
-    outFile << std::endl;
-    for(unsigned int i = 0; i < sampleSetSize; i++) {
-        outFile << "QSIHistogram " << i << ": " << std::endl;
-        outFile << QSIHistograms.at(i).toJSON() << std::endl;
-    }
-    for(unsigned int i = 0; i < sampleSetSize; i++) {
-        outFile << "SIHistogram " << i << ": " << std::endl;
-        outFile << SIHistograms.at(i).toJSON() << std::endl;
-    }
+    outFile << "\t]," << std::endl << std::endl;
+    outFile << "\t\"runtimes\": {" << std::endl;
 
+    outFile << "\t\t\"QSIReferenceGeneration\": {" << std::endl;
+    outFile << "\t\t\t\"total\": " << QSIRuns.at(0).totalExecutionTimeSeconds << ", " << std::endl;
+    outFile << "\t\t\t\"meshScale\": " << QSIRuns.at(0).meshScaleTimeSeconds << ", " << std::endl;
+    outFile << "\t\t\t\"redistribution\": " << QSIRuns.at(0).redistributionTimeSeconds << ", " << std::endl;
+    outFile << "\t\t\t\"generation\": " << QSIRuns.at(0).generationTimeSeconds << std::endl;
+    outFile << "\t\t}," << std::endl << std::endl;
+
+    outFile << "\t\t\"QSIReferenceGeneration\": {" << std::endl;
+    outFile << "\t\t\t\"total\": " << SIRuns.at(0).totalExecutionTimeSeconds << ", " << std::endl;
+    outFile << "\t\t\t\"initialisation\": " << SIRuns.at(0).initialisationTimeSeconds<< ", " << std::endl;
+    outFile << "\t\t\t\"sampling\": " << SIRuns.at(0).meshSamplingTimeSeconds << ", " << std::endl;
+    outFile << "\t\t\t\"generation\": " << SIRuns.at(0).generationTimeSeconds << std::endl;
+    outFile << "\t\t}," << std::endl << std::endl;
+
+    outFile << "\t\t\"QSISampleGeneration\": {" << std::endl;
+    outFile << "\t\t\t\"total\": [";
+    for(unsigned int i = 1; i < QSIRuns.size(); i++) {
+        outFile << QSIRuns.at(i).totalExecutionTimeSeconds << ((i == QSIRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]," << std::endl << "\t\t\t\"meshScale\": [";
+    for(unsigned int i = 1; i < QSIRuns.size(); i++) {
+        outFile << QSIRuns.at(i).meshScaleTimeSeconds << ((i == QSIRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]," << std::endl << "\t\t\t\"redistribution\": [";
+    for(unsigned int i = 1; i < QSIRuns.size(); i++) {
+        outFile << QSIRuns.at(i).redistributionTimeSeconds << ((i == QSIRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]," << std::endl << "\t\t\t\"generation\": [";
+    for(unsigned int i = 1; i < QSIRuns.size(); i++) {
+        outFile << QSIRuns.at(i).generationTimeSeconds << ((i == QSIRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]" << std::endl;
+    outFile << "\t\t}," << std::endl << std::endl;
+
+    outFile << "\t\t\"SISampleGeneration\": {" << std::endl;
+    outFile << "\t\t\t\"total\": [";
+    for(unsigned int i = 1; i < SIRuns.size(); i++) {
+        outFile << SIRuns.at(i).totalExecutionTimeSeconds << ((i == SIRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]," << std::endl << "\t\t\t\"initialisation\": [";
+    for(unsigned int i = 1; i < SIRuns.size(); i++) {
+        outFile << SIRuns.at(i).initialisationTimeSeconds << ((i == SIRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]," << std::endl << "\t\t\t\"sampling\": [";
+    for(unsigned int i = 1; i < SIRuns.size(); i++) {
+        outFile << SIRuns.at(i).meshSamplingTimeSeconds << ((i == SIRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]," << std::endl << "\t\t\t\"generation\": [";
+    for(unsigned int i = 1; i < SIRuns.size(); i++) {
+        outFile << SIRuns.at(i).generationTimeSeconds << ((i == SIRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]" << std::endl;
+    outFile << "\t\t}," << std::endl << std::endl;
+
+    outFile << "\t\t\"QSISearch\": {" << std::endl;
+    outFile << "\t\t\t\"total\": [";
+    for(unsigned int i = 0; i < QSISearchRuns.size(); i++) {
+        outFile << QSISearchRuns.at(i).totalExecutionTimeSeconds << ((i == QSISearchRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]," << std::endl << "\t\t\t\"search\": [";
+    for(unsigned int i = 0; i < QSISearchRuns.size(); i++) {
+        outFile << QSISearchRuns.at(i).searchExecutionTimeSeconds << ((i == QSISearchRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]" << std::endl;
+    outFile << "\t\t}," << std::endl << std::endl;
+
+    outFile << "\t\t\"SISearch\": {" << std::endl;
+    outFile << "\t\t\t\"total\": [";
+    for(unsigned int i = 0; i < SISearchRuns.size(); i++) {
+        outFile << SISearchRuns.at(i).totalExecutionTimeSeconds << ((i == SISearchRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]," << std::endl << "\t\t\t\"averaging\": [";
+    for(unsigned int i = 0; i < SISearchRuns.size(); i++) {
+        outFile << SISearchRuns.at(i).averagingExecutionTimeSeconds << ((i == SISearchRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]," << std::endl << "\t\t\t\"search\": [";
+    for(unsigned int i = 0; i < SISearchRuns.size(); i++) {
+        outFile << SISearchRuns.at(i).searchExecutionTimeSeconds << ((i == SISearchRuns.size() -1) ? "" : ", ");
+    }
+    outFile << "]" << std::endl;
+    outFile << "\t\t}" << std::endl;
+
+    outFile << "\t}," << std::endl;
+
+    outFile << std::endl << "\t\"QSIhistograms\": [" << std::endl;
+    for(unsigned int i = 0; i < sampleSetSize; i++) {
+        outFile << QSIHistograms.at(i).toJSON(2) << ((i == sampleSetSize -1) ? "" : ", ") << std::endl;
+    }
+    outFile << "\t]," << std::endl << "\t\"SIhistograms\": [" << std::endl;
+    for(unsigned int i = 0; i < sampleSetSize; i++) {
+        outFile << SIHistograms.at(i).toJSON(2) << ((i == sampleSetSize -1) ? "" : ", ") << std::endl;
+    }
+    outFile << "\t]" << std::endl;
+    outFile << "}" << std::endl;
 
     outFile.close();
 
@@ -411,7 +460,7 @@ void runClutterBoxExperiment(cudaDeviceProp device_information, std::string obje
         cudaFree(device_referenceQSIImages.content);
         cudaFree(device_referenceSpinImages.content);
 
-        dumpResultsFile("../output/" + getCurrentDateTimeString() + ".txt", randomSeed, QSIHistograms, spinImageHistograms, objectDirectory, sampleSetSize, boxSize, spinImageWidth, generator(), QSIRuns, SIRuns, QSISearchRuns, SISearchRuns);
+        dumpResultsFile("../output/" + getCurrentDateTimeString() + ".json", randomSeed, QSIHistograms, spinImageHistograms, objectDirectory, sampleSetSize, boxSize, spinImageWidth, generator(), QSIRuns, SIRuns, QSISearchRuns, SISearchRuns);
     }
 }
 

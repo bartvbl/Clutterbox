@@ -12,7 +12,7 @@ private:
 public:
     void count(size_t key);
     Histogram merge(Histogram other);
-    std::string toJSON();
+    std::string toJSON(int indentLevel = 0);
 
 };
 
