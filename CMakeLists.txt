@@ -20,7 +20,7 @@ set (CMAKE_SUPPRESS_REGENERATION TRUE) # Suppresses ZERO_CHECK
 if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++17 -frounding-math") #  -g -pg -pg -no-pie
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -frounding-math") #  -g -pg -pg -no-pie
 endif()
 
 # OpenMP
@@ -41,7 +41,7 @@ find_package(CUDA REQUIRED)
 
 INCLUDE(FindCUDA)
 
-set(CUDA_NVCC_FLAGS -arch=sm_61 -gencode arch=compute_61,code=\"sm_61,compute_61\" -lcurand -lineinfo)
+set(CUDA_NVCC_FLAGS -arch=sm_61 -gencode arch=compute_61,code=\"sm_61,compute_61\" -lcurand -lineinfo -std=c++14)
 set(CUDA_VERBOSE_BUILD ON)
 
 # libShapeSearch
@@ -55,6 +55,7 @@ include_directories (
   src/
   ../libShapeSearch/src
   lib/glm
+  ${CUDA_INCLUDE_DIRS}
 )
 
 #

@@ -1,4 +1,5 @@
-#include <cuda_runtime.h>
+
+#include <cuda_runtime_api.h>
 #include "clutterBoxUtilities.h"
 
 DeviceMesh combineMeshesOnGPU(std::vector<DeviceMesh> meshes) {
@@ -9,13 +10,13 @@ DeviceMesh combineMeshesOnGPU(std::vector<DeviceMesh> meshes) {
 
     DeviceMesh combinedMesh;
 
-    cudaMalloc(&combinedMesh.normals_x, totalVertexCount * sizeof(float));
-    cudaMalloc(&combinedMesh.normals_y, totalVertexCount * sizeof(float));
-    cudaMalloc(&combinedMesh.normals_z, totalVertexCount * sizeof(float));
+    cudaMalloc((void**) &combinedMesh.normals_x, totalVertexCount * sizeof(float));
+    cudaMalloc((void**) &combinedMesh.normals_y, totalVertexCount * sizeof(float));
+    cudaMalloc((void**) &combinedMesh.normals_z, totalVertexCount * sizeof(float));
 
-    cudaMalloc(&combinedMesh.vertices_x, totalVertexCount * sizeof(float));
-    cudaMalloc(&combinedMesh.vertices_y, totalVertexCount * sizeof(float));
-    cudaMalloc(&combinedMesh.vertices_z, totalVertexCount * sizeof(float));
+    cudaMalloc((void**) &combinedMesh.vertices_x, totalVertexCount * sizeof(float));
+    cudaMalloc((void**) &combinedMesh.vertices_y, totalVertexCount * sizeof(float));
+    cudaMalloc((void**) &combinedMesh.vertices_z, totalVertexCount * sizeof(float));
 
     combinedMesh.vertexCount = totalVertexCount;
 

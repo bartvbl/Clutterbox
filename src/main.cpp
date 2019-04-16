@@ -69,7 +69,7 @@ int main(int argc, const char **argv)
 		exit(0);
 	}
 
-	runClutterBoxExperiment(device_information, objectDirectory.value(), sampleSetSize.value(), boxSize.value(), experimentRepetitions.value(), spinImageWidth.value());
+	runClutterBoxExperiment(objectDirectory.value(), sampleSetSize.value(), boxSize.value(), experimentRepetitions.value(), spinImageWidth.value());
 
 
 	std::cout << "Complete." << std::endl;
