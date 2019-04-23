@@ -283,7 +283,7 @@ void dumpQuasiSpinImages(std::string filename, array<quasiSpinImagePixelType> de
     delete[] hostDescriptors.content;
 }
 
-void runClutterBoxExperiment(cudaDeviceProp device_information, std::string objectDirectory, unsigned int sampleSetSize, float boxSize, unsigned int experimentRepetitions, float spinImageWidth) {
+void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSetSize, float boxSize, unsigned int experimentRepetitions, float spinImageWidth) {
 	// --- Overview ---
 	//
 	// 1 Search SHREC directory for files
