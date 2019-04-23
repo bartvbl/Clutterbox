@@ -168,7 +168,7 @@ void dumpResultsFile(
     outFile << "\t\t\t\"generation\": " << QSIRuns.at(0).generationTimeSeconds << std::endl;
     outFile << "\t\t}," << std::endl << std::endl;
 
-    outFile << "\t\t\"QSIReferenceGeneration\": {" << std::endl;
+    outFile << "\t\t\"SIReferenceGeneration\": {" << std::endl;
     outFile << "\t\t\t\"total\": " << SIRuns.at(0).totalExecutionTimeSeconds << ", " << std::endl;
     outFile << "\t\t\t\"initialisation\": " << SIRuns.at(0).initialisationTimeSeconds<< ", " << std::endl;
     outFile << "\t\t\t\"sampling\": " << SIRuns.at(0).meshSamplingTimeSeconds << ", " << std::endl;
