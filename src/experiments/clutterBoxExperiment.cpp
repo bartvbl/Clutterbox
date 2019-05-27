@@ -29,6 +29,7 @@
 #include <map>
 #include <sstream>
 #include <algorithm>
+#include <cuda_runtime_api.h>
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
@@ -265,7 +266,8 @@ void dumpResultsFile(
 
 
 const inline size_t computeSpinImageSampleCount(size_t &vertexCount) {
-    return std::max((size_t)1000000, (size_t) (30 * vertexCount)); }
+    return std::max((size_t)1000000, (size_t) (30 * vertexCount)); 
+}
 
 void dumpSpinImages(std::string filename, array<spinImagePixelType> device_descriptors) {
     size_t arrayLength = std::min(device_descriptors.length, (size_t)2500);
@@ -283,7 +285,7 @@ void dumpQuasiSpinImages(std::string filename, array<quasiSpinImagePixelType> de
     delete[] hostDescriptors.content;
 }
 
-void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSetSize, float boxSize, unsigned int experimentRepetitions, float spinImageWidth) {
+void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSetSize, float boxSize, unsigned int experimentRepetitions, float spinImageWidth, float spinImageSupportAngleDegrees, size_t overrideSeed) {
 	// --- Overview ---
 	//
 	// 1 Search SHREC directory for files
@@ -310,7 +312,8 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
         std::cout << "Selecting file sample set.." << std::endl;
 
         std::random_device rd;
-        size_t randomSeed = rd();
+        size_t randomSeed = overrideSeed != 0 ? overrideSeed : rd();
+        std::cout << "Random seed: " << randomSeed << std::endl;
         std::default_random_engine generator{randomSeed};
         // 1 Search SHREC directory for files
         // 2 Make a sample set of n sample objects
@@ -366,6 +369,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
                                                                                          scaledMeshesOnGPU.at(0),
                                                                                          spinImageWidth,
                                                                                          spinImageSampleCount,
+                                                                                         spinImageSupportAngleDegrees,
                                                                                          &siReferenceRunInfo);
         //dumpSpinImages("si_verification.png", device_referenceSpinImages);
         SIRuns.push_back(siReferenceRunInfo);
@@ -427,6 +431,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
                     boxScene,
                     spinImageWidth,
                     spinImageSampleCount,
+                    spinImageSupportAngleDegrees,
                     &siSampleRunInfo);
             SIRuns.push_back(siSampleRunInfo);
             std::cout << "\t\t\tTimings: (total " << siSampleRunInfo.totalExecutionTimeSeconds
@@ -458,7 +463,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
 
         }
 
-        freeDeviceMesh(boxScene);
+        SpinImage::gpu::freeDeviceMesh(boxScene);
         cudaFree(device_referenceQSIImages.content);
         cudaFree(device_referenceSpinImages.content);
 
