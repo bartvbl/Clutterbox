@@ -18,7 +18,7 @@ __global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMat
     }
 
     unsigned int transformationIndex = 0;
-    while(threadIndex > endIndices[transformationIndex]) {
+    while(threadIndex >= endIndices[transformationIndex]) {
         transformationIndex++;
     }
 
