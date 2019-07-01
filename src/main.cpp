@@ -16,9 +16,7 @@ const float DEFAULT_SPIN_IMAGE_SUPPORT_ANGLE_DEGREES = 90;
 int main(int argc, const char **argv)
 {
 	arrrgh::parser parser("qsiverification", "Generates and compares spin images on the GPU");
-	const auto& inputFile = parser.add<std::string>("input", "The location of the input model file.", '\0', arrrgh::Optional, "steve.obj");
 	const auto& showHelp = parser.add<bool>("help", "Show this help message.", 'h', arrrgh::Optional, false);
-	const auto& generationMode = parser.add<std::string>("generation-mode", "Which generation mode to use. Can be either 'new' or 'classic'.", '\0', arrrgh::Optional, "new");
 	const auto& forceSpinImageSize = parser.add<float>("force-spin-image-size", "Rather than automatically selecting the spin image size based upon a specific voxel count, force the image to use a specific width.", '\0', arrrgh::Optional, 0);
 	const auto& listGPUs = parser.add<bool>("list-gpus", "List all GPU's, used for the --force-gpu parameter.", 'a', arrrgh::Optional, false);
 	const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", 'b', arrrgh::Optional, -1);
