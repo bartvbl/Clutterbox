@@ -8,7 +8,10 @@
 #include <glm/gtc/matrix_inverse.hpp>
 
 #include "nvidia/helper_cuda.h"
+#include "../../../../libShapeSearch/lib/nvidia-samples-common/nvidia/helper_cuda.h"
 #include <cuda_runtime.h>
+#include <spinImage/gpu/types/DeviceOrientedPoint.h>
+#include <nvidia/helper_cuda.h>
 
 __global__ void removeDuplicates(DeviceMesh inputMesh, QSIMesh outMesh, size_t* totalVertexCount) {
     // Only a single warp to avoid complications related to divergence within a block
@@ -89,7 +92,7 @@ __global__ void removeDuplicates(DeviceMesh inputMesh, QSIMesh outMesh, size_t* 
     *totalVertexCount = arrayPointer;
 }
 
-size_t removeDuplicates(DeviceMesh mesh, QSIMesh &outMesh) {
+array<DeviceOrientedPoint> removeDuplicates(DeviceMesh mesh) {
     std::cout << "Removing duplicate vertices.. " << std::endl;
     size_t* device_totalVertexCount;
     checkCudaErrors(cudaMalloc(&device_totalVertexCount, sizeof(size_t)));
@@ -102,7 +105,6 @@ size_t removeDuplicates(DeviceMesh mesh, QSIMesh &outMesh) {
 
     std::cout << "\tReduced " << mesh.vertexCount << " vertices to " << totalVertexCount << "." << std::endl;
 
-    return totalVertexCount;
 }
 
 __global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMatrices, size_t* endIndices, DeviceMesh scene) {

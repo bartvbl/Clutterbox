@@ -342,6 +342,9 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
             scaledMeshesOnGPU.at(i) = SpinImage::copy::hostMeshToDevice(scaledMeshes.at(i));
         }
 
+        // 6 Remove duplicate vertices
+        std::cout << "Removing duplicate vertices.." << std::endl;
+        array<DeviceOrientedPoint> spinOrigins_reference = removeDuplicates(scaledMeshesOnGPU.at(0));
 
 
         std::cout << "Running experiment iteration " << (experiment + 1) << "/" << experimentRepetitions << std::endl;
@@ -357,6 +360,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
         SpinImage::debug::QSIRunInfo qsiReferenceRunInfo;
         array<quasiSpinImagePixelType> device_referenceQSIImages = SpinImage::gpu::generateQuasiSpinImages(
                                                                                          scaledMeshesOnGPU.at(0),
+                                                                                         spinOrigins_reference,
                                                                                          spinImageWidth,
                                                                                          &qsiReferenceRunInfo);
         //dumpQuasiSpinImages("qsi_verification.png", device_referenceQSIImages);
@@ -367,6 +371,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
         SpinImage::debug::SIRunInfo siReferenceRunInfo;
         array<spinImagePixelType> device_referenceSpinImages = SpinImage::gpu::generateSpinImages(
                                                                                          scaledMeshesOnGPU.at(0),
+                                                                                         spinOrigins_reference,
                                                                                          spinImageWidth,
                                                                                          spinImageSampleCount,
                                                                                          spinImageSupportAngleDegrees,
@@ -383,6 +388,8 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
 
         size_t vertexCount = 0;
         size_t referenceMeshVertexCount = scaledMeshesOnGPU.at(0).vertexCount;
+
+
 
         // Generate images for increasingly more complex scenes
         for (unsigned int i = 0; i < sampleSetSize; i++) {
