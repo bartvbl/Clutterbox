@@ -34,6 +34,7 @@
 #include "clutterBox/clutterBoxKernels.cuh"
 
 #include "experimentUtilities/listDir.h"
+#include "../../../libShapeSearch/lib/nvidia-samples-common/nvidia/helper_cuda.h"
 
 
 // TODO list:
@@ -376,6 +377,9 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
                                                                                          spinImageSampleCount,
                                                                                          spinImageSupportAngleDegrees,
                                                                                          &siReferenceRunInfo);
+
+        checkCudaErrors(cudaFree(spinOrigins_reference.content));
+
         //dumpSpinImages("si_verification.png", device_referenceSpinImages);
         SIRuns.push_back(siReferenceRunInfo);
         std::cout << "\t\tExecution time: " << siReferenceRunInfo.generationTimeSeconds << std::endl;
@@ -388,6 +392,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
 
         size_t vertexCount = 0;
         size_t referenceMeshVertexCount = scaledMeshesOnGPU.at(0).vertexCount;
+        size_t referenceMeshImageCount = spinOrigins_reference.length;
 
 
 
@@ -395,16 +400,19 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
         for (unsigned int i = 0; i < sampleSetSize; i++) {
             std::cout << "\tProcessing mesh sample " << (i + 1) << "/" << sampleSetSize << std::endl;
             // Making the generation algorithm believe the scene is smaller than it really is
+            // This allows adding objects one by one, without having to copy memory all over the place
             vertexCount += scaledMeshesOnGPU.at(i).vertexCount;
             boxScene.vertexCount = vertexCount;
 
-
+            array<DeviceOrientedPoint> spinOrigins_sample = removeDuplicates(boxScene);
+            size_t imageCount = spinOrigins_sample.length;
 
             // Generating quasi spin images
-            std::cout << "\t\tGenerating QSI images.. (" << vertexCount << " images)" << std::endl;
+            std::cout << "\t\tGenerating QSI images.. (" << imageCount << " images)" << std::endl;
             SpinImage::debug::QSIRunInfo qsiSampleRunInfo;
             array<quasiSpinImagePixelType> device_sampleQSIImages = SpinImage::gpu::generateQuasiSpinImages(
                     boxScene,
+                    spinOrigins_sample,
                     spinImageWidth,
                     &qsiSampleRunInfo);
             QSIRuns.push_back(qsiSampleRunInfo);
@@ -412,30 +420,31 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
                       << ", scaling " << qsiSampleRunInfo.meshScaleTimeSeconds
                       << ", redistribution " << qsiSampleRunInfo.redistributionTimeSeconds
                       << ", generation " << qsiSampleRunInfo.generationTimeSeconds << ")" << std::endl;
+
             std::cout << "\t\tSearching in quasi spin images.." << std::endl;
-            //dumpQuasiSpinImages("qsi_sample_" + std::to_string(i) + ".png", device_sampleQSIImages);
             SpinImage::debug::QSISearchRunInfo qsiSearchRun;
             array<unsigned int> QSIsearchResults = SpinImage::gpu::computeQuasiSpinImageSearchResultRanks(
                     device_referenceQSIImages,
-                    referenceMeshVertexCount,
+                    referenceMeshImageCount,
                     device_sampleQSIImages,
-                    vertexCount,
+                    imageCount,
                     &qsiSearchRun);
             QSISearchRuns.push_back(qsiSearchRun);
             std::cout << "\t\t\tTimings: (total " << qsiSearchRun.totalExecutionTimeSeconds
                       << ", searching " << qsiSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
-            Histogram QSIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, QSIsearchResults);
+            Histogram QSIHistogram = computeSearchResultHistogram(referenceMeshImageCount, QSIsearchResults);
             cudaFree(device_sampleQSIImages.content);
             delete[] QSIsearchResults.content;
 
 
 
             // Generating spin images
-            spinImageSampleCount = computeSpinImageSampleCount(vertexCount);
-            std::cout << "\t\tGenerating spin images.. (" << vertexCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
+            spinImageSampleCount = computeSpinImageSampleCount(imageCount);
+            std::cout << "\t\tGenerating spin images.. (" << imageCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
             SpinImage::debug::SIRunInfo siSampleRunInfo;
             array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(
                     boxScene,
+                    spinOrigins_sample,
                     spinImageWidth,
                     spinImageSampleCount,
                     spinImageSupportAngleDegrees,
@@ -445,24 +454,26 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
                       << ", initialisation " << siSampleRunInfo.initialisationTimeSeconds
                       << ", sampling " << siSampleRunInfo.meshSamplingTimeSeconds
                       << ", generation " << siSampleRunInfo.generationTimeSeconds << ")" << std::endl;
+
             std::cout << "\t\tSearching in spin images.." << std::endl;
-            //dumpSpinImages("si_sample_" + std::to_string(i) + ".png", device_sampleSpinImages);
             SpinImage::debug::SISearchRunInfo siSearchRun;
             array<unsigned int> SpinImageSearchResults = SpinImage::gpu::computeSpinImageSearchResultRanks(
                     device_referenceSpinImages,
-                    referenceMeshVertexCount,
+                    referenceMeshImageCount,
                     device_sampleSpinImages,
-                    vertexCount,
+                    imageCount,
                     &siSearchRun);
             SISearchRuns.push_back(siSearchRun);
             std::cout << "\t\t\tTimings: (total " << siSearchRun.totalExecutionTimeSeconds
                       << ", averaging " << siSearchRun.averagingExecutionTimeSeconds
                       << ", searching " << siSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
-            Histogram SIHistogram = computeSearchResultHistogram(referenceMeshVertexCount, SpinImageSearchResults);
+            Histogram SIHistogram = computeSearchResultHistogram(referenceMeshImageCount, SpinImageSearchResults);
             cudaFree(device_sampleSpinImages.content);
             delete[] SpinImageSearchResults.content;
 
 
+            // Cleaning up
+            checkCudaErrors(cudaFree(spinOrigins_sample.content));
 
             // Storing results
             QSIHistograms.push_back(QSIHistogram);

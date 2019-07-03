@@ -13,6 +13,10 @@
 #include <spinImage/gpu/types/DeviceOrientedPoint.h>
 #include <nvidia/helper_cuda.h>
 
+__host__ __device__ __inline__ size_t roundSizeToNearestCacheLine(size_t sizeInBytes) {
+    return (sizeInBytes + 127u) & ~((size_t) 127);
+}
+
 __global__ void removeDuplicates(DeviceMesh inputMesh, QSIMesh outMesh, size_t* totalVertexCount) {
     // Only a single warp to avoid complications related to divergence within a block
     // (syncthreads may hang indefinitely if some threads diverged)
@@ -74,13 +78,13 @@ __global__ void removeDuplicates(DeviceMesh inputMesh, QSIMesh outMesh, size_t* 
         const size_t blockSize = roundSizeToNearestCacheLine(outMesh.vertexCount);
 
         if(!shouldBeDiscarded) {
-            outMesh.spinImageGeometryBasePointer[0 * blockSize + outVertexIndex] = vertex.x;
-            outMesh.spinImageGeometryBasePointer[1 * blockSize + outVertexIndex] = vertex.y;
-            outMesh.spinImageGeometryBasePointer[2 * blockSize + outVertexIndex] = vertex.z;
+            outMesh.spinOriginsBasePointer[0 * blockSize + outVertexIndex] = vertex.x;
+            outMesh.spinOriginsBasePointer[1 * blockSize + outVertexIndex] = vertex.y;
+            outMesh.spinOriginsBasePointer[2 * blockSize + outVertexIndex] = vertex.z;
 
-            outMesh.spinImageGeometryBasePointer[3 * blockSize + outVertexIndex] = normal.x;
-            outMesh.spinImageGeometryBasePointer[4 * blockSize + outVertexIndex] = normal.y;
-            outMesh.spinImageGeometryBasePointer[5 * blockSize + outVertexIndex] = normal.z;
+            outMesh.spinOriginsBasePointer[3 * blockSize + outVertexIndex] = normal.x;
+            outMesh.spinOriginsBasePointer[4 * blockSize + outVertexIndex] = normal.y;
+            outMesh.spinOriginsBasePointer[5 * blockSize + outVertexIndex] = normal.z;
         }
 
         if(threadIndex == 0) {
