@@ -24,7 +24,6 @@ int main(int argc, const char **argv)
 	const auto& boxSize = parser.add<int>("box-size", "Size of the cube box for the clutter box experiment", '\0', arrrgh::Optional, -1);
 	const auto& objectDirectory = parser.add<std::string>("source-directory", "Defines the directory from which input objects are read", '\0', arrrgh::Optional, "");
 	const auto& spinImageWidth = parser.add<float>("spin-image-width", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
-	const auto& experimentRepetitions = parser.add<int>("repetition-count", "The number of times each experiment should be repeated", '\0', arrrgh::Optional, 1);
 	const auto& spinImageSupportAngle = parser.add<float>("spin-image-support-angle-degrees", "The support angle to use for filtering spin image point samples", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_SUPPORT_ANGLE_DEGREES);
     const auto& forcedSeed = parser.add<std::string>("force-seed", "Specify the seed to use for random generation. Used for reproducing results.", '\0', arrrgh::Optional, "0");
 
@@ -77,7 +76,7 @@ int main(int argc, const char **argv)
         std::cout << "Using overridden seed: " << val << std::endl;
     }
 
-	runClutterBoxExperiment(objectDirectory.value(), sampleSetSize.value(), boxSize.value(), experimentRepetitions.value(), spinImageWidth.value(), spinImageSupportAngle.value(), val);
+	runClutterBoxExperiment(objectDirectory.value(), sampleSetSize.value(), boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), val);
 
 
 	std::cout << "Complete." << std::endl;
