@@ -91,7 +91,8 @@ void dumpResultsFile(
         std::vector<SpinImage::debug::QSIRunInfo> QSIRuns,
         std::vector<SpinImage::debug::SIRunInfo> SIRuns,
         std::vector<SpinImage::debug::QSISearchRunInfo> QSISearchRuns,
-        std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns) {
+        std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns,
+        float spinImageSupportAngleDegrees) {
     std::cout << "Dumping results file.." << std::endl;
 
     std::default_random_engine generator{seed};
@@ -133,12 +134,13 @@ void dumpResultsFile(
 
     std::ofstream outFile(outputFile);
     outFile << "{" << std::endl;
-    outFile << "\t\"version\": \"v6\"," << std::endl;
+    outFile << "\t\"version\": \"v7\"," << std::endl;
     outFile << "\t\"seed\": " << seed << "," << std::endl;
     outFile << "\t\"sampleSetSize\": " << sampleSetSize << "," << std::endl;
     outFile << "\t\"boxSize\": " << boxSize << "," << std::endl;
     outFile << "\t\"spinImageWidth\": " << spinImageWidth << "," << std::endl;
     outFile << "\t\"spinImageWidthPixels\": " << spinImageWidthPixels << "," << std::endl;
+    outFile << "\t\"spinImageSupportAngle\": " << spinImageSupportAngleDegrees << "," << std::endl;
     outFile << "\t\"searchResultCount\": " << SEARCH_RESULT_COUNT << "," << std::endl;
     outFile << std::endl;
     outFile << "\t\"inputFiles\": [" << std::endl;
@@ -480,7 +482,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
     cudaFree(device_referenceQSIImages.content);
     cudaFree(device_referenceSpinImages.content);
 
-    dumpResultsFile("../output/" + getCurrentDateTimeString() + ".json", randomSeed, QSIHistograms, spinImageHistograms, objectDirectory, sampleSetSize, boxSize, spinImageWidth, generator(), QSIRuns, SIRuns, QSISearchRuns, SISearchRuns);
+    dumpResultsFile("../output/" + getCurrentDateTimeString() + ".json", randomSeed, QSIHistograms, spinImageHistograms, objectDirectory, sampleSetSize, boxSize, spinImageWidth, generator(), QSIRuns, SIRuns, QSISearchRuns, SISearchRuns, spinImageSupportAngleDegrees);
 
 }
 
