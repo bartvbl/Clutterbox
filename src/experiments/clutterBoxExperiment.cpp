@@ -347,6 +347,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
     // 6 Remove duplicate vertices
     std::cout << "Removing duplicate vertices.." << std::endl;
     array<DeviceOrientedPoint> spinOrigins_reference = SpinImage::utilities::generateUniqueSpinOriginBuffer(scaledMeshesOnGPU.at(0));
+    size_t referenceImageCount = spinOrigins_reference.length;
 
     // Shuffle the list. First mesh is now our "reference".
     std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), generator);
@@ -355,7 +356,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
     std::cout << "\tUsing sample count: " << spinImageSampleCount << std::endl;
 
     // Compute spin image for reference model
-    std::cout << "\tGenerating reference QSI images.. (" << scaledMeshesOnGPU.at(0).vertexCount << " images)" << std::endl;
+    std::cout << "\tGenerating reference QSI images.. (" << referenceImageCount << " images)" << std::endl;
     SpinImage::debug::QSIRunInfo qsiReferenceRunInfo;
     array<quasiSpinImagePixelType> device_referenceQSIImages = SpinImage::gpu::generateQuasiSpinImages(
                                                                                      scaledMeshesOnGPU.at(0),
