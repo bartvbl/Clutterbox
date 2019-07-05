@@ -3,6 +3,6 @@
 #include <vector>
 #include <random>
 #include <spinImage/gpu/types/DeviceMesh.h>
+#include <spinImage/gpu/types/DeviceOrientedPoint.h>
 
-array<DeviceOrientedPoint> removeDuplicates(DeviceMesh mesh);
 void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<DeviceMesh> meshList, std::default_random_engine &randomGenerator);

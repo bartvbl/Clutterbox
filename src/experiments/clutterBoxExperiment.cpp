@@ -30,6 +30,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cuda_runtime_api.h>
+#include <spinImage/utilities/spinOriginBufferGenerator.h>
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
@@ -345,7 +346,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
 
     // 6 Remove duplicate vertices
     std::cout << "Removing duplicate vertices.." << std::endl;
-    array<DeviceOrientedPoint> spinOrigins_reference = removeDuplicates(scaledMeshesOnGPU.at(0));
+    array<DeviceOrientedPoint> spinOrigins_reference = SpinImage::utilities::generateUniqueSpinOriginBuffer(scaledMeshesOnGPU.at(0));
 
     // Shuffle the list. First mesh is now our "reference".
     std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), generator);
@@ -401,7 +402,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
         vertexCount += scaledMeshesOnGPU.at(i).vertexCount;
         boxScene.vertexCount = vertexCount;
 
-        array<DeviceOrientedPoint> spinOrigins_sample = removeDuplicates(boxScene);
+        array<DeviceOrientedPoint> spinOrigins_sample = SpinImage::utilities::generateUniqueSpinOriginBuffer(boxScene);
         size_t imageCount = spinOrigins_sample.length;
 
         // Generating quasi spin images
