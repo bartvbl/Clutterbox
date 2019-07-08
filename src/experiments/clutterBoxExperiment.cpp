@@ -346,7 +346,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
 
     // 6 Remove duplicate vertices
     std::cout << "Removing duplicate vertices.." << std::endl;
-    array<DeviceOrientedPoint> spinOrigins_reference = SpinImage::utilities::generateUniqueSpinOriginBuffer(scaledMeshesOnGPU.at(0));
+    array<DeviceOrientedPoint> spinOrigins_reference = computeUniqueSpinOrigins(scaledMeshesOnGPU.at(0));
     size_t referenceImageCount = spinOrigins_reference.length;
     std::cout << "\tReduced " << scaledMeshesOnGPU.at(0).vertexCount << " vertices to " << referenceImageCount << "." << std::endl;
 
@@ -413,6 +413,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
         boxScene.vertexCount = vertexCount;
         imageCount += uniqueVertexCounts.at(i);
         device_uniqueSpinOrigins.length = imageCount;
+        std::cout << "\t\t\tVertex count: " << boxScene.vertexCount << ", Image count: " << imageCount << std::endl;
 
         // Generating quasi spin images
         std::cout << "\t\tGenerating QSI images.. (" << imageCount << " images)" << std::endl;

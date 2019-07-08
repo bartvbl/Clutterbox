@@ -85,13 +85,11 @@ __global__ void computeTargetIndices(array<signed long long> targetIndices, bool
 }
 
 array<signed long long> computeUniqueIndexMapping(DeviceMesh boxScene, std::vector<DeviceMesh> deviceMeshes, std::vector<size_t> *uniqueVertexCounts) {
-    std::cout << "Locating duplicates.." << std::endl;
     bool* device_duplicateVertices;
     checkCudaErrors(cudaMalloc(&device_duplicateVertices, boxScene.vertexCount * sizeof(bool)));
     detectDuplicates<<<(boxScene.vertexCount / 256) + 1, 256>>>(boxScene, device_duplicateVertices);
     checkCudaErrors(cudaDeviceSynchronize());
 
-    std::cout << "Computing new vertex counts.." << std::endl;
     bool* temp_duplicateVertices = new bool[boxScene.vertexCount];
     checkCudaErrors(cudaMemcpy(temp_duplicateVertices, device_duplicateVertices, boxScene.vertexCount * sizeof(bool), cudaMemcpyDeviceToHost));
 
@@ -112,7 +110,6 @@ array<signed long long> computeUniqueIndexMapping(DeviceMesh boxScene, std::vect
 
     delete[] temp_duplicateVertices;
 
-    std::cout << "Computing taget indices.." << std::endl;
     array<signed long long> device_uniqueIndexMapping;
     device_uniqueIndexMapping.length = totalUniqueVertexCount;
     checkCudaErrors(cudaMalloc(&device_uniqueIndexMapping.content, totalUniqueVertexCount * sizeof(signed long long)));
@@ -157,6 +154,16 @@ array<DeviceOrientedPoint> applyUniqueMapping(DeviceMesh boxScene, array<signed 
     mapVertices<<<(boxScene.vertexCount / 256) + 1, 256>>>(boxScene, device_origins, device_mapping);
     checkCudaErrors(cudaDeviceSynchronize());
 
+    return device_origins;
+}
+
+array<DeviceOrientedPoint> computeUniqueSpinOrigins(DeviceMesh &mesh) {
+    std::vector<DeviceMesh> deviceMeshes;
+    deviceMeshes.push_back(mesh);
+    std::vector<size_t> vertexCounts;
+    array<signed long long> device_mapping = computeUniqueIndexMapping(mesh, deviceMeshes, &vertexCounts);
+    array<DeviceOrientedPoint> device_origins = applyUniqueMapping(mesh, device_mapping);
+    checkCudaErrors(cudaFree(device_mapping.content));
     return device_origins;
 }
 

@@ -7,5 +7,6 @@
 
 array<signed long long> computeUniqueIndexMapping(DeviceMesh boxScene, std::vector<DeviceMesh> deviceMeshes, std::vector<size_t> *uniqueVertexCounts);
 array<DeviceOrientedPoint> applyUniqueMapping(DeviceMesh boxScene, array<signed long long> mapping);
+array<DeviceOrientedPoint> computeUniqueSpinOrigins(DeviceMesh &mesh);
 
 void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<DeviceMesh> meshList, std::default_random_engine &randomGenerator);
