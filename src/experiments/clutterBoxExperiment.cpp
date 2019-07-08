@@ -348,14 +348,15 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
     std::cout << "Removing duplicate vertices.." << std::endl;
     array<DeviceOrientedPoint> spinOrigins_reference = SpinImage::utilities::generateUniqueSpinOriginBuffer(scaledMeshesOnGPU.at(0));
     size_t referenceImageCount = spinOrigins_reference.length;
+    std::cout << "\tReduced " << scaledMeshesOnGPU.at(0).vertexCount << " vertices to " << referenceImageCount << "." << std::endl;
 
-    // Shuffle the list. First mesh is now our "reference".
+    // 7 Shuffle the list. First mesh is now our "reference".
     std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), generator);
 
     size_t spinImageSampleCount = computeSpinImageSampleCount(scaledMeshesOnGPU.at(0).vertexCount);
     std::cout << "\tUsing sample count: " << spinImageSampleCount << std::endl;
 
-    // Compute spin image for reference model
+    // 8 Compute spin image for reference model
     std::cout << "\tGenerating reference QSI images.. (" << referenceImageCount << " images)" << std::endl;
     SpinImage::debug::QSIRunInfo qsiReferenceRunInfo;
     array<quasiSpinImagePixelType> device_referenceQSIImages = SpinImage::gpu::generateQuasiSpinImages(
@@ -363,7 +364,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
                                                                                      spinOrigins_reference,
                                                                                      spinImageWidth,
                                                                                      &qsiReferenceRunInfo);
-    //dumpQuasiSpinImages("qsi_verification.png", device_referenceQSIImages);
+
     QSIRuns.push_back(qsiReferenceRunInfo);
     std::cout << "\t\tExecution time: " << qsiReferenceRunInfo.generationTimeSeconds << std::endl;
 
@@ -379,20 +380,28 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
 
     checkCudaErrors(cudaFree(spinOrigins_reference.content));
 
-    //dumpSpinImages("si_verification.png", device_referenceSpinImages);
     SIRuns.push_back(siReferenceRunInfo);
     std::cout << "\t\tExecution time: " << siReferenceRunInfo.generationTimeSeconds << std::endl;
 
-    // Combine meshes into one larger scene
+    // 9 Combine meshes into one larger scene
     DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
 
-    // Randomly transform objects
+    // 10 Compute unique vertex mapping
+    std::vector<size_t> uniqueVertexCounts;
+    array<signed long long> device_indexMapping = computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts);
+
+    // 11 Randomly transform objects
     randomlyTransformMeshes(boxScene, boxSize, scaledMeshesOnGPU, generator);
 
     size_t vertexCount = 0;
-    size_t referenceMeshVertexCount = scaledMeshesOnGPU.at(0).vertexCount;
     size_t referenceMeshImageCount = spinOrigins_reference.length;
 
+    // 12 Compute corresponding transformed vertex buffer
+    //    A mapping is used here because the previously applied transformation can cause non-unique vertices to become
+    //    equivalent. It is vital we can rely on a 1:1 mapping existing between vertices.
+    array<DeviceOrientedPoint> device_uniqueSpinOrigins = applyUniqueMapping(boxScene, device_indexMapping);
+    cudaFree(device_indexMapping.content);
+    size_t imageCount = 0;
 
 
     // Generate images for increasingly more complex scenes
@@ -402,16 +411,15 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
         // This allows adding objects one by one, without having to copy memory all over the place
         vertexCount += scaledMeshesOnGPU.at(i).vertexCount;
         boxScene.vertexCount = vertexCount;
-
-        array<DeviceOrientedPoint> spinOrigins_sample = SpinImage::utilities::generateUniqueSpinOriginBuffer(boxScene);
-        size_t imageCount = spinOrigins_sample.length;
+        imageCount += uniqueVertexCounts.at(i);
+        device_uniqueSpinOrigins.length = imageCount;
 
         // Generating quasi spin images
         std::cout << "\t\tGenerating QSI images.. (" << imageCount << " images)" << std::endl;
         SpinImage::debug::QSIRunInfo qsiSampleRunInfo;
         array<quasiSpinImagePixelType> device_sampleQSIImages = SpinImage::gpu::generateQuasiSpinImages(
                 boxScene,
-                spinOrigins_sample,
+                device_uniqueSpinOrigins,
                 spinImageWidth,
                 &qsiSampleRunInfo);
         QSIRuns.push_back(qsiSampleRunInfo);
@@ -443,7 +451,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
         SpinImage::debug::SIRunInfo siSampleRunInfo;
         array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(
                 boxScene,
-                spinOrigins_sample,
+                device_uniqueSpinOrigins,
                 spinImageWidth,
                 spinImageSampleCount,
                 spinImageSupportAngleDegrees,
@@ -470,10 +478,6 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
         cudaFree(device_sampleSpinImages.content);
         delete[] SpinImageSearchResults.content;
 
-
-        // Cleaning up
-        checkCudaErrors(cudaFree(spinOrigins_sample.content));
-
         // Storing results
         QSIHistograms.push_back(QSIHistogram);
         spinImageHistograms.push_back(SIHistogram);
@@ -483,6 +487,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
     SpinImage::gpu::freeDeviceMesh(boxScene);
     cudaFree(device_referenceQSIImages.content);
     cudaFree(device_referenceSpinImages.content);
+    cudaFree(device_uniqueSpinOrigins.content);
 
     dumpResultsFile("../output/" + getCurrentDateTimeString() + ".json", randomSeed, QSIHistograms, spinImageHistograms, objectDirectory, sampleSetSize, boxSize, spinImageWidth, generator(), QSIRuns, SIRuns, QSISearchRuns, SISearchRuns, spinImageSupportAngleDegrees);
 
