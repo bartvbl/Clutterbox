@@ -226,7 +226,7 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
         float distanceY = maxDistance * distribution(randomGenerator);
         float distanceZ = maxDistance * distribution(randomGenerator);
 
-        std::cout << "Rotation: (" << yaw << ", " << pitch << ", "<< roll << "), Translation: (" << distanceX << ", "<< distanceY << ", "<< distanceZ << "), Vertex Count: " << device_meshList.at(i).vertexCount << std::endl;
+        std::cout << "\t\tRotation: (" << yaw << ", " << pitch << ", "<< roll << "), Translation: (" << distanceX << ", "<< distanceY << ", "<< distanceZ << "), Vertex Count: " << device_meshList.at(i).vertexCount << std::endl;
 
         glm::mat4 randomRotationTransformation(1.0);
         randomRotationTransformation = glm::rotate(randomRotationTransformation, yaw,   glm::vec3(0, 0, 1));

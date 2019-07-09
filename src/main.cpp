@@ -78,9 +78,6 @@ int main(int argc, const char **argv)
 
 	runClutterBoxExperiment(objectDirectory.value(), sampleSetSize.value(), boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), val);
 
-
-	std::cout << "Complete." << std::endl;
-
     return 0;
 }
 
