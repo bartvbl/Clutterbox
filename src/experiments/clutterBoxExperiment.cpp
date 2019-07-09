@@ -388,7 +388,8 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
 
     // 10 Compute unique vertex mapping
     std::vector<size_t> uniqueVertexCounts;
-    array<signed long long> device_indexMapping = computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts);
+    size_t totalUniqueVertexCount;
+    array<signed long long> device_indexMapping = computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts, &totalUniqueVertexCount);
 
     // 11 Randomly transform objects
     randomlyTransformMeshes(boxScene, boxSize, scaledMeshesOnGPU, generator);
