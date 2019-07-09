@@ -346,15 +346,15 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
         scaledMeshesOnGPU.at(i) = SpinImage::copy::hostMeshToDevice(scaledMeshes.at(i));
     }
 
-    // 7 Remove duplicate vertices
+    // 7 Shuffle the list. First mesh is now our "reference".
+    std::cout << "\tShuffling sample object list.." << std::endl;
+    std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), generator);
+
+    // 8 Remove duplicate vertices
     std::cout << "\tRemoving duplicate vertices.." << std::endl;
     array<DeviceOrientedPoint> spinOrigins_reference = computeUniqueSpinOrigins(scaledMeshesOnGPU.at(0));
     size_t referenceImageCount = spinOrigins_reference.length;
     std::cout << "\t\tReduced " << scaledMeshesOnGPU.at(0).vertexCount << " vertices to " << referenceImageCount << "." << std::endl;
-
-    // 8 Shuffle the list. First mesh is now our "reference".
-    std::cout << "\tShuffling sample object list.." << std::endl;
-    std::shuffle(std::begin(scaledMeshesOnGPU), std::end(scaledMeshesOnGPU), generator);
 
     size_t spinImageSampleCount = computeSpinImageSampleCount(scaledMeshesOnGPU.at(0).vertexCount);
     std::cout << "\tUsing sample count: " << spinImageSampleCount << std::endl;
@@ -405,7 +405,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
     //    A mapping is used here because the previously applied transformation can cause non-unique vertices to become
     //    equivalent. It is vital we can rely on a 1:1 mapping existing between vertices.
     array<DeviceOrientedPoint> device_uniqueSpinOrigins = applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
-    cudaFree(device_indexMapping.content);
+    checkCudaErrors(cudaFree(device_indexMapping.content));
     size_t imageCount = 0;
 
     // 14 Ensure enough memory is available to complete the experiment.

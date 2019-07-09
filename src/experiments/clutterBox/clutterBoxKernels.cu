@@ -84,23 +84,25 @@ __global__ void computeTargetIndices(array<signed long long> targetIndices, bool
     targetIndices.content[vertexIndex] = targetIndex;
 }
 
-array<signed long long> computeUniqueIndexMapping(DeviceMesh boxScene, std::vector<DeviceMesh> deviceMeshes, std::vector<size_t> *uniqueVertexCounts, size_t* totalUniqueVertexCount) {
+array<signed long long> computeUniqueIndexMapping(DeviceMesh boxScene, std::vector<DeviceMesh> deviceMeshes, std::vector<size_t> *uniqueVertexCounts, size_t &totalUniqueVertexCount) {
+    size_t sceneVertexCount = boxScene.vertexCount;
+
     bool* device_duplicateVertices;
-    checkCudaErrors(cudaMalloc(&device_duplicateVertices, boxScene.vertexCount * sizeof(bool)));
+    checkCudaErrors(cudaMalloc(&device_duplicateVertices, sceneVertexCount * sizeof(bool)));
     detectDuplicates<<<(boxScene.vertexCount / 256) + 1, 256>>>(boxScene, device_duplicateVertices);
     checkCudaErrors(cudaDeviceSynchronize());
 
-    bool* temp_duplicateVertices = new bool[boxScene.vertexCount];
+    bool* temp_duplicateVertices = new bool[sceneVertexCount];
     checkCudaErrors(cudaMemcpy(temp_duplicateVertices, device_duplicateVertices, boxScene.vertexCount * sizeof(bool), cudaMemcpyDeviceToHost));
 
     size_t baseIndex = 0;
-    *totalUniqueVertexCount = 0;
+    totalUniqueVertexCount = 0;
     for(auto mesh : deviceMeshes) {
         size_t meshUniqueVertexCount = 0;
         for(size_t i = 0; i < mesh.vertexCount; i++) {
             // Check if the vertex is unique
             if(temp_duplicateVertices[baseIndex + i] == false) {
-                (*totalUniqueVertexCount)++;
+                totalUniqueVertexCount++;
                 meshUniqueVertexCount++;
             }
         }
