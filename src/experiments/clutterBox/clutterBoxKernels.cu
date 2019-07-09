@@ -166,7 +166,7 @@ array<DeviceOrientedPoint> computeUniqueSpinOrigins(DeviceMesh &mesh) {
     deviceMeshes.push_back(mesh);
     std::vector<size_t> vertexCounts;
     size_t totalUniqueVertexCount;
-    array<signed long long> device_mapping = computeUniqueIndexMapping(mesh, deviceMeshes, &vertexCounts, &totalUniqueVertexCount);
+    array<signed long long> device_mapping = computeUniqueIndexMapping(mesh, deviceMeshes, &vertexCounts, totalUniqueVertexCount);
     array<DeviceOrientedPoint> device_origins = applyUniqueMapping(mesh, device_mapping, totalUniqueVertexCount);
     checkCudaErrors(cudaFree(device_mapping.content));
     return device_origins;
