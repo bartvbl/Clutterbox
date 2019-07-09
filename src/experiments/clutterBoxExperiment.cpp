@@ -404,6 +404,13 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
     cudaFree(device_indexMapping.content);
     size_t imageCount = 0;
 
+    // 14 Ensure enough memory is available to complete the experiment.
+    std::cout << "\tTesting for sufficient memory capacity on GPU.. ";
+    int* device_largestNecessaryImageBuffer;
+    size_t largestImageBufferSize = totalUniqueVertexCount * spinImageWidthPixels * spinImageWidthPixels * sizeof(int);
+    checkCudaErrors(cudaMalloc((void**) &device_largestNecessaryImageBuffer, largestImageBufferSize));
+    checkCudaErrors(cudaFree(device_largestNecessaryImageBuffer));
+    std::cout << "Success." << std::endl;
 
     // Generate images for increasingly more complex scenes
     for (unsigned int i = 0; i < sampleSetSize; i++) {
