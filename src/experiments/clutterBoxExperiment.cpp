@@ -503,7 +503,21 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
     cudaFree(device_referenceSpinImages.content);
     cudaFree(device_uniqueSpinOrigins.content);
 
-    dumpResultsFile("../output/" + getCurrentDateTimeString() + ".json", randomSeed, QSIHistograms, spinImageHistograms, objectDirectory, sampleSetSize, boxSize, spinImageWidth, generator(), QSIRuns, SIRuns, QSISearchRuns, SISearchRuns, spinImageSupportAngleDegrees);
+    dumpResultsFile(
+            "../output/" + getCurrentDateTimeString() + ".json",
+            randomSeed,
+            QSIHistograms,
+            spinImageHistograms,
+            objectDirectory,
+            sampleSetSize,
+            boxSize,
+            spinImageWidth,
+            generator(),
+            QSIRuns,
+            SIRuns,
+            QSISearchRuns,
+            SISearchRuns,
+            spinImageSupportAngleDegrees);
 
     std::cout << std::endl << "Complete." << std::endl;
 
