@@ -342,6 +342,8 @@ void dumpRawSearchResultFile(
     outFile << "\t}," << std::endl;
 
     outFile << "}" << std::endl;
+
+    outFile.close();
 }
 
 
@@ -674,7 +676,7 @@ Histogram computeSearchResultHistogram(size_t vertexCount, const array<unsigned 
         }
     }
 
-    std::cout << "\t\t\tTop 10 counts: ";
+    std::cout << "\t\tTop 10 counts: ";
     int top10Count = 0;
     for(int i = 0; i < 10; i++) {
         std::cout << lowerRanks[i] << ((i < 9) ? ", " : "");
