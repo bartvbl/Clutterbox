@@ -96,7 +96,8 @@ void dumpResultsFile(
         std::vector<SpinImage::debug::QSISearchRunInfo> QSISearchRuns,
         std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns,
         float spinImageSupportAngleDegrees,
-        std::vector<size_t> uniqueVertexCounts) {
+        std::vector<size_t> uniqueVertexCounts,
+        std::vector<size_t> spinImageSampleCounts) {
     std::cout << std::endl << "Dumping results file.." << std::endl;
 
     std::default_random_engine generator{seed};
@@ -169,6 +170,10 @@ void dumpResultsFile(
     outFile << "\t\"spinImageWidth\": " << spinImageWidth << "," << std::endl;
     outFile << "\t\"spinImageWidthPixels\": " << spinImageWidthPixels << "," << std::endl;
     outFile << "\t\"spinImageSupportAngle\": " << spinImageSupportAngleDegrees << "," << std::endl;
+    outFile << "\t\"spinImageSampleCounts\": [";
+    for(int i = 0; i < spinImageSampleCounts.size(); i++) {
+        outFile << spinImageSampleCounts.at(i) << (i == spinImageSampleCounts.size() - 1 ? "" : ", ");
+    }
     outFile << "\t\"searchResultCount\": " << SEARCH_RESULT_COUNT << "," << std::endl;
     outFile << std::endl;
     outFile << "\t\"inputFiles\": [" << std::endl;
@@ -506,6 +511,7 @@ void runClutterBoxExperiment(
 
     std::vector<array<unsigned int>> rawQSISearchResults;
     std::vector<array<unsigned int>> rawSISearchResults;
+    std::vector<size_t> spinImageSampleCounts;
 
     int currentObjectListIndex = 0;
 
@@ -564,6 +570,7 @@ void runClutterBoxExperiment(
 
         // Generating spin images
         spinImageSampleCount = computeSpinImageSampleCount(imageCount);
+        spinImageSampleCounts.push_back(spinImageSampleCount);
         std::cout << "\tGenerating spin images.. (" << imageCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
         SpinImage::debug::SIRunInfo siSampleRunInfo;
         array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(
@@ -625,7 +632,8 @@ void runClutterBoxExperiment(
             QSISearchRuns,
             SISearchRuns,
             spinImageSupportAngleDegrees,
-            uniqueVertexCounts);
+            uniqueVertexCounts,
+            spinImageSampleCounts);
 
     if(dumpRawSearchResults) {
         dumpRawSearchResultFile(
