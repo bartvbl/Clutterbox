@@ -529,6 +529,7 @@ void runClutterBoxExperiment(
         // If the object count is not on the list, skip it.
         if(objectCount != objectCountList.at(currentObjectListIndex)) {
             std::cout << "\tSample count is not on the list. Skipping." << std::endl;
+            continue;
         }
 
         // Marking the current object count as processed
