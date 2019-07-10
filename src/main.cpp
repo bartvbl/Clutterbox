@@ -26,6 +26,8 @@ int main(int argc, const char **argv)
 	const auto& spinImageWidth = parser.add<float>("spin-image-width", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
 	const auto& spinImageSupportAngle = parser.add<float>("spin-image-support-angle-degrees", "The support angle to use for filtering spin image point samples", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_SUPPORT_ANGLE_DEGREES);
     const auto& forcedSeed = parser.add<std::string>("force-seed", "Specify the seed to use for random generation. Used for reproducing results.", '\0', arrrgh::Optional, "0");
+	const auto& dumpRawResults = parser.add<bool>("dump-raw-search-results", "Enable dumping of raw search result index values", '\0', arrrgh::Optional, false);
+	const auto& outputDirectory = parser.add<std::string>("output-directory", "Specify the location where output files should be dumped", '\0', arrrgh::Optional, "../output/");
 
 	try
 	{
@@ -76,7 +78,7 @@ int main(int argc, const char **argv)
         std::cout << "Using overridden seed: " << val << std::endl;
     }
 
-	runClutterBoxExperiment(objectDirectory.value(), sampleSetSize.value(), boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), val);
+	runClutterBoxExperiment(objectDirectory.value(), sampleSetSize.value(), boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), val);
 
     return 0;
 }

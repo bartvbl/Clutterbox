@@ -30,7 +30,6 @@
 #include <sstream>
 #include <algorithm>
 #include <cuda_runtime_api.h>
-#include <spinImage/utilities/spinOriginBufferGenerator.h>
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
@@ -268,6 +267,21 @@ void dumpResultsFile(
     }
 }
 
+void dumpRawSearchResultFile(
+        std::string outputFile,
+        std::vector<array<unsigned int>> rawQSISearchResults,
+        std::vector<array<unsigned int>> rawSISearchResults) {
+    std::ofstream outFile(outputFile);
+    outFile << "{" << std::endl;
+    outFile << "\t\"version\": \"rawfile_v1\"," << std::endl;
+    outFile << "}" << std::endl;
+}
+
+
+
+
+
+
 
 const inline size_t computeSpinImageSampleCount(size_t &vertexCount) {
     return std::max((size_t)1000000, (size_t) (30 * vertexCount)); 
@@ -289,7 +303,15 @@ void dumpQuasiSpinImages(std::string filename, array<quasiSpinImagePixelType> de
     delete[] hostDescriptors.content;
 }
 
-void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSetSize, float boxSize, float spinImageWidth, float spinImageSupportAngleDegrees, size_t overrideSeed) {
+void runClutterBoxExperiment(
+        std::string objectDirectory,
+        unsigned int sampleSetSize,
+        float boxSize,
+        float spinImageWidth,
+        float spinImageSupportAngleDegrees,
+        bool dumpRawSearchResults,
+        std::string outputDirectory,
+        size_t overrideSeed) {
 	// --- Overview ---
 	//
 	// 1 Search SHREC directory for files
@@ -416,6 +438,8 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
     checkCudaErrors(cudaFree(device_largestNecessaryImageBuffer));
     std::cout << "Success." << std::endl;
 
+    std::vector<array<unsigned int>> rawQSISearchResults;
+    std::vector<array<unsigned int>> rawSISearchResults;
 
     // Generate images for increasingly more complex scenes
     for (unsigned int i = 0; i < sampleSetSize; i++) {
@@ -451,11 +475,14 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
                 imageCount,
                 &qsiSearchRun);
         QSISearchRuns.push_back(qsiSearchRun);
+        rawQSISearchResults.push_back(QSIsearchResults);
         std::cout << "\t\tTimings: (total " << qsiSearchRun.totalExecutionTimeSeconds
                   << ", searching " << qsiSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
         Histogram QSIHistogram = computeSearchResultHistogram(referenceMeshImageCount, QSIsearchResults);
         cudaFree(device_sampleQSIImages.content);
-        delete[] QSIsearchResults.content;
+        if(!dumpRawSearchResults) {
+            delete[] QSIsearchResults.content;
+        }
 
 
 
@@ -485,12 +512,15 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
                 imageCount,
                 &siSearchRun);
         SISearchRuns.push_back(siSearchRun);
+        rawSISearchResults.push_back(SpinImageSearchResults);
         std::cout << "\t\tTimings: (total " << siSearchRun.totalExecutionTimeSeconds
                   << ", averaging " << siSearchRun.averagingExecutionTimeSeconds
                   << ", searching " << siSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
         Histogram SIHistogram = computeSearchResultHistogram(referenceMeshImageCount, SpinImageSearchResults);
         cudaFree(device_sampleSpinImages.content);
-        delete[] SpinImageSearchResults.content;
+        if(!dumpRawSearchResults) {
+            delete[] SpinImageSearchResults.content;
+        }
 
         // Storing results
         QSIHistograms.push_back(QSIHistogram);
@@ -504,7 +534,7 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
     cudaFree(device_uniqueSpinOrigins.content);
 
     dumpResultsFile(
-            "../output/" + getCurrentDateTimeString() + ".json",
+            outputDirectory + getCurrentDateTimeString() + ".json",
             randomSeed,
             QSIHistograms,
             spinImageHistograms,
@@ -519,8 +549,22 @@ void runClutterBoxExperiment(std::string objectDirectory, unsigned int sampleSet
             SISearchRuns,
             spinImageSupportAngleDegrees);
 
-    std::cout << std::endl << "Complete." << std::endl;
+    if(dumpRawSearchResults) {
+        dumpRawSearchResultFile(
+                outputDirectory + "raw/" + getCurrentDateTimeString() + ".json",
+                rawQSISearchResults,
+                rawSISearchResults);
 
+        // Cleanup
+        for(auto results : rawQSISearchResults) {
+            delete[] results.content;
+        }
+        for(auto results : rawSISearchResults) {
+            delete[] results.content;
+        }
+    }
+
+    std::cout << std::endl << "Complete." << std::endl;
 }
 
 
