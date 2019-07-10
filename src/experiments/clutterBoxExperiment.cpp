@@ -95,7 +95,8 @@ void dumpResultsFile(
         std::vector<SpinImage::debug::SIRunInfo> SIRuns,
         std::vector<SpinImage::debug::QSISearchRunInfo> QSISearchRuns,
         std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns,
-        float spinImageSupportAngleDegrees) {
+        float spinImageSupportAngleDegrees,
+        std::vector<size_t> uniqueVertexCounts) {
     std::cout << std::endl << "Dumping results file.." << std::endl;
 
     std::default_random_engine generator{seed};
@@ -153,6 +154,11 @@ void dumpResultsFile(
     outFile << "\t\"sampleObjectCounts\": [";
     for(int i = 0; i < objectCountList.size(); i++) {
         outFile << objectCountList.at(i) << (i == objectCountList.size() - 1 ? "" : ", ");
+    }
+    outFile << "]," << std::endl;
+    outFile << "\t\"uniqueVertexCounts\": [";
+    for(int i = 0; i < uniqueVertexCounts.size(); i++) {
+        outFile << uniqueVertexCounts.at(i) << (i == uniqueVertexCounts.size() - 1 ? "" : ", ");
     }
     outFile << "]," << std::endl;
     outFile << "\t\"boxSize\": " << boxSize << "," << std::endl;
@@ -614,7 +620,8 @@ void runClutterBoxExperiment(
             SIRuns,
             QSISearchRuns,
             SISearchRuns,
-            spinImageSupportAngleDegrees);
+            spinImageSupportAngleDegrees,
+            uniqueVertexCounts);
 
     if(dumpRawSearchResults) {
         dumpRawSearchResultFile(
