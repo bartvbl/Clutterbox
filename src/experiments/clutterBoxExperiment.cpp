@@ -68,6 +68,9 @@ std::vector<std::string> generateRandomFileList(const std::string &objectDirecto
     std::vector<std::string> fileList = listDir(objectDirectory);
     std::cout << " (found " << fileList.size() << " files)" << std::endl;
 
+    // Sort the file list to avoid the effects of operating systems ordering files inconsistently.
+    std::sort(fileList.begin(), fileList.end());
+
     std::shuffle(std::begin(fileList), std::end(fileList), generator);
 
     for (unsigned int i = 0; i < sampleSetSize; i++) {
