@@ -160,6 +160,10 @@ void dumpResultsFile(
     for(int i = 0; i < uniqueVertexCounts.size(); i++) {
         outFile << uniqueVertexCounts.at(i) << (i == uniqueVertexCounts.size() - 1 ? "" : ", ");
     }
+    outFile << "\t\"imageCounts\": [";
+    for(int i = 0; i < uniqueVertexCounts.size(); i++) {
+        outFile << uniqueVertexCounts.at(i) << (i == uniqueVertexCounts.size() - 1 ? "" : ", ");
+    }
     outFile << "]," << std::endl;
     outFile << "\t\"boxSize\": " << boxSize << "," << std::endl;
     outFile << "\t\"spinImageWidth\": " << spinImageWidth << "," << std::endl;
