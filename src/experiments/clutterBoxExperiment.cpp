@@ -293,6 +293,38 @@ void dumpRawSearchResultFile(
     std::ofstream outFile(outputFile);
     outFile << "{" << std::endl;
     outFile << "\t\"version\": \"rawfile_v1\"," << std::endl;
+    outFile << "\t\"sampleObjectCounts\": [";
+    for(int i = 0; i < objectCountList.size(); i++) {
+        outFile << objectCountList.at(i) << (i == objectCountList.size() - 1 ? "" : ", ");
+    }
+
+    // QSI block
+    outFile << std::endl << std::endl << "\tQSI: {" << std::endl;
+    for(int i = 0; i < rawQSISearchResults.size(); i++) {
+        outFile << "\t\t" << objectCountList.at(i) << ": [";
+        for(int j = 0; j < rawQSISearchResults.at(i).length; j++) {
+            if(j + 1 != rawQSISearchResults.at(i).length && j % 10 == 0) {
+                outFile << std::endl << "\t\t";
+            }
+            outFile << rawQSISearchResults.at(i).content[j] << (j + 1 != rawQSISearchResults.at(i).length ? ", " : "");
+        }
+        outFile << "\t\t]," << std::endl;
+    }
+    outFile << "\t}," << std::endl;
+
+    // SI block
+    outFile << std::endl << std::endl << "\tSI: {" << std::endl;
+    for(int i = 0; i < rawSISearchResults.size(); i++) {
+        outFile << "\t\t" << objectCountList.at(i) << ": [";
+        for(int j = 0; j < rawSISearchResults.at(i).length; j++) {
+            if(j + 1 != rawSISearchResults.at(i).length && j % 10 == 0) {
+                outFile << std::endl << "\t\t";
+            }
+            outFile << rawSISearchResults.at(i).content[j] << (j + 1 != rawSISearchResults.at(i).length ? ", " : "");
+        }
+        outFile << "\t\t]," << std::endl;
+    }
+    outFile << "\t}," << std::endl;
 
     outFile << "}" << std::endl;
 }
