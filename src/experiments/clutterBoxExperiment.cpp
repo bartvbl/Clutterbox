@@ -527,7 +527,7 @@ void runClutterBoxExperiment(
         std::cout << "\t\tVertex count: " << boxScene.vertexCount << ", Image count: " << imageCount << std::endl;
 
         // If the object count is not on the list, skip it.
-        if(objectCount != objectCountList.at(currentObjectListIndex)) {
+        if((objectCount + 1) != objectCountList.at(currentObjectListIndex)) {
             std::cout << "\tSample count is not on the list. Skipping." << std::endl;
             continue;
         }
