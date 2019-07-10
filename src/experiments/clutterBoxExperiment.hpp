@@ -1,10 +1,11 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 void runClutterBoxExperiment(
         std::string objectDirectory,
-        unsigned int sampleSetSize,
+        std::vector<int> objectCountList,
         float boxSize,
         float spinImageWidth,
         float spinImageSupportAngleDegrees,

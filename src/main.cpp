@@ -13,14 +13,22 @@ cudaDeviceProp setCurrentCUDADevice(bool listOnly, int forceGPU);
 const float DEFAULT_SPIN_IMAGE_WIDTH = 1;
 const float DEFAULT_SPIN_IMAGE_SUPPORT_ANGLE_DEGREES = 90;
 
+void splitByCharacter(std::vector<std::string>* parts, const std::string &s, char delim) {
+
+    std::stringstream ss;
+    ss.str(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        parts->push_back(item);
+    }
+}
+
 int main(int argc, const char **argv)
 {
 	arrrgh::parser parser("qsiverification", "Generates and compares spin images on the GPU");
 	const auto& showHelp = parser.add<bool>("help", "Show this help message.", 'h', arrrgh::Optional, false);
-	const auto& forceSpinImageSize = parser.add<float>("force-spin-image-size", "Rather than automatically selecting the spin image size based upon a specific voxel count, force the image to use a specific width.", '\0', arrrgh::Optional, 0);
 	const auto& listGPUs = parser.add<bool>("list-gpus", "List all GPU's, used for the --force-gpu parameter.", 'a', arrrgh::Optional, false);
 	const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", 'b', arrrgh::Optional, -1);
-	const auto& sampleSetSize = parser.add<int>("sample-set-size", "How many sample models the clutter box experiment should use", '\0', arrrgh::Optional, -1);
 	const auto& boxSize = parser.add<int>("box-size", "Size of the cube box for the clutter box experiment", '\0', arrrgh::Optional, -1);
 	const auto& objectDirectory = parser.add<std::string>("source-directory", "Defines the directory from which input objects are read", '\0', arrrgh::Optional, "");
 	const auto& spinImageWidth = parser.add<float>("spin-image-width", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
@@ -28,6 +36,7 @@ int main(int argc, const char **argv)
     const auto& forcedSeed = parser.add<std::string>("force-seed", "Specify the seed to use for random generation. Used for reproducing results.", '\0', arrrgh::Optional, "0");
 	const auto& dumpRawResults = parser.add<bool>("dump-raw-search-results", "Enable dumping of raw search result index values", '\0', arrrgh::Optional, false);
 	const auto& outputDirectory = parser.add<std::string>("output-directory", "Specify the location where output files should be dumped", '\0', arrrgh::Optional, "../output/");
+    const auto& objectCounts = parser.add<std::string>("object-counts", "Specify the number of objects the experiment should be performed with, as a comma separated list WITHOUT spaces (e.g. --object-counts=1,2,5)", '\0', arrrgh::Optional, "NONE");
 
 	try
 	{
@@ -55,8 +64,8 @@ int main(int argc, const char **argv)
 		return 0;
 	}
 
-	if(sampleSetSize.value() == -1) {
-		std::cout << "Experiment requires the --sample-set-size parameter to be set" << std::endl;
+	if(objectCounts.value() == "NONE") {
+		std::cout << "Experiment requires the --object-counts parameter to be set" << std::endl;
 		exit(0);
 	}
 
@@ -78,7 +87,17 @@ int main(int argc, const char **argv)
         std::cout << "Using overridden seed: " << val << std::endl;
     }
 
-	runClutterBoxExperiment(objectDirectory.value(), sampleSetSize.value(), boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), val);
+    // Interpret the object counts string
+    std::vector<std::string> objectCountParts;
+	splitByCharacter(&objectCountParts, objectCounts.value(), ',');
+    std::vector<int> objectCountList;
+    for (const auto &objectCountPart : objectCountParts) {
+        objectCountList.push_back(std::stoi(objectCountPart));
+    }
+
+    std::sort(objectCountList.begin(), objectCountList.end());
+
+	runClutterBoxExperiment(objectDirectory.value(), objectCountList, boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), val);
 
     return 0;
 }

@@ -84,7 +84,7 @@ void dumpResultsFile(
         std::vector<Histogram> QSIHistograms,
         std::vector<Histogram> SIHistograms,
         const std::string &sourceFileDirectory,
-        unsigned int sampleSetSize,
+        std::vector<int> objectCountList,
         float boxSize,
         float spinImageWidth,
         size_t assertionRandomToken,
@@ -97,16 +97,18 @@ void dumpResultsFile(
 
     std::default_random_engine generator{seed};
 
-    std::vector<std::string> chosenFiles = generateRandomFileList(sourceFileDirectory, sampleSetSize, generator);
+    int sampleObjectCount = *std::max_element(objectCountList.begin(), objectCountList.end());
+
+    std::vector<std::string> chosenFiles = generateRandomFileList(sourceFileDirectory, sampleObjectCount, generator);
 
     std::shuffle(std::begin(chosenFiles), std::end(chosenFiles), generator);
 
     std::uniform_real_distribution<float> distribution(0, 1);
 
-    std::vector<glm::vec3> rotations(sampleSetSize);
-    std::vector<glm::vec3> translations(sampleSetSize);
+    std::vector<glm::vec3> rotations(sampleObjectCount);
+    std::vector<glm::vec3> translations(sampleObjectCount);
 
-    for(unsigned int i = 0; i < sampleSetSize; i++) {
+    for(unsigned int i = 0; i < sampleObjectCount; i++) {
         float yaw = float(distribution(generator) * 2.0 * M_PI);
         float pitch = float((distribution(generator) - 0.5) * M_PI);
         float roll = float(distribution(generator) * 2.0 * M_PI);
@@ -121,8 +123,8 @@ void dumpResultsFile(
         std::cout << "\tRotation: (" << yaw << ", " << pitch << ", "<< roll << "), Translation: (" << distanceX << ", "<< distanceY << ", "<< distanceZ << ")" << std::endl;
     }
 
-    std::vector<HostMesh> sampleMeshes(sampleSetSize);
-    for (unsigned int i = 0; i < sampleSetSize; i++) {
+    std::vector<HostMesh> sampleMeshes(sampleObjectCount);
+    for (unsigned int i = 0; i < sampleObjectCount; i++) {
         sampleMeshes.at(i) = SpinImage::utilities::loadOBJ(chosenFiles.at(i), true);
     }
 
@@ -136,7 +138,12 @@ void dumpResultsFile(
     outFile << "{" << std::endl;
     outFile << "\t\"version\": \"v7\"," << std::endl;
     outFile << "\t\"seed\": " << seed << "," << std::endl;
-    outFile << "\t\"sampleSetSize\": " << sampleSetSize << "," << std::endl;
+    outFile << "\t\"sampleSetSize\": " << sampleObjectCount << "," << std::endl;
+    outFile << "\t\"sampleObjectCounts\": [";
+    for(int i = 0; i < objectCountList.size(); i++) {
+        outFile << objectCountList.at(i) << (i == objectCountList.size() - 1 ? "" : ", ");
+    }
+    outFile << "]," << std::endl;
     outFile << "\t\"boxSize\": " << boxSize << "," << std::endl;
     outFile << "\t\"spinImageWidth\": " << spinImageWidth << "," << std::endl;
     outFile << "\t\"spinImageWidthPixels\": " << spinImageWidthPixels << "," << std::endl;
@@ -250,30 +257,32 @@ void dumpResultsFile(
     outFile << "\t}," << std::endl;
 
     outFile << std::endl << "\t\"QSIhistograms\": [" << std::endl;
-    for(unsigned int i = 0; i < sampleSetSize; i++) {
-        outFile << QSIHistograms.at(i).toJSON(2) << ((i == sampleSetSize -1) ? "" : ", ") << std::endl;
+    for(unsigned int i = 0; i < objectCountList.size(); i++) {
+        outFile << QSIHistograms.at(i).toJSON(2) << ((i == objectCountList.size() -1) ? "" : ", ") << std::endl;
     }
     outFile << "\t]," << std::endl << "\t\"SIhistograms\": [" << std::endl;
-    for(unsigned int i = 0; i < sampleSetSize; i++) {
-        outFile << SIHistograms.at(i).toJSON(2) << ((i == sampleSetSize -1) ? "" : ", ") << std::endl;
+    for(unsigned int i = 0; i < objectCountList.size(); i++) {
+        outFile << SIHistograms.at(i).toJSON(2) << ((i == objectCountList.size() -1) ? "" : ", ") << std::endl;
     }
     outFile << "\t]" << std::endl;
     outFile << "}" << std::endl;
 
     outFile.close();
 
-    for (unsigned int i = 0; i < sampleSetSize; i++) {
+    for (unsigned int i = 0; i < sampleObjectCount; i++) {
         SpinImage::cpu::freeHostMesh(sampleMeshes.at(i));
     }
 }
 
 void dumpRawSearchResultFile(
         std::string outputFile,
+        std::vector<int> objectCountList,
         std::vector<array<unsigned int>> rawQSISearchResults,
         std::vector<array<unsigned int>> rawSISearchResults) {
     std::ofstream outFile(outputFile);
     outFile << "{" << std::endl;
     outFile << "\t\"version\": \"rawfile_v1\"," << std::endl;
+
     outFile << "}" << std::endl;
 }
 
@@ -305,7 +314,7 @@ void dumpQuasiSpinImages(std::string filename, array<quasiSpinImagePixelType> de
 
 void runClutterBoxExperiment(
         std::string objectDirectory,
-        unsigned int sampleSetSize,
+        std::vector<int> objectCountList,
         float boxSize,
         float spinImageWidth,
         float spinImageSupportAngleDegrees,
@@ -333,6 +342,9 @@ void runClutterBoxExperiment(
     std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns;
     std::vector<SpinImage::debug::QSISearchRunInfo> QSISearchRuns;
 
+    // The number of sample objects that need to be loaded depends on the largest number of objects required in the list
+    int sampleObjectCount = *std::max_element(objectCountList.begin(), objectCountList.end());
+
     // 1 Seeding the random number generator
     std::random_device rd;
     size_t randomSeed = overrideSeed != 0 ? overrideSeed : rd();
@@ -343,28 +355,28 @@ void runClutterBoxExperiment(
 
     // 2 Search SHREC directory for files
     // 3 Make a sample set of n sample objects
-    std::vector<std::string> filePaths = generateRandomFileList(objectDirectory, sampleSetSize, generator);
+    std::vector<std::string> filePaths = generateRandomFileList(objectDirectory, sampleObjectCount, generator);
 
     // 4 Load the models in the sample set
     std::cout << "\tLoading sample models.." << std::endl;
-    std::vector<HostMesh> sampleMeshes(sampleSetSize);
-    for (unsigned int i = 0; i < sampleSetSize; i++) {
+    std::vector<HostMesh> sampleMeshes(sampleObjectCount);
+    for (unsigned int i = 0; i < sampleObjectCount; i++) {
         sampleMeshes.at(i) = SpinImage::utilities::loadOBJ(filePaths.at(i), true);
         std::cout << "\t\tMesh " << i << ": " << sampleMeshes.at(i).vertexCount << " vertices" << std::endl;
     }
 
     // 5 Scale all models to fit in a 1x1x1 sphere
     std::cout << "\tScaling meshes.." << std::endl;
-    std::vector<HostMesh> scaledMeshes(sampleSetSize);
-    for (unsigned int i = 0; i < sampleSetSize; i++) {
+    std::vector<HostMesh> scaledMeshes(sampleObjectCount);
+    for (unsigned int i = 0; i < sampleObjectCount; i++) {
         scaledMeshes.at(i) = fitMeshInsideSphereOfRadius(sampleMeshes.at(i), 1);
         SpinImage::cpu::freeHostMesh(sampleMeshes.at(i));
     }
 
     // 6 Copy meshes to GPU
     std::cout << "\tCopying meshes to device.." << std::endl;
-    std::vector<DeviceMesh> scaledMeshesOnGPU(sampleSetSize);
-    for (unsigned int i = 0; i < sampleSetSize; i++) {
+    std::vector<DeviceMesh> scaledMeshesOnGPU(sampleObjectCount);
+    for (unsigned int i = 0; i < sampleObjectCount; i++) {
         scaledMeshesOnGPU.at(i) = SpinImage::copy::hostMeshToDevice(scaledMeshes.at(i));
     }
 
@@ -441,16 +453,26 @@ void runClutterBoxExperiment(
     std::vector<array<unsigned int>> rawQSISearchResults;
     std::vector<array<unsigned int>> rawSISearchResults;
 
+    int currentObjectListIndex = 0;
+
     // Generate images for increasingly more complex scenes
-    for (unsigned int i = 0; i < sampleSetSize; i++) {
-        std::cout << std::endl << "Processing mesh sample " << (i + 1) << "/" << sampleSetSize << std::endl;
+    for (int objectCount = 0; objectCount < sampleObjectCount; objectCount++) {
+        std::cout << std::endl << "Processing mesh sample " << (objectCount + 1) << "/" << sampleObjectCount << std::endl;
         // Making the generation algorithm believe the scene is smaller than it really is
         // This allows adding objects one by one, without having to copy memory all over the place
-        vertexCount += scaledMeshesOnGPU.at(i).vertexCount;
+        vertexCount += scaledMeshesOnGPU.at(objectCount).vertexCount;
         boxScene.vertexCount = vertexCount;
-        imageCount += uniqueVertexCounts.at(i);
+        imageCount += uniqueVertexCounts.at(objectCount);
         device_uniqueSpinOrigins.length = imageCount;
         std::cout << "\t\tVertex count: " << boxScene.vertexCount << ", Image count: " << imageCount << std::endl;
+
+        // If the object count is not on the list, skip it.
+        if(objectCount != objectCountList.at(currentObjectListIndex)) {
+            std::cout << "\tSample count is not on the list. Skipping." << std::endl;
+        }
+
+        // Marking the current object count as processed
+        currentObjectListIndex++;
 
         // Generating quasi spin images
         std::cout << "\tGenerating QSI images.. (" << imageCount << " images)" << std::endl;
@@ -539,7 +561,7 @@ void runClutterBoxExperiment(
             QSIHistograms,
             spinImageHistograms,
             objectDirectory,
-            sampleSetSize,
+            objectCountList,
             boxSize,
             spinImageWidth,
             generator(),
@@ -552,6 +574,7 @@ void runClutterBoxExperiment(
     if(dumpRawSearchResults) {
         dumpRawSearchResultFile(
                 outputDirectory + "raw/" + getCurrentDateTimeString() + ".json",
+                objectCountList,
                 rawQSISearchResults,
                 rawSISearchResults);
 
