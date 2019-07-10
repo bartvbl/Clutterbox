@@ -161,6 +161,7 @@ void dumpResultsFile(
     for(int i = 0; i < uniqueVertexCounts.size(); i++) {
         outFile << uniqueVertexCounts.at(i) << (i == uniqueVertexCounts.size() - 1 ? "" : ", ");
     }
+    outFile << "]," << std::endl;
     outFile << "\t\"imageCounts\": [";
     for(int i = 0; i < uniqueVertexCounts.size(); i++) {
         outFile << uniqueVertexCounts.at(i) << (i == uniqueVertexCounts.size() - 1 ? "" : ", ");
@@ -174,6 +175,7 @@ void dumpResultsFile(
     for(int i = 0; i < spinImageSampleCounts.size(); i++) {
         outFile << spinImageSampleCounts.at(i) << (i == spinImageSampleCounts.size() - 1 ? "" : ", ");
     }
+    outFile << "]," << std::endl;
     outFile << "\t\"searchResultCount\": " << SEARCH_RESULT_COUNT << "," << std::endl;
     outFile << std::endl;
     outFile << "\t\"inputFiles\": [" << std::endl;
