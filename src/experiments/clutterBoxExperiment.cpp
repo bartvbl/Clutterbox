@@ -106,6 +106,9 @@ void dumpResultsFile(
 
     std::shuffle(std::begin(chosenFiles), std::end(chosenFiles), generator);
 
+    // This represents an random number generation for the spin image seed selection
+    generator();
+
     std::uniform_real_distribution<float> distribution(0, 1);
 
     std::vector<glm::vec3> rotations(sampleObjectCount);
@@ -129,6 +132,11 @@ void dumpResultsFile(
     std::vector<HostMesh> sampleMeshes(sampleObjectCount);
     for (unsigned int i = 0; i < sampleObjectCount; i++) {
         sampleMeshes.at(i) = SpinImage::utilities::loadOBJ(chosenFiles.at(i), true);
+    }
+
+    // This represents random number generations for the spin image seed selections during the experiment
+    for(int i = 0; i < objectCountList.size(); i++) {
+        generator();
     }
 
     size_t finalCheckToken = generator();
@@ -416,6 +424,7 @@ void runClutterBoxExperiment(
                                                                                      spinImageWidth,
                                                                                      spinImageSampleCount,
                                                                                      spinImageSupportAngleDegrees,
+                                                                                     generator(),
                                                                                      &siReferenceRunInfo);
 
     checkCudaErrors(cudaFree(spinOrigins_reference.content));
@@ -521,6 +530,7 @@ void runClutterBoxExperiment(
                 spinImageWidth,
                 spinImageSampleCount,
                 spinImageSupportAngleDegrees,
+                generator(),
                 &siSampleRunInfo);
         SIRuns.push_back(siSampleRunInfo);
         std::cout << "\t\tTimings: (total " << siSampleRunInfo.totalExecutionTimeSeconds
