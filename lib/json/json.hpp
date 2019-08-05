@@ -13823,17 +13823,24 @@ class serializer
                     }
 
                     // first n-1 elements
+                    size_t index = 0;
                     for (auto i = val.m_value.array->cbegin();
                             i != val.m_value.array->cend() - 1; ++i)
                     {
-                        o->write_characters(indent_string.c_str(), new_indent);
+                        if(index % 10 == 0) {
+                            o->write_characters(indent_string.c_str(), new_indent);
+                        }
                         dump(*i, true, ensure_ascii, indent_step, new_indent);
-                        o->write_characters(",\n", 2);
+                        o->write_characters(", ", 2);
+                        index++;
+                        if(index % 10 == 0) {
+                            o->write_characters("\n", 1);
+                        }
+
                     }
 
                     // last element
                     assert(not val.m_value.array->empty());
-                    o->write_characters(indent_string.c_str(), new_indent);
                     dump(val.m_value.array->back(), true, ensure_ascii, indent_step, new_indent);
 
                     o->write_character('\n');
