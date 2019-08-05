@@ -67,3 +67,7 @@ std::string Histogram::toJSON(int indentLevel) {
 
     return ss.str();
 }
+
+std::map<unsigned int, size_t> Histogram::getMap() {
+    return contents;
+}

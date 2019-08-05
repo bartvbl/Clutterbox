@@ -30,6 +30,9 @@
 #include <sstream>
 #include <algorithm>
 #include <cuda_runtime_api.h>
+#include <json.hpp>
+
+using json = nlohmann::json;
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
@@ -147,154 +150,113 @@ void dumpResultsFile(
         std::cerr << "Expected: " << finalCheckToken << ", got: " << assertionRandomToken << std::endl;
     }
 
+    json outJson;
+
+    outJson["version"] = "v8";
+    outJson["seed"] = seed;
+    outJson["sampleSetSize"] = sampleObjectCount;
+    outJson["sampleObjectCounts"] = objectCountList;
+    outJson["uniqueVertexCounts"] = uniqueVertexCounts;
+    outJson["imageCounts"] = uniqueVertexCounts;
+    outJson["boxSize"] = boxSize;
+    outJson["spinImageWidth"] = spinImageWidth;
+    outJson["spinImageWidthPixels"] = spinImageWidthPixels;
+    outJson["spinImageSupportAngle"] = spinImageSupportAngleDegrees;
+    outJson["spinImageSampleCounts"] = spinImageSampleCounts;
+    outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
+    outJson["inputFiles"] = chosenFiles;
+    outJson["vertexCounts"] = {};
+    for (auto &sampleMesh : sampleMeshes) {
+        outJson["vertexCounts"].push_back(sampleMesh.vertexCount);
+    }
+    outJson["rotations"] = {};
+    for (auto &rotation : rotations) {
+        outJson["rotations"].push_back({rotation.x, rotation.y, rotation.z});
+    }
+    outJson["translations"] = {};
+    for (auto &translation : translations) {
+        outJson["translations"].push_back({translation.x, translation.y, translation.z});
+    }
+
+    outJson["runtimes"]["QSIReferenceGeneration"]["total"] = QSIRuns.at(0).totalExecutionTimeSeconds;
+    outJson["runtimes"]["QSIReferenceGeneration"]["meshScale"] = QSIRuns.at(0).meshScaleTimeSeconds;
+    outJson["runtimes"]["QSIReferenceGeneration"]["redistribution"] = QSIRuns.at(0).redistributionTimeSeconds;
+    outJson["runtimes"]["QSIReferenceGeneration"]["generation"] = QSIRuns.at(0).generationTimeSeconds;
+
+    outJson["runtimes"]["SIReferenceGeneration"]["total"] = SIRuns.at(0).totalExecutionTimeSeconds;
+    outJson["runtimes"]["SIReferenceGeneration"]["initialisation"] = SIRuns.at(0).initialisationTimeSeconds;
+    outJson["runtimes"]["SIReferenceGeneration"]["sampling"] = SIRuns.at(0).meshSamplingTimeSeconds;
+    outJson["runtimes"]["SIReferenceGeneration"]["generation"] = SIRuns.at(0).generationTimeSeconds;
+
+    outJson["runtimes"]["QSISampleGeneration"]["total"] = {};
+    outJson["runtimes"]["QSISampleGeneration"]["meshScale"] = {};
+    outJson["runtimes"]["QSISampleGeneration"]["redistribution"] = {};
+    outJson["runtimes"]["QSISampleGeneration"]["generation"] = {};
+    for(unsigned int i = 1; i < QSIRuns.size(); i++) {
+        outJson["runtimes"]["QSISampleGeneration"]["total"].push_back(QSIRuns.at(i).totalExecutionTimeSeconds);
+        outJson["runtimes"]["QSISampleGeneration"]["meshScale"].push_back(QSIRuns.at(i).meshScaleTimeSeconds);
+        outJson["runtimes"]["QSISampleGeneration"]["redistribution"].push_back(QSIRuns.at(i).redistributionTimeSeconds);
+        outJson["runtimes"]["QSISampleGeneration"]["generation"].push_back(QSIRuns.at(i).generationTimeSeconds);
+    }
+
+    outJson["runtimes"]["SISampleGeneration"]["total"] = {};
+    outJson["runtimes"]["SISampleGeneration"]["initialisation"] = {};
+    outJson["runtimes"]["SISampleGeneration"]["sampling"] = {};
+    outJson["runtimes"]["SISampleGeneration"]["generation"] = {};
+    for(unsigned int i = 1; i < SIRuns.size(); i++) {
+        outJson["runtimes"]["SISampleGeneration"]["total"].push_back(SIRuns.at(i).totalExecutionTimeSeconds);
+        outJson["runtimes"]["SISampleGeneration"]["initialisation"].push_back(SIRuns.at(i).initialisationTimeSeconds);
+        outJson["runtimes"]["SISampleGeneration"]["sampling"].push_back(SIRuns.at(i).meshSamplingTimeSeconds);
+        outJson["runtimes"]["SISampleGeneration"]["generation"].push_back(SIRuns.at(i).generationTimeSeconds);
+    }
+
+    outJson["runtimes"]["QSISearch"]["total"] = {};
+    outJson["runtimes"]["QSISearch"]["search"] = {};
+    for (auto &QSISearchRun : QSISearchRuns) {
+        outJson["runtimes"]["QSISearch"]["total"].push_back(QSISearchRun.totalExecutionTimeSeconds);
+        outJson["runtimes"]["QSISearch"]["search"].push_back(QSISearchRun.searchExecutionTimeSeconds);
+    }
+
+    outJson["runtimes"]["SISearch"]["total"] = {};
+    outJson["runtimes"]["SISearch"]["averaging"] = {};
+    outJson["runtimes"]["SISearch"]["search"] = {};
+    for (auto &SISearchRun : SISearchRuns) {
+        outJson["runtimes"]["SISearch"]["total"].push_back(SISearchRun.totalExecutionTimeSeconds);
+        outJson["runtimes"]["SISearch"]["averaging"].push_back(SISearchRun.averagingExecutionTimeSeconds);
+        outJson["runtimes"]["SISearch"]["search"].push_back(SISearchRun.searchExecutionTimeSeconds);
+    }
+
+
+
+    outJson["QSIhistograms"] = {};
+    for(unsigned int i = 0; i < objectCountList.size(); i++) {
+        std::map<unsigned int, size_t> qsiMap = QSIHistograms.at(i).getMap();
+        std::vector<unsigned int> keys;
+        for (auto &content : qsiMap) {
+            keys.push_back(content.first);
+        }
+        std::sort(keys.begin(), keys.end());
+
+        for(auto &key : keys) {
+            outJson["QSIhistograms"][std::to_string(i)][std::to_string(key)] = qsiMap[key];
+        }
+    }
+    outJson["SIhistograms"] = {};
+    for(unsigned int i = 0; i < objectCountList.size(); i++) {
+        std::map<unsigned int, size_t> siMap = SIHistograms.at(i).getMap();
+        std::vector<unsigned int> keys;
+        for (auto &content : siMap) {
+            keys.push_back(content.first);
+        }
+        std::sort(keys.begin(), keys.end());
+
+        for(auto &key : keys) {
+            outJson["SIhistograms"][std::to_string(i)][std::to_string(key)] = siMap[key];
+        }
+    }
+
     std::ofstream outFile(outputFile);
-    outFile << "{" << std::endl;
-    outFile << "\t\"version\": \"v7\"," << std::endl;
-    outFile << "\t\"seed\": " << seed << "," << std::endl;
-    outFile << "\t\"sampleSetSize\": " << sampleObjectCount << "," << std::endl;
-    outFile << "\t\"sampleObjectCounts\": [";
-    for(int i = 0; i < objectCountList.size(); i++) {
-        outFile << objectCountList.at(i) << (i == objectCountList.size() - 1 ? "" : ", ");
-    }
-    outFile << "]," << std::endl;
-    outFile << "\t\"uniqueVertexCounts\": [";
-    for(int i = 0; i < uniqueVertexCounts.size(); i++) {
-        outFile << uniqueVertexCounts.at(i) << (i == uniqueVertexCounts.size() - 1 ? "" : ", ");
-    }
-    outFile << "]," << std::endl;
-    outFile << "\t\"imageCounts\": [";
-    for(int i = 0; i < uniqueVertexCounts.size(); i++) {
-        outFile << uniqueVertexCounts.at(i) << (i == uniqueVertexCounts.size() - 1 ? "" : ", ");
-    }
-    outFile << "]," << std::endl;
-    outFile << "\t\"boxSize\": " << boxSize << "," << std::endl;
-    outFile << "\t\"spinImageWidth\": " << spinImageWidth << "," << std::endl;
-    outFile << "\t\"spinImageWidthPixels\": " << spinImageWidthPixels << "," << std::endl;
-    outFile << "\t\"spinImageSupportAngle\": " << spinImageSupportAngleDegrees << "," << std::endl;
-    outFile << "\t\"spinImageSampleCounts\": [";
-    for(int i = 0; i < spinImageSampleCounts.size(); i++) {
-        outFile << spinImageSampleCounts.at(i) << (i == spinImageSampleCounts.size() - 1 ? "" : ", ");
-    }
-    outFile << "]," << std::endl;
-    outFile << "\t\"searchResultCount\": " << SEARCH_RESULT_COUNT << "," << std::endl;
-    outFile << std::endl;
-    outFile << "\t\"inputFiles\": [" << std::endl;
-    for(unsigned int i = 0; i < chosenFiles.size(); i++) {
-        outFile << "\t\t\"" << chosenFiles.at(i) << "\"" << ((i == chosenFiles.size() -1) ? "" : ", ") << std::endl;
-    }
-    outFile << "\t]," << std::endl << std::endl;
-    outFile << "\t\"vertexCounts\": [";
-    for(unsigned int i = 0; i < sampleMeshes.size(); i++) {
-        outFile << sampleMeshes.at(i).vertexCount << ((i == sampleMeshes.size() -1) ? "" : ", ");
-    }
-    outFile << "]," << std::endl << std::endl;
-    outFile << "\t\"rotations\": [" << std::endl;
-    for(unsigned int i = 0; i < rotations.size(); i++) {
-        outFile << "\t\t[" << rotations.at(i).x << ", " << rotations.at(i).y << ", " << rotations.at(i).z << "]" << ((i == rotations.size() -1) ? "" : ",") << std::endl;
-    }
-    outFile << "\t]," << std::endl << std::endl;
-    outFile << "\t\"translations\": [" << std::endl;
-    for(unsigned int i = 0; i < translations.size(); i++) {
-        outFile << "\t\t[" << translations.at(i).x << ", " << translations.at(i).y << ", " << translations.at(i).z << "]" << ((i == translations.size() -1) ? "" : ",") << std::endl;
-    }
-    outFile << "\t]," << std::endl << std::endl;
-    outFile << "\t\"runtimes\": {" << std::endl;
-
-    outFile << "\t\t\"QSIReferenceGeneration\": {" << std::endl;
-    outFile << "\t\t\t\"total\": " << QSIRuns.at(0).totalExecutionTimeSeconds << ", " << std::endl;
-    outFile << "\t\t\t\"meshScale\": " << QSIRuns.at(0).meshScaleTimeSeconds << ", " << std::endl;
-    outFile << "\t\t\t\"redistribution\": " << QSIRuns.at(0).redistributionTimeSeconds << ", " << std::endl;
-    outFile << "\t\t\t\"generation\": " << QSIRuns.at(0).generationTimeSeconds << std::endl;
-    outFile << "\t\t}," << std::endl << std::endl;
-
-    outFile << "\t\t\"SIReferenceGeneration\": {" << std::endl;
-    outFile << "\t\t\t\"total\": " << SIRuns.at(0).totalExecutionTimeSeconds << ", " << std::endl;
-    outFile << "\t\t\t\"initialisation\": " << SIRuns.at(0).initialisationTimeSeconds<< ", " << std::endl;
-    outFile << "\t\t\t\"sampling\": " << SIRuns.at(0).meshSamplingTimeSeconds << ", " << std::endl;
-    outFile << "\t\t\t\"generation\": " << SIRuns.at(0).generationTimeSeconds << std::endl;
-    outFile << "\t\t}," << std::endl << std::endl;
-
-    outFile << "\t\t\"QSISampleGeneration\": {" << std::endl;
-    outFile << "\t\t\t\"total\": [";
-    for(unsigned int i = 1; i < QSIRuns.size(); i++) {
-        outFile << QSIRuns.at(i).totalExecutionTimeSeconds << ((i == QSIRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]," << std::endl << "\t\t\t\"meshScale\": [";
-    for(unsigned int i = 1; i < QSIRuns.size(); i++) {
-        outFile << QSIRuns.at(i).meshScaleTimeSeconds << ((i == QSIRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]," << std::endl << "\t\t\t\"redistribution\": [";
-    for(unsigned int i = 1; i < QSIRuns.size(); i++) {
-        outFile << QSIRuns.at(i).redistributionTimeSeconds << ((i == QSIRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]," << std::endl << "\t\t\t\"generation\": [";
-    for(unsigned int i = 1; i < QSIRuns.size(); i++) {
-        outFile << QSIRuns.at(i).generationTimeSeconds << ((i == QSIRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]" << std::endl;
-    outFile << "\t\t}," << std::endl << std::endl;
-
-    outFile << "\t\t\"SISampleGeneration\": {" << std::endl;
-    outFile << "\t\t\t\"total\": [";
-    for(unsigned int i = 1; i < SIRuns.size(); i++) {
-        outFile << SIRuns.at(i).totalExecutionTimeSeconds << ((i == SIRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]," << std::endl << "\t\t\t\"initialisation\": [";
-    for(unsigned int i = 1; i < SIRuns.size(); i++) {
-        outFile << SIRuns.at(i).initialisationTimeSeconds << ((i == SIRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]," << std::endl << "\t\t\t\"sampling\": [";
-    for(unsigned int i = 1; i < SIRuns.size(); i++) {
-        outFile << SIRuns.at(i).meshSamplingTimeSeconds << ((i == SIRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]," << std::endl << "\t\t\t\"generation\": [";
-    for(unsigned int i = 1; i < SIRuns.size(); i++) {
-        outFile << SIRuns.at(i).generationTimeSeconds << ((i == SIRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]" << std::endl;
-    outFile << "\t\t}," << std::endl << std::endl;
-
-    outFile << "\t\t\"QSISearch\": {" << std::endl;
-    outFile << "\t\t\t\"total\": [";
-    for(unsigned int i = 0; i < QSISearchRuns.size(); i++) {
-        outFile << QSISearchRuns.at(i).totalExecutionTimeSeconds << ((i == QSISearchRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]," << std::endl << "\t\t\t\"search\": [";
-    for(unsigned int i = 0; i < QSISearchRuns.size(); i++) {
-        outFile << QSISearchRuns.at(i).searchExecutionTimeSeconds << ((i == QSISearchRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]" << std::endl;
-    outFile << "\t\t}," << std::endl << std::endl;
-
-    outFile << "\t\t\"SISearch\": {" << std::endl;
-    outFile << "\t\t\t\"total\": [";
-    for(unsigned int i = 0; i < SISearchRuns.size(); i++) {
-        outFile << SISearchRuns.at(i).totalExecutionTimeSeconds << ((i == SISearchRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]," << std::endl << "\t\t\t\"averaging\": [";
-    for(unsigned int i = 0; i < SISearchRuns.size(); i++) {
-        outFile << SISearchRuns.at(i).averagingExecutionTimeSeconds << ((i == SISearchRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]," << std::endl << "\t\t\t\"search\": [";
-    for(unsigned int i = 0; i < SISearchRuns.size(); i++) {
-        outFile << SISearchRuns.at(i).searchExecutionTimeSeconds << ((i == SISearchRuns.size() -1) ? "" : ", ");
-    }
-    outFile << "]" << std::endl;
-    outFile << "\t\t}" << std::endl;
-
-    outFile << "\t}," << std::endl;
-
-    outFile << std::endl << "\t\"QSIhistograms\": [" << std::endl;
-    for(unsigned int i = 0; i < objectCountList.size(); i++) {
-        outFile << QSIHistograms.at(i).toJSON(2) << ((i == objectCountList.size() -1) ? "" : ", ") << std::endl;
-    }
-    outFile << "\t]," << std::endl << "\t\"SIhistograms\": [" << std::endl;
-    for(unsigned int i = 0; i < objectCountList.size(); i++) {
-        outFile << SIHistograms.at(i).toJSON(2) << ((i == objectCountList.size() -1) ? "" : ", ") << std::endl;
-    }
-    outFile << "\t]" << std::endl;
-    outFile << "}" << std::endl;
-
+    outFile << outJson.dump(4);
     outFile.close();
 
     for (unsigned int i = 0; i < sampleObjectCount; i++) {
@@ -307,45 +269,34 @@ void dumpRawSearchResultFile(
         std::vector<int> objectCountList,
         std::vector<array<unsigned int>> rawQSISearchResults,
         std::vector<array<unsigned int>> rawSISearchResults) {
-    std::ofstream outFile(outputFile);
-    outFile << "{" << std::endl;
-    outFile << "\t\"version\": \"rawfile_v1\"," << std::endl;
-    outFile << "\t\"sampleObjectCounts\": [";
-    for(int i = 0; i < objectCountList.size(); i++) {
-        outFile << objectCountList.at(i) << (i == objectCountList.size() - 1 ? "" : ", ");
-    }
-    outFile << "]," << std::endl;
+
+    json outJson;
+
+    outJson["version"] = "rawfile_v2";
+    outJson["sampleObjectCounts"] = objectCountList;
 
     // QSI block
-    outFile << std::endl << "\t\"QSI\": {" << std::endl;
+    outJson["QSI"] = {};
     for(int i = 0; i < rawQSISearchResults.size(); i++) {
-        outFile << "\t\t\"" << objectCountList.at(i) << "\": [";
+        std::string indexString = std::to_string(objectCountList.at(i));
+        outJson["QSI"][indexString] = {};
         for(int j = 0; j < rawQSISearchResults.at(i).length; j++) {
-            if(j + 1 != rawQSISearchResults.at(i).length && j % 10 == 0) {
-                outFile << std::endl << "\t\t\t";
-            }
-            outFile << rawQSISearchResults.at(i).content[j] << (j + 1 != rawQSISearchResults.at(i).length ? ", " : "");
+            outJson["QSI"][indexString].push_back(rawQSISearchResults.at(i).content[j]);
         }
-        outFile << "]" << (i == rawQSISearchResults.size() - 1 ? "" : ",") << std::endl;
     }
-    outFile << "\t}," << std::endl;
 
     // SI block
-    outFile << std::endl << std::endl << "\t\"SI\": {" << std::endl;
+    outJson["SI"] = {};
     for(int i = 0; i < rawSISearchResults.size(); i++) {
-        outFile << "\t\t\"" << objectCountList.at(i) << "\": [";
+        std::string indexString = std::to_string(objectCountList.at(i));
+        outJson["SI"][indexString] = {};
         for(int j = 0; j < rawSISearchResults.at(i).length; j++) {
-            if(j + 1 != rawSISearchResults.at(i).length && j % 10 == 0) {
-                outFile << std::endl << "\t\t\t";
-            }
-            outFile << rawSISearchResults.at(i).content[j] << (j + 1 != rawSISearchResults.at(i).length ? ", " : "");
+            outJson["SI"][indexString].push_back(rawSISearchResults.at(i).content[j]);
         }
-        outFile << "]" << (i == rawSISearchResults.size() - 1 ? "" : ",") << std::endl;
     }
-    outFile << "\t}" << std::endl;
 
-    outFile << "}" << std::endl;
-
+    std::ofstream outFile(outputFile);
+    outFile << outJson.dump(4);
     outFile.close();
 }
 

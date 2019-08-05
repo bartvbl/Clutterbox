@@ -55,6 +55,7 @@ include_directories (
   src/
   ../libShapeSearch/src
   lib/glm
+  lib/json
   lib/arrrgh
   ${CUDA_INCLUDE_DIRS}
 )
@@ -74,6 +75,7 @@ file (GLOB         PROJECT_CONFIGS CMakeLists.txt
                                    README.rst
                                   .gitignore
                                   .gitmodules)
+file (GLOB_RECURSE CLUTTER_ESTIMATOR_SOURCES    tools/clutterEstimator/*.cpp)
 
 #
 # Organizing files
@@ -90,3 +92,6 @@ add_executable (${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
 
 
 target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart SpinImage cudadevrt)
+
+add_executable(clutterEstimator ${CLUTTER_ESTIMATOR_SOURCES})
+target_link_libraries(clutterEstimator SpinImage cudadevrt)
