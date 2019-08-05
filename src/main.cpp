@@ -1,4 +1,4 @@
-#include "arrrgh.hpp"
+#include <arrrgh.hpp>
 #include "cuda.h"
 #include "cuda_runtime.h"
 #include "nvidia/helper_cuda.h"

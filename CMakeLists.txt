@@ -55,6 +55,7 @@ include_directories (
   src/
   ../libShapeSearch/src
   lib/glm
+  lib/arrrgh
   ${CUDA_INCLUDE_DIRS}
 )
 
