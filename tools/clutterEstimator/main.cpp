@@ -11,6 +11,8 @@
 #include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/gpu/types/DeviceOrientedPoint.h>
 #include <experiments/clutterBox/clutterBoxUtilities.h>
+#include <spinImage/gpu/types/GPUPointCloud.h>
+#include <spinImage/utilities/meshSampler.cuh>
 
 using json = nlohmann::json;
 
@@ -150,7 +152,10 @@ int main(int argc, const char** argv) {
         checkCudaErrors(cudaFree(device_indexMapping.content));
         size_t imageCount = 0;
 
+        std::cout << "\tSampling scene.." << std::endl;
+        SpinImage::GPUPointCloud sampledScene = SpinImage::utilities::sampleMesh(boxScene, 1000 * boxScene.vertexCount, generator());
 
+        sampledScene.free();
         SpinImage::gpu::freeDeviceMesh(boxScene);
 
         for(DeviceMesh deviceMesh : scaledMeshesOnGPU) {
