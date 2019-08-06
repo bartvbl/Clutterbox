@@ -608,6 +608,10 @@ void runClutterBoxExperiment(
         }
     }
 
+    for(DeviceMesh deviceMesh : scaledMeshesOnGPU) {
+        SpinImage::gpu::freeDeviceMesh(deviceMesh);
+    }
+
     std::cout << std::endl << "Complete." << std::endl;
 }
 
