@@ -76,6 +76,9 @@ file (GLOB         PROJECT_CONFIGS CMakeLists.txt
                                   .gitignore
                                   .gitmodules)
 file (GLOB_RECURSE CLUTTER_ESTIMATOR_SOURCES    tools/clutterEstimator/*.cpp)
+file (GLOB_RECURSE CLUTTER_EXPERIMENT_SOURCES   src/experiments/*.cpp
+                                                src/experiments/*.cu
+                                                src/utilities/*.cpp)
 
 #
 # Organizing files
@@ -93,5 +96,5 @@ add_executable (${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
 
 target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart SpinImage cudadevrt)
 
-add_executable(clutterEstimator ${CLUTTER_ESTIMATOR_SOURCES})
-target_link_libraries(clutterEstimator SpinImage cudadevrt)
+add_executable(clutterEstimator ${CLUTTER_ESTIMATOR_SOURCES} ${CLUTTER_EXPERIMENT_SOURCES})
+target_link_libraries(clutterEstimator ${CUDA_LIBRARY} cuda cudart SpinImage cudadevrt)

@@ -11,14 +11,14 @@
 #include <utilities/Histogram.h>
 
 #include <spinImage/cpu/types/HostMesh.h>
-#include <spinImage/utilities/OBJLoader.h>
 #include <spinImage/cpu/MSIGenerator.h>
 #include <spinImage/gpu/types/DeviceMesh.h>
-#include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/gpu/quasiSpinImageGenerator.cuh>
 #include <spinImage/gpu/quasiSpinImageSearcher.cuh>
 #include <spinImage/gpu/spinImageGenerator.cuh>
 #include <spinImage/gpu/spinImageSearcher.cuh>
+#include <spinImage/utilities/OBJLoader.h>
+#include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/utilities/copy/deviceDescriptorsToHost.h>
 #include <spinImage/utilities/dumpers/spinImageDumper.h>
 #include <spinImage/utilities/dumpers/searchResultDumper.h>
