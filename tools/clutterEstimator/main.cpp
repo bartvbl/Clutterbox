@@ -152,10 +152,14 @@ int main(int argc, const char** argv) {
         checkCudaErrors(cudaFree(device_indexMapping.content));
         size_t imageCount = 0;
 
-        std::cout << "\tSampling scene.." << std::endl;
-        SpinImage::GPUPointCloud sampledScene = SpinImage::utilities::sampleMesh(boxScene, 1000 * boxScene.vertexCount, generator());
+        size_t sampleCount = 100 * boxScene.vertexCount;
+        std::cout << "\tSampling scene.. (" << sampleCount << " samples)" << std::endl;
+        SpinImage::GPUPointCloud sampledScene = SpinImage::utilities::sampleMesh(boxScene, sampleCount, generator());
+
+
 
         sampledScene.free();
+        cudaFree(device_uniqueSpinOrigins.content);
         SpinImage::gpu::freeDeviceMesh(boxScene);
 
         for(DeviceMesh deviceMesh : scaledMeshesOnGPU) {
