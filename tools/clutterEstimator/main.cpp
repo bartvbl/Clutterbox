@@ -166,7 +166,7 @@ int main(int argc, const char** argv) {
         std::cout << "\tComputing clutter values.." << std::endl;
         float spinImageWidth = resultFileContents["spinImageWidth"];
 
-        array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth);
+        array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth, 0);
 
         sampledScene.free();
         cudaFree(device_uniqueSpinOrigins.content);

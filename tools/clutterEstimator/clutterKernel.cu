@@ -1,26 +1,92 @@
 #include "clutterKernel.cuh"
-#include "../../../libShapeSearch/lib/nvidia-samples-common/nvidia/helper_cuda.h"
 #include <nvidia/helper_cuda.h>
+#include <nvidia/helper_math.h>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
-__global__ void computeClutterKernel(array<DeviceOrientedPoint> origins, SpinImage::GPUPointCloud samplePointCloud, float spinImageWidth, array<float> clutterValues, size_t referenceObjectSampleCount) {
+#define MAX_EQUIVALENCE_ROUNDING_ERROR 0.0001
 
-    __shared__ size_t hitObjectSampleCount;
-    __shared__ size_t hitClutterSampleCount;
+__device__ __inline__ float3 transformCoordinate(const float3 &vertex, const float3 &spinImageVertex, const float3 &spinImageNormal)
+{
+    const float2 sineCosineAlpha = normalize(make_float2(spinImageNormal.x, spinImageNormal.y));
+
+    const bool is_n_a_not_zero = !((abs(spinImageNormal.x) < MAX_EQUIVALENCE_ROUNDING_ERROR) && (abs(spinImageNormal.y) < MAX_EQUIVALENCE_ROUNDING_ERROR));
+
+    const float alignmentProjection_n_ax = is_n_a_not_zero ? sineCosineAlpha.x : 1;
+    const float alignmentProjection_n_ay = is_n_a_not_zero ? sineCosineAlpha.y : 0;
+
+    float3 transformedCoordinate = vertex - spinImageVertex;
+
+    const float initialTransformedX = transformedCoordinate.x;
+    transformedCoordinate.x = alignmentProjection_n_ax * transformedCoordinate.x + alignmentProjection_n_ay * transformedCoordinate.y;
+    transformedCoordinate.y = -alignmentProjection_n_ay * initialTransformedX + alignmentProjection_n_ax * transformedCoordinate.y;
+
+    const float transformedNormalX = alignmentProjection_n_ax * spinImageNormal.x + alignmentProjection_n_ay * spinImageNormal.y;
+
+    const float2 sineCosineBeta = normalize(make_float2(transformedNormalX, spinImageNormal.z));
+
+    const bool is_n_b_not_zero = !((abs(transformedNormalX) < MAX_EQUIVALENCE_ROUNDING_ERROR) && (abs(spinImageNormal.z) < MAX_EQUIVALENCE_ROUNDING_ERROR));
+
+    const float alignmentProjection_n_bx = is_n_b_not_zero ? sineCosineBeta.x : 1;
+    const float alignmentProjection_n_bz = is_n_b_not_zero ? sineCosineBeta.y : 0; // discrepancy between axis here is because we are using a 2D vector on 3D axis.
+
+    // Order matters here
+    const float initialTransformedX_2 = transformedCoordinate.x;
+    transformedCoordinate.x = alignmentProjection_n_bz * transformedCoordinate.x - alignmentProjection_n_bx * transformedCoordinate.z;
+    transformedCoordinate.z = alignmentProjection_n_bx * initialTransformedX_2 + alignmentProjection_n_bz * transformedCoordinate.z;
+
+    return transformedCoordinate;
+}
+
+__global__ void computeClutterKernel(
+        array<DeviceOrientedPoint> origins,
+        SpinImage::GPUPointCloud samplePointCloud,
+        array<float> clutterValues,
+        float spinImageWidth,
+        size_t referenceObjectSampleCount) {
+
+    __shared__ unsigned long long int hitObjectSampleCount;
+    __shared__ unsigned long long int hitClutterSampleCount;
 
     const size_t pointCloudSampleCount = samplePointCloud.vertices.length;
 
     if(threadIdx.x == 0) {
-        hitSampleCount = 0;
-        missSampleCount = 0;
+        hitObjectSampleCount = 0;
+        hitClutterSampleCount = 0;
+    }
+
+    unsigned long long int threadObjectSampleCount = 0;
+    unsigned long long int threadClutterSampleCount = 0;
+
+    __syncthreads();
+
+    const DeviceOrientedPoint origin = origins.content[blockIdx.x];
+    const float3 spinVertex = origin.vertex;
+    const float3 spinNormal = origin.normal;
+
+    for(size_t sampleIndex = threadIdx.x; sampleIndex < pointCloudSampleCount; sampleIndex += blockDim.x) {
+        const float3 samplePoint = samplePointCloud.vertices.at(sampleIndex);
+
+        const float3 projectedSampleLocation = transformCoordinate(samplePoint, spinVertex, spinNormal);
+
+        const float alpha = length(make_float2(projectedSampleLocation.x, projectedSampleLocation.y));
+        const float beta = projectedSampleLocation.z;
+
+        // if projected point lies inside spin image
+        if(alpha <= spinImageWidth && abs(beta) <= (spinImageWidth / 2.0f)) {
+            if(sampleIndex >= referenceObjectSampleCount) {
+                threadClutterSampleCount++;
+            } else {
+                threadObjectSampleCount++;
+            }
+        }
     }
 
     __syncthreads();
 
-    for(size_t sampleIndex = threadIdx.x; sampleIndex < pointCloudSampleCount; sampleIndex += blockDim.x) {
-
-    }
+    // Safely add up all tallies
+    atomicAdd(&hitObjectSampleCount, threadObjectSampleCount);
+    atomicAdd(&hitClutterSampleCount, threadClutterSampleCount);
 
     __syncthreads();
 
@@ -39,7 +105,7 @@ array<float> computeClutter(array<DeviceOrientedPoint> origins, SpinImage::GPUPo
 
     cudaMemset(device_clutterValues.content, 0, clutterBufferSize);
 
-    computeClutterKernel<<<origins.length, 256>>>(origins, samplePointCloud, device_clutterValues);
+    computeClutterKernel<<<origins.length, 256>>>(origins, samplePointCloud, device_clutterValues, spinImageWidth, referenceObjectSampleCount);
     checkCudaErrors(cudaDeviceSynchronize());
 
     array<float> host_clutterValues;
