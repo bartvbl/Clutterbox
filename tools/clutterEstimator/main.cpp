@@ -19,6 +19,7 @@ using json = nlohmann::json;
 #include "experimentUtilities/listDir.h"
 #include "experiments/clutterBox/clutterBoxKernels.cuh"
 #include "utilities/modelScaler.h"
+#include "clutterKernel.cuh"
 #include "../../../libShapeSearch/lib/nvidia-samples-common/nvidia/helper_cuda.h"
 
 void stringSplit(std::vector<std::string>* parts, const std::string &s, char delim) {
@@ -75,6 +76,12 @@ int main(int argc, const char** argv) {
     std::vector<std::string> resultFileList = listDir(resultDir.value());
     std::cout << " (found " << resultFileList.size() << " files)" << std::endl;
     std::cout << std::endl;
+
+    std::cout << "Listing raw result directory..";
+    std::vector<std::string> rawResultFileList = listDir(resultDir.value() + "/raw");
+    std::cout << " (found " << rawResultFileList.size() << " files)" << std::endl;
+    std::cout << std::endl;
+
 
     std::vector<std::string> parts;
 
@@ -152,11 +159,14 @@ int main(int argc, const char** argv) {
         checkCudaErrors(cudaFree(device_indexMapping.content));
         size_t imageCount = 0;
 
-        size_t sampleCount = 100 * boxScene.vertexCount;
+        size_t sampleCount = std::max(100 * boxScene.vertexCount, (size_t) 1000000);
         std::cout << "\tSampling scene.. (" << sampleCount << " samples)" << std::endl;
         SpinImage::GPUPointCloud sampledScene = SpinImage::utilities::sampleMesh(boxScene, sampleCount, generator());
 
+        std::cout << "\tComputing clutter values.." << std::endl;
+        float spinImageWidth = resultFileContents["spinImageWidth"];
 
+        array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth);
 
         sampledScene.free();
         cudaFree(device_uniqueSpinOrigins.content);

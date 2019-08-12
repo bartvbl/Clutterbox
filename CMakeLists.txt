@@ -54,6 +54,7 @@ add_subdirectory(../libShapeSearch ${CMAKE_CURRENT_BINARY_DIR}/libSpinImage)
 include_directories (
   src/
   ../libShapeSearch/src
+  tools/clutterEstimator
   lib/glm
   lib/json
   lib/arrrgh
@@ -75,7 +76,9 @@ file (GLOB         PROJECT_CONFIGS CMakeLists.txt
                                    README.rst
                                   .gitignore
                                   .gitmodules)
-file (GLOB_RECURSE CLUTTER_ESTIMATOR_SOURCES    tools/clutterEstimator/*.cpp)
+file (GLOB_RECURSE CLUTTER_ESTIMATOR_SOURCES    tools/clutterEstimator/*.cpp
+                                                tools/clutterEstimator/*.cu
+                                                tools/clutterEstimator/*.cuh)
 file (GLOB_RECURSE CLUTTER_EXPERIMENT_SOURCES   src/experiments/*.cpp
                                                 src/experiments/*.cu
                                                 src/utilities/*.cpp)
