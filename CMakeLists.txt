@@ -15,22 +15,30 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set (CMAKE_VERBOSE_MAKEFILE 0) # 1 should be used for debugging
 set (CMAKE_SUPPRESS_REGENERATION TRUE) # Suppresses ZERO_CHECK
 
+# Eigen
+
+find_package (Eigen3 3.3.4 REQUIRED NO_MODULE)
+
+# PCL
+
+find_package(PCL 1.8.1 REQUIRED COMPONENTS common io)
+
 # Compiler Flags
 
 if(MSVC)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -frounding-math") #  -g -pg -pg -no-pie
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -frounding-math") #  -g -pg -pg -no-pie
 endif()
 
 # OpenMP
 
 IF(USE_OpenMP)
-  FIND_PACKAGE(OpenMP)
-  IF(OPENMP_FOUND)
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  ENDIF()
+    FIND_PACKAGE(OpenMP)
+    IF(OPENMP_FOUND)
+        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    ENDIF()
 ENDIF()
 
 # CUDA
@@ -52,36 +60,42 @@ add_subdirectory(../libShapeSearch ${CMAKE_CURRENT_BINARY_DIR}/libSpinImage)
 # Include Paths
 #
 include_directories (
-  src/
-  ../libShapeSearch/src
-  tools/clutterEstimator
-  lib/glm
-  lib/json
-  lib/arrrgh
-  ${CUDA_INCLUDE_DIRS}
+        src/
+        ../libShapeSearch/src
+        tools/clutterEstimator
+        lib/glm
+        lib/json
+        lib/arrrgh
+        ${PCL_INCLUDE_DIRS}
+        ${CUDA_INCLUDE_DIRS}
 )
+
+
+link_directories(${PCL_LIBRARY_DIRS})
+
+add_definitions(${PCL_DEFINITIONS})
 
 #
 # Add files
 #
 file (GLOB_RECURSE PROJECT_HEADERS src/*.hpp
-                                   src/*.h
-                                   src/*.cuh)
+        src/*.h
+        src/*.cuh)
 file (GLOB_RECURSE PROJECT_SOURCES src/*.cpp
-                                   src/*.cxx
-                                   src/*.cc
-                                   src/*.c
-                                   src/*.cu)
+        src/*.cxx
+        src/*.cc
+        src/*.c
+        src/*.cu)
 file (GLOB         PROJECT_CONFIGS CMakeLists.txt
-                                   README.rst
-                                  .gitignore
-                                  .gitmodules)
+        README.rst
+        .gitignore
+        .gitmodules)
 file (GLOB_RECURSE CLUTTER_ESTIMATOR_SOURCES    tools/clutterEstimator/*.cpp
-                                                tools/clutterEstimator/*.cu
-                                                tools/clutterEstimator/*.cuh)
+        tools/clutterEstimator/*.cu
+        tools/clutterEstimator/*.cuh)
 file (GLOB_RECURSE CLUTTER_EXPERIMENT_SOURCES   src/experiments/*.cpp
-                                                src/experiments/*.cu
-                                                src/utilities/*.cpp)
+        src/experiments/*.cu
+        src/utilities/*.cpp)
 
 #
 # Organizing files
@@ -93,11 +107,14 @@ source_group ("sources" FILES ${PROJECT_SOURCES})
 # Set executable and target link libraries
 
 add_executable (${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
-                                ${PROJECT_SHADERS} ${PROJECT_CONFIGS}
-                                ${VENDORS_SOURCES})
+        ${PROJECT_SHADERS} ${PROJECT_CONFIGS}
+        ${VENDORS_SOURCES})
 
 
 target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart SpinImage cudadevrt)
 
 add_executable(clutterEstimator ${CLUTTER_ESTIMATOR_SOURCES} ${CLUTTER_EXPERIMENT_SOURCES})
 target_link_libraries(clutterEstimator ${CUDA_LIBRARY} cuda cudart SpinImage cudadevrt)
+
+add_executable(projectionBenchmark tools/projectionBenchmark/compare.cpp)
+target_link_libraries(projectionBenchmark ${PCL_LIBRARIES} Eigen3::Eigen)

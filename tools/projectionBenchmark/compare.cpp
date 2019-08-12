@@ -65,6 +65,8 @@ int main(int argc, const char** argv) {
 	const float radius = 2;
 	const float imageWidth = float(std::sqrt(4.0 / 5.0) * radius);
 
+	std::cout << "Initializing.." << std::endl;
+
 	centres.resize(imageCount);
 	normals.resize(imageCount);
 	pointCloud.resize(pointCount);
@@ -75,8 +77,6 @@ int main(int argc, const char** argv) {
 	std::random_device rd;
 	std::uniform_real_distribution<float> distribution(0, 1);
     std::default_random_engine generator{rd()};
-
-    std::cout << "Initializing.." << std::endl;
 
 
     float x = ((distribution(generator) * 20.0f) - 10.0f) * radius;
