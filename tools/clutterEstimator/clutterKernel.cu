@@ -74,6 +74,7 @@ __global__ void computeClutterKernel(
 
         // if projected point lies inside spin image
         if(alpha <= spinImageWidth && abs(beta) <= (spinImageWidth / 2.0f)) {
+            // Determine if sample is clutter
             if(sampleIndex >= referenceObjectSampleCount) {
                 threadClutterSampleCount++;
             } else {

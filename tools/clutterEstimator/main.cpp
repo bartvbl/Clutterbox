@@ -13,6 +13,7 @@
 #include <experiments/clutterBox/clutterBoxUtilities.h>
 #include <spinImage/gpu/types/GPUPointCloud.h>
 #include <spinImage/utilities/meshSampler.cuh>
+#include <utilities/stringUtils.h>
 
 using json = nlohmann::json;
 
@@ -40,6 +41,8 @@ int main(int argc, const char** argv) {
     const auto& showHelp = parser.add<bool>("help", "Show this help message.", 'h', arrrgh::Optional, false);
     const auto& resultDir = parser.add<std::string>("result-dump-dir", "Define the directory containing experiment output dumps.", '\0', arrrgh::Optional, DIRECTORY_UNSPECIFIED);
     const auto& objectDir = parser.add<std::string>("object-dir", "Define the directory containing input objects.", '\0', arrrgh::Optional, DIRECTORY_UNSPECIFIED);
+    const auto& outDir = parser.add<std::string>("output-dir", "Define the directory where computed clutter values should be dumped.", '\0', arrrgh::Optional, DIRECTORY_UNSPECIFIED);
+
 
     try
     {
@@ -68,6 +71,11 @@ int main(int argc, const char** argv) {
         return 0;
     }
 
+    if(outDir.value() == DIRECTORY_UNSPECIFIED) {
+        std::cout << "An output directory must be specified!" << std::endl;
+        return 0;
+    }
+
     std::cout << "Listing object directory..";
     std::vector<std::string> objectFileList = listDir(objectDir.value());
     std::cout << " (found " << objectFileList.size() << " files)" << std::endl;
@@ -75,11 +83,6 @@ int main(int argc, const char** argv) {
     std::cout << "Listing result directory..";
     std::vector<std::string> resultFileList = listDir(resultDir.value());
     std::cout << " (found " << resultFileList.size() << " files)" << std::endl;
-    std::cout << std::endl;
-
-    std::cout << "Listing raw result directory..";
-    std::vector<std::string> rawResultFileList = listDir(resultDir.value() + "/raw");
-    std::cout << " (found " << rawResultFileList.size() << " files)" << std::endl;
     std::cout << std::endl;
 
 
@@ -166,8 +169,25 @@ int main(int argc, const char** argv) {
         std::cout << "\tComputing clutter values.." << std::endl;
         float spinImageWidth = resultFileContents["spinImageWidth"];
 
-        array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth, 0);
+        array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth, 100);
 
+        json outJson;
+
+        outJson["version"] = "clutter_v1";
+        outJson["clutterValues"] = {};
+        outJson["sourceFile"] = resultFile;
+
+        for(size_t item = 0; item < clutterValues.length; item++) {
+            outJson["clutterValues"].push_back(clutterValues.content[item]);
+        }
+
+        std::cout << "Writing output file.." << std::endl;
+        std::string outFilePath = outDir.value() + "/" + getCurrentDateTimeString() + ".json";
+        std::ofstream outFile(outFilePath);
+        outFile << outJson.dump(4) << std::endl;
+        outFile.close();
+
+        std::cout << "Cleaning up.." << std::endl;
         sampledScene.free();
         cudaFree(device_uniqueSpinOrigins.content);
         SpinImage::gpu::freeDeviceMesh(boxScene);
@@ -175,6 +195,8 @@ int main(int argc, const char** argv) {
         for(DeviceMesh deviceMesh : scaledMeshesOnGPU) {
             SpinImage::gpu::freeDeviceMesh(deviceMesh);
         }
+
+        std::cout << "Done." << std::endl;
     }
 
 }
