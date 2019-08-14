@@ -162,14 +162,21 @@ int main(int argc, const char** argv) {
         checkCudaErrors(cudaFree(device_indexMapping.content));
         size_t imageCount = 0;
 
-        size_t sampleCount = std::max(100 * boxScene.vertexCount, (size_t) 1000000);
+        size_t sampleCount = std::max(10 * boxScene.vertexCount, (size_t) 1000000);
+
+
         std::cout << "\tSampling scene.. (" << sampleCount << " samples)" << std::endl;
-        SpinImage::GPUPointCloud sampledScene = SpinImage::utilities::sampleMesh(boxScene, sampleCount, generator());
+        SpinImage::internal::MeshSamplingBuffers sampleBuffers;
+        SpinImage::GPUPointCloud sampledScene = SpinImage::utilities::sampleMesh(boxScene, sampleCount, generator(), &sampleBuffers);
+
+        std::cout << "\tComputing reference object sample count.." << std::endl;
+        size_t referenceObjectSampleCount = computeReferenceSampleCount(scaledMeshesOnGPU.at(0), sampleCount, sampleBuffers.cumulativeAreaArray);
+        std::cout << "\t\tReference object has " << referenceObjectSampleCount << " samples." << std::endl;
 
         std::cout << "\tComputing clutter values.." << std::endl;
         float spinImageWidth = resultFileContents["spinImageWidth"];
 
-        array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth, 100);
+        array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth, referenceObjectSampleCount);
 
         json outJson;
 

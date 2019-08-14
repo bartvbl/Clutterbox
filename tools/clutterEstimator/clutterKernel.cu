@@ -1,4 +1,5 @@
 #include "clutterKernel.cuh"
+#include "../../../libShapeSearch/lib/nvidia-samples-common/nvidia/helper_cuda.h"
 #include <nvidia/helper_cuda.h>
 #include <nvidia/helper_math.h>
 #include <cuda_runtime.h>
@@ -119,4 +120,32 @@ array<float> computeClutter(array<DeviceOrientedPoint> origins, SpinImage::GPUPo
 
     return host_clutterValues;
 
+}
+
+__global__ void computeSampleCount(size_t baseVertexIndex, size_t totalSceneSampleCount, array<float> cumulativeAreaArray, size_t* outputIndex) {
+
+    size_t triangleIndex = baseVertexIndex / 3;
+
+    float maxArea = cumulativeAreaArray.content[cumulativeAreaArray.length - 1];
+    float areaStepSize = maxArea / (float)totalSceneSampleCount;
+
+    float areaEnd = cumulativeAreaArray.content[triangleIndex];
+
+    size_t lastIndexInRange = (size_t) (areaEnd / areaStepSize);
+
+    *outputIndex = lastIndexInRange;
+}
+
+size_t computeReferenceSampleCount(DeviceMesh referenceMesh, size_t totalSceneSampleCount, array<float> cumulativeAreaArray) {
+    size_t* device_sampleCount;
+    checkCudaErrors(cudaMalloc(&device_sampleCount, sizeof(size_t)));
+
+    computeSampleCount<<<1, 1>>>(referenceMesh.vertexCount, totalSceneSampleCount, cumulativeAreaArray, device_sampleCount);
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    size_t host_sampleCount = 0;
+    checkCudaErrors(cudaMemcpy(&host_sampleCount, device_sampleCount, sizeof(size_t), cudaMemcpyDeviceToHost));
+    checkCudaErrors(cudaFree(device_sampleCount));
+
+    return host_sampleCount;
 }
