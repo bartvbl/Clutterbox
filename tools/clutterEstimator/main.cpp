@@ -88,12 +88,12 @@ int main(int argc, const char** argv) {
 
     std::vector<std::string> parts;
 
-    for (unsigned int i = 0; i < resultFileList.size(); i++) {
-        std::string resultFile = resultFileList.at(i);
+    for (unsigned int resultFileIndex = 0; resultFileIndex < resultFileList.size(); resultFileIndex++) {
+        std::string resultFile = resultFileList.at(resultFileIndex);
         if(resultFile == "raw") {
             continue;
         }
-        std::cout << "Processing " << (i + 1) << "/" << resultFileList.size() << ": " << resultFile << std::endl;
+        std::cout << "Processing " << (resultFileIndex + 1) << "/" << resultFileList.size() << ": " << resultFile << std::endl;
         std::ifstream inputResultFile(resultDir.value() + "/" + resultFile);
         json resultFileContents;
         inputResultFile >> resultFileContents;
@@ -160,9 +160,8 @@ int main(int argc, const char** argv) {
         //    equivalent. It is vital we can rely on a 1:1 mapping existing between vertices.
         array<DeviceOrientedPoint> device_uniqueSpinOrigins = applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
         checkCudaErrors(cudaFree(device_indexMapping.content));
-        size_t imageCount = 0;
 
-        size_t sampleCount = std::max(10 * boxScene.vertexCount, (size_t) 1000000);
+        size_t sampleCount = std::max(3 * boxScene.vertexCount, (size_t) 1000000);
 
 
         std::cout << "\tSampling scene.. (" << sampleCount << " samples)" << std::endl;
