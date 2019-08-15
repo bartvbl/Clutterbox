@@ -75,6 +75,7 @@ __global__ void computeClutterKernel(
 
         // if projected point lies inside spin image
         if(alpha <= spinImageWidth && abs(beta) <= (spinImageWidth / 2.0f)) {
+
             // Determine if sample is clutter
             if(sampleIndex >= referenceObjectSampleCount) {
                 threadClutterSampleCount++;
@@ -83,8 +84,6 @@ __global__ void computeClutterKernel(
             }
         }
     }
-
-    __syncthreads();
 
     // Safely add up all tallies
     atomicAdd(&hitObjectSampleCount, threadObjectSampleCount);
@@ -95,24 +94,28 @@ __global__ void computeClutterKernel(
     if(threadIdx.x == 0) {
         double clutterPercentage = double(hitObjectSampleCount) / double(hitObjectSampleCount + hitClutterSampleCount);
 
+        if(clutterPercentage == 0) {
+            printf("%i\n", blockIdx.x);
+        }
+
         clutterValues.content[blockIdx.x] = float(clutterPercentage);
     }
 }
 
-array<float> computeClutter(array<DeviceOrientedPoint> origins, SpinImage::GPUPointCloud samplePointCloud, float spinImageWidth, size_t referenceObjectSampleCount) {
+array<float> computeClutter(array<DeviceOrientedPoint> origins, SpinImage::GPUPointCloud samplePointCloud, float spinImageWidth, size_t referenceObjectSampleCount, size_t referenceObjectOriginCount) {
     array<float> device_clutterValues;
 
-    size_t clutterBufferSize = origins.length * sizeof(float);
+    size_t clutterBufferSize = referenceObjectOriginCount * sizeof(float);
     checkCudaErrors(cudaMalloc(&device_clutterValues.content, clutterBufferSize));
 
     cudaMemset(device_clutterValues.content, 0, clutterBufferSize);
 
-    computeClutterKernel<<<origins.length, 256>>>(origins, samplePointCloud, device_clutterValues, spinImageWidth, referenceObjectSampleCount);
+    computeClutterKernel<<<referenceObjectOriginCount, 128>>>(origins, samplePointCloud, device_clutterValues, spinImageWidth, referenceObjectSampleCount);
     checkCudaErrors(cudaDeviceSynchronize());
 
     array<float> host_clutterValues;
-    host_clutterValues.content = new float[origins.length];
-    host_clutterValues.length = origins.length;
+    host_clutterValues.content = new float[referenceObjectOriginCount];
+    host_clutterValues.length = referenceObjectOriginCount;
 
     checkCudaErrors(cudaMemcpy(host_clutterValues.content, device_clutterValues.content, clutterBufferSize, cudaMemcpyDeviceToHost));
 

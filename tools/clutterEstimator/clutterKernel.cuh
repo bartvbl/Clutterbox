@@ -7,5 +7,13 @@
 #include <spinImage/utilities/meshSampler.cuh>
 #include <vector>
 
-array<float> computeClutter(array<DeviceOrientedPoint> array, SpinImage::GPUPointCloud cloud, float spinImageWidth, size_t referenceObjectSampleCount);
-size_t computeReferenceSampleCount(DeviceMesh referenceMesh, size_t totalSceneSampleCount, array<float> cumulativeAreaArray);
+array<float> computeClutter(
+        array<DeviceOrientedPoint> array,
+        SpinImage::GPUPointCloud cloud,
+        float spinImageWidth,
+        size_t referenceObjectSampleCount,
+        size_t referenceObjectOriginCount);
+size_t computeReferenceSampleCount(
+        DeviceMesh referenceMesh,
+        size_t totalSceneSampleCount,
+        array<float> cumulativeAreaArray);

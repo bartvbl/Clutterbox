@@ -161,7 +161,7 @@ int main(int argc, const char** argv) {
         array<DeviceOrientedPoint> device_uniqueSpinOrigins = applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
         checkCudaErrors(cudaFree(device_indexMapping.content));
 
-        size_t sampleCount = std::max(3 * boxScene.vertexCount, (size_t) 1000000);
+        size_t sampleCount = std::max(10 * boxScene.vertexCount, (size_t) 1000000);
 
 
         std::cout << "\tSampling scene.. (" << sampleCount << " samples)" << std::endl;
@@ -175,7 +175,7 @@ int main(int argc, const char** argv) {
         std::cout << "\tComputing clutter values.." << std::endl;
         float spinImageWidth = resultFileContents["spinImageWidth"];
 
-        array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth, referenceObjectSampleCount);
+        array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth, referenceObjectSampleCount, resultFileContents["uniqueVertexCounts"][0]);
 
         json outJson;
 

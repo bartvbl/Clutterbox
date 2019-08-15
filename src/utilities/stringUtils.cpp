@@ -1,3 +1,4 @@
+#include <chrono>
 #include "stringUtils.h"
 
 std::string getCurrentDateTimeString() {
@@ -8,8 +9,17 @@ std::string getCurrentDateTimeString() {
     time (&rawtime);
     timeinfo = localtime(&rawtime);
 
-    strftime(buffer, sizeof(buffer), "%d-%m-%Y %H-%M-%S", timeinfo);
-    return std::string(buffer);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H-%M-%S", timeinfo);
+
+    tm localTime;
+    std::chrono::system_clock::time_point t = std::chrono::system_clock::now();
+    time_t now = std::chrono::system_clock::to_time_t(t);
+    localtime_r(&now, &localTime);
+
+    const std::chrono::duration<double> tse = t.time_since_epoch();
+    std::chrono::seconds::rep milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(tse).count() % 1000;
+    
+    return std::string(buffer) + "_" + std::to_string(milliseconds);
 
 }
 
