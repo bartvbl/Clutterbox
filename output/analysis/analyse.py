@@ -3,7 +3,7 @@ import os
 import os.path
 from math import sqrt
 
-resultDirectory = 'combined/noSupportAngle'
+resultDirectory = '../HEIDRUNS/output_majorfix_v1/output'
 outfile = 'dump.csv'
 
 def loadOutputFileDirectory(path):
@@ -11,6 +11,8 @@ def loadOutputFileDirectory(path):
     results = {}
     for fileindex, file in enumerate(originalFiles):
         print(str(fileindex+1) + '/' + str(len(originalFiles)), file, end='\r')
+        if(file == 'raw'):
+        	continue
         with open(os.path.join(path, file), 'r') as openFile:
             fileContents = json.loads(openFile.read())
             results[fileContents['seed']] = fileContents

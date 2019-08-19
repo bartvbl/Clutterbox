@@ -18,7 +18,7 @@ std::string getCurrentDateTimeString() {
 
     const std::chrono::duration<double> tse = t.time_since_epoch();
     std::chrono::seconds::rep milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(tse).count() % 1000;
-    
+
     return std::string(buffer) + "_" + std::to_string(milliseconds);
 
 }
