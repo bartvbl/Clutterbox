@@ -3,7 +3,7 @@ import os
 import os.path
 from math import sqrt
 
-resultDirectory = '../HEIDRUNS/output_majorfix_v1/output'
+resultDirectory = '../HEIDRUNS/output_majorfix_v1_smallspinwidth/output'
 outfile = 'dump.csv'
 
 def loadOutputFileDirectory(path):
@@ -24,7 +24,35 @@ print()
 
 print('Processing..')
 with open(outfile, 'w') as outputFile:
-    outputFile.write('Experiment ID, Total Vertex Count, , Vertex Count Object 0, Vertex Count Object 1, Vertex Count Object 2, Vertex Count Object 3, Vertex Count Object 4, , Distance from Object 0 to Object 0, Distance from Object 1 to Object 0, Distance from Object 2 to Object 0, Distance from Object 3 to Object 0, Distance from Object 4 to Object 0, , QSI with 1 Object in Scene, QSI with 2 Objects in Scene, QSI with 3 Objects in Scene, QSI with 4 Objects in Scene, QSI with 5 Objects in Scene, , SI with 1 Object in Scene, SI with 2 Objects in Scene, SI with 3 Objects in Scene, SI with 4 Objects in Scene, SI with 5 Objects in Scene, , QSI Top 10 with 1 Object in Scene, QSI Top 10 with 2 Objects in Scene, QSI Top 10 with 3 Objects in Scene, QSI Top 10 with 4 Objects in Scene, QSI Top 10 with 5 Objects in Scene, , SI Top 10 with 1 Object in Scene, SI Top 10 with 2 Objects in Scene, SI Top 10 with 3 Objects in Scene, SI Top 10 with 4 Objects in Scene, SI Top 10 with 5 Objects in Scene, , QSI Generation Time with 1 Object in Scene, QSI Generation Time with 2 Objects in Scene, QSI Generation Time with 3 Objects in Scene, QSI Generation Time with 4 Objects in Scene, QSI Generation Time with 5 Objects in Scene, , SI Generation Time with 1 Object in Scene, SI Generation Time with 2 Objects in Scene, SI Generation Time with 3 Objects in Scene, SI Generation Time with 4 Objects in Scene, SI Generation Time with 5 Objects in Scene, , QSI Search Time, , , , , , SI Search Time, , , , , , QSI (smaller box), , , , , , SI (smaller box + support angle)\n')
+    anyResult = next(iter(loadedResults.values()))
+    outputFile.write('Experiment ID, Total Vertex Count, , ')
+    for i in range(0, anyResult['sampleSetSize']):
+        outputFile.write('Vertex Count Object ' + str(i) + ', ')
+    outputFile.write(', ')
+    for i in range(0, anyResult['sampleSetSize']):
+        outputFile.write('Distance from Object ' + str(i) + ' to Object 0, ')
+    outputFile.write(', ')
+    for count in anyResult['sampleObjectCounts']:
+        outputFile.write('QSI with ' + str(count) + ' Object in Scene, ')
+    outputFile.write(', ')
+    for count in anyResult['sampleObjectCounts']:
+        outputFile.write('SI with ' + str(count) + ' Object in Scene, ')
+    outputFile.write(', ')
+    for count in anyResult['sampleObjectCounts']:
+        outputFile.write('QSI Top 10 with ' + str(count) + ' Object in Scene, ')
+    outputFile.write(', ')
+    for count in anyResult['sampleObjectCounts']:
+        outputFile.write('SI Top 10 with ' + str(count) + ' Object in Scene, ')
+    outputFile.write(', ')
+    for count in anyResult['sampleObjectCounts']:
+        outputFile.write('QSI Generation Time with ' + str(count) + ' Object in Scene, ')
+    outputFile.write(', ')
+    for count in anyResult['sampleObjectCounts']:
+        outputFile.write('SI Generation Time with ' + str(count) + ' Object in Scene, ')
+    outputFile.write(', ')
+    outputFile.write('QSI Search Time, , , , , , SI Search Time, , , , , , QSI (smaller box), , , , , , SI (smaller box + support angle)\n')
+
+
     for fileindex, seed in enumerate(loadedResults):
         print(str(fileindex+1) + '/' + str(len(loadedResults)), seed, end='\r')
         result = loadedResults[seed]
@@ -32,24 +60,26 @@ with open(outfile, 'w') as outputFile:
 
         referenceVertexCount = result['vertexCounts'][0]
         referencePosition = (result['translations'][0])
-        usedSampleObjectCounts = result['sampleObjectCounts']
+        usedSampleObjectCount = result['sampleSetSize']
+        experimentIterationCount = len(result['sampleObjectCounts'])
 
-        distances = [0, 0, 0, 0, 0]
-        qsiPercentageAtPlace0 = [0, 0, 0, 0, 0]
-        siPercentageAtPlace0 = [0, 0, 0, 0, 0]
-        qsiPercentageInTop10 = [0, 0, 0, 0, 0]
-        siPercentageInTop10 = [0, 0, 0, 0, 0]
+        distances = [0] * usedSampleObjectCount
+        qsiPercentageAtPlace0 = [0] * experimentIterationCount
+        siPercentageAtPlace0 = [0] * experimentIterationCount
+        qsiPercentageInTop10 = [0] * experimentIterationCount
+        siPercentageInTop10 = [0] * experimentIterationCount
 
-        angle_qsiPercentageAtPlace0 = [0, 0, 0, 0, 0]
-        angle_siPercentageAtPlace0 = [0, 0, 0, 0, 0]
+        angle_qsiPercentageAtPlace0 = [0] * experimentIterationCount
+        angle_siPercentageAtPlace0 = [0] * experimentIterationCount
 
-        for i in range(0, len(usedSampleObjectCounts)):
+        for i in range(0, usedSampleObjectCount):
             vertex = tuple(result['translations'][i])
             dx = vertex[0] - referencePosition[0]
             dy = vertex[1] - referencePosition[1]
             dz = vertex[2] - referencePosition[2]
             distances[i] = sqrt(dx*dx + dy*dy + dz*dz)
 
+        for i in range(0, experimentIterationCount):
             if '0' in result['QSIhistograms'][i]:
                 qsiPercentageAtPlace0[i] = float(result['QSIhistograms'][i]['0']) / float(referenceVertexCount)
 
@@ -68,16 +98,16 @@ with open(outfile, 'w') as outputFile:
             siPercentageInTop10[i] = float(SITop10Sum) / float(referenceVertexCount)
 
         outputFile.write('%i, %i, ,' % (fileindex, sum(result['vertexCounts'])))
-        outputFile.write('%i, %i, %i, %i, %i, ,' % tuple(result['vertexCounts']))
-        outputFile.write('%f, %f, %f, %f, %f, ,' % tuple(distances))
-        outputFile.write('%f, %f, %f, %f, %f, ,' % tuple(qsiPercentageAtPlace0))
-        outputFile.write('%f, %f, %f, %f, %f, ,' % tuple(siPercentageAtPlace0))
-        outputFile.write('%f, %f, %f, %f, %f, ,' % tuple(qsiPercentageInTop10))
-        outputFile.write('%f, %f, %f, %f, %f, ,' % tuple(siPercentageInTop10))
-        outputFile.write('%f, %f, ,' % tuple(result['runtimes']['QSISampleGeneration']['total']))
-        outputFile.write('%f, %f, ,' % tuple(result['runtimes']['SISampleGeneration']['total']))
-        outputFile.write('%f, %f, ,' % tuple(result['runtimes']['QSISearch']['total']))
-        outputFile.write('%f, %f, ,' % tuple(result['runtimes']['SISearch']['total']))
+        outputFile.write(', '.join([str(f) for f in result['vertexCounts']]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in distances]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in qsiPercentageAtPlace0]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in siPercentageAtPlace0]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in qsiPercentageInTop10]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in siPercentageInTop10]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in result['runtimes']['QSISampleGeneration']['total']]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in result['runtimes']['SISampleGeneration']['total']]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in result['runtimes']['QSISearch']['total']]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in result['runtimes']['SISearch']['total']]) + ', , ')
         outputFile.write('\n')
 print()
 print('Complete.')
