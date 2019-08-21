@@ -21,8 +21,8 @@ clutterfiles_directory = "/mnt/a666854b-88ec-4fb7-9cc5-c167acbd5e9c/home/bart/gi
 
 outFile = 'clutter_out.csv'
 
-use_cached_results = False
-size = 4096
+use_cached_results = True
+size = 256
 
 def readJsonFile(file):
 	with open(file, 'r') as openFile:
@@ -181,8 +181,8 @@ else:
 	hist_qsi = readCacheFile('hist_qsi_cache.txt')
 	hist_si = readCacheFile('hist_si_cache.txt')
 
-#hist_qsi = np.log10(np.maximum(hist_qsi,0.1))
-#hist_si = np.log10(np.maximum(hist_si,0.1))
+hist_qsi = np.log(np.maximum(hist_qsi,0.1))
+hist_si = np.log(np.maximum(hist_si,0.1))
 
 
 
