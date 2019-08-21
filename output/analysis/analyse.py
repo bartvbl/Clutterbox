@@ -18,6 +18,12 @@ def loadOutputFileDirectory(path):
             results[fileContents['seed']] = fileContents
     return results
 
+def objects(count):
+    if count > 1:
+        return 'Objects'
+    else:
+        return 'Object'
+
 print('Loading original files..')
 loadedResults = loadOutputFileDirectory(resultDirectory)
 print()
@@ -33,24 +39,29 @@ with open(outfile, 'w') as outputFile:
         outputFile.write('Distance from Object ' + str(i) + ' to Object 0, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
-        outputFile.write('QSI with ' + str(count) + ' Object in Scene, ')
+        outputFile.write('QSI with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
-        outputFile.write('SI with ' + str(count) + ' Object in Scene, ')
+        outputFile.write('SI with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
-        outputFile.write('QSI Top 10 with ' + str(count) + ' Object in Scene, ')
+        outputFile.write('QSI Top 10 with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
-        outputFile.write('SI Top 10 with ' + str(count) + ' Object in Scene, ')
+        outputFile.write('SI Top 10 with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
-        outputFile.write('QSI Generation Time with ' + str(count) + ' Object in Scene, ')
+        outputFile.write('QSI Reference Generation Time with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
-        outputFile.write('SI Generation Time with ' + str(count) + ' Object in Scene, ')
+        outputFile.write('SI Reference Generation Time with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
-    outputFile.write('QSI Search Time, , , , , , SI Search Time, , , , , , QSI (smaller box), , , , , , SI (smaller box + support angle)\n')
+    for count in anyResult['sampleObjectCounts']:
+        outputFile.write('QSI Search Time with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
+    outputFile.write(', ')
+    for count in anyResult['sampleObjectCounts']:
+        outputFile.write('SI Search Time with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
+    outputFile.write('\n')
 
 
     for fileindex, seed in enumerate(loadedResults):
