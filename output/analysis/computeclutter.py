@@ -195,16 +195,18 @@ extent = [0, size, 0, size]
 # Plot heatmap
 plt.clf()
 qsiplt = plt.figure(1)
-plt.title('QSI clutter performance, 5 objects')
+plt.title('')
 plt.ylabel('rank')
 plt.xlabel('clutter percentage')
 plt.imshow(hist_qsi, extent=extent)
+plt.xticks(np.arange(0,256,25.599), [("%.1f" % x) for x in np.arange(0,1.1,0.1)])
 
 siplt = plt.figure(2)
-plt.title('SI clutter performance, 5 objects')
+plt.title('')
 plt.ylabel('rank')
 plt.xlabel('clutter percentage')
 plt.imshow(hist_si, extent=extent)
+plt.xticks(np.arange(0,256,25.599), [("%.1f" % x) for x in np.arange(0,1.1,0.1)])
 
 qsiplt.show()
 siplt.show()
