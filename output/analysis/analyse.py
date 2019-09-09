@@ -3,7 +3,7 @@ import os
 import os.path
 from math import sqrt
 
-resultDirectory = '../HEIDRUNS/output_majorfix_v1_smallspinwidth/output'
+resultDirectory = '../HEIDRUNS/output_majorfix_v1/output'
 outfile = 'dump.csv'
 
 def loadOutputFileDirectory(path):
@@ -31,7 +31,7 @@ print()
 print('Processing..')
 with open(outfile, 'w') as outputFile:
     anyResult = next(iter(loadedResults.values()))
-    outputFile.write('Experiment ID, Total Vertex Count, , ')
+    outputFile.write('Experiment ID, seed, Total Vertex Count, , ')
     for i in range(0, anyResult['sampleSetSize']):
         outputFile.write('Vertex Count Object ' + str(i) + ', ')
     outputFile.write(', ')
@@ -108,7 +108,7 @@ with open(outfile, 'w') as outputFile:
             qsiPercentageInTop10[i] = float(QSITop10Sum) / float(referenceVertexCount)
             siPercentageInTop10[i] = float(SITop10Sum) / float(referenceVertexCount)
 
-        outputFile.write('%i, %i, ,' % (fileindex, sum(result['vertexCounts'])))
+        outputFile.write('%i, %i, %i, ,' % (fileindex, seed, sum(result['vertexCounts'])))
         outputFile.write(', '.join([str(f) for f in result['vertexCounts']]) + ', , ')
         outputFile.write(', '.join([str(f) for f in distances]) + ', , ')
         outputFile.write(', '.join([str(f) for f in qsiPercentageAtPlace0]) + ', , ')
