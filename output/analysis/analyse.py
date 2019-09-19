@@ -33,9 +33,12 @@ print()
 print('Processing..')
 with open(outfile, 'w') as outputFile:
     anyResult = next(iter(loadedResults.values()))
-    outputFile.write('Experiment ID, seed, Total Vertex Count, , ')
+    outputFile.write('Experiment ID, seed, Total Vertex Count, Total Image Count, , ')
     for i in range(0, anyResult['sampleSetSize']):
         outputFile.write('Vertex Count Object ' + str(i) + ', ')
+    outputFile.write(', ')
+    for i in range(0, anyResult['sampleSetSize']):
+        outputFile.write('Image Count Object ' + str(i) + ', ')
     outputFile.write(', ')
     for i in range(0, anyResult['sampleSetSize']):
         outputFile.write('Distance from Object ' + str(i) + ' to Object 0, ')
@@ -113,8 +116,9 @@ with open(outfile, 'w') as outputFile:
             qsiPercentageInTop10[i] = float(QSITop10Sum) / float(referenceVertexCount)
             siPercentageInTop10[i] = float(SITop10Sum) / float(referenceVertexCount)
 
-        outputFile.write('%i, %i, %i, ,' % (fileindex, seed, sum(result['vertexCounts'])))
+        outputFile.write('%i, %i, %i, %i, ,' % (fileindex, seed, sum(result['vertexCounts']), sum(result['imageCounts'])))
         outputFile.write(', '.join([str(f) for f in result['vertexCounts']]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in result['imageCounts']]) + ', , ')
         outputFile.write(', '.join([str(f) for f in distances]) + ', , ')
         outputFile.write(', '.join([str(f) for f in qsiPercentageAtPlace0]) + ', , ')
         outputFile.write(', '.join([str(f) for f in siPercentageAtPlace0]) + ', , ')
