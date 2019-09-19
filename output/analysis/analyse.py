@@ -3,8 +3,10 @@ import os
 import os.path
 from math import sqrt
 
-resultDirectory = '../HEIDRUNS/output_majorfix_v1/output'
-outfile = 'dump.csv'
+
+variety = 'earlycutoff'
+resultDirectory = '../HEIDRUNS/output_majorfix_v2_' + variety + '/output'
+outfile = 'final_results/results_' + variety + '.csv'
 
 def loadOutputFileDirectory(path):
     originalFiles = os.listdir(path)
@@ -91,19 +93,22 @@ with open(outfile, 'w') as outputFile:
             distances[i] = sqrt(dx*dx + dy*dy + dz*dz)
 
         for i in range(0, experimentIterationCount):
-            if '0' in result['QSIhistograms'][i]:
-                qsiPercentageAtPlace0[i] = float(result['QSIhistograms'][i]['0']) / float(referenceVertexCount)
+            index = i
+            if result['version'] == 'v8':
+                index = str(i)
+            if '0' in result['QSIhistograms'][index]:
+                qsiPercentageAtPlace0[i] = float(result['QSIhistograms'][index]['0']) / float(referenceVertexCount)
 
-            if '0' in result['SIhistograms'][i]:
-                siPercentageAtPlace0[i] = float(result['SIhistograms'][i]['0']) / float(referenceVertexCount)
+            if '0' in result['SIhistograms'][index]:
+                siPercentageAtPlace0[i] = float(result['SIhistograms'][index]['0']) / float(referenceVertexCount)
 
             QSITop10Sum = 0
             SITop10Sum = 0
             for j in range(0, 10):
-                if str(j) in result['QSIhistograms'][i]:
-                    QSITop10Sum += result['QSIhistograms'][i][str(j)]
-                if str(j) in result['SIhistograms'][i]:
-                    SITop10Sum += result['SIhistograms'][i][str(j)]
+                if str(j) in result['QSIhistograms'][index]:
+                    QSITop10Sum += result['QSIhistograms'][index][str(j)]
+                if str(j) in result['SIhistograms'][index]:
+                    SITop10Sum += result['SIhistograms'][index][str(j)]
 
             qsiPercentageInTop10[i] = float(QSITop10Sum) / float(referenceVertexCount)
             siPercentageInTop10[i] = float(SITop10Sum) / float(referenceVertexCount)
