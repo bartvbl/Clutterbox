@@ -74,7 +74,7 @@ with open(outfile, 'w') as outputFile:
         result = loadedResults[seed]
         angleFileContents = {}
 
-        referenceVertexCount = result['vertexCounts'][0]
+        totalImageCount = result['imageCounts'][0] #result['vertexCounts'][0]
         referencePosition = (result['translations'][0])
         usedSampleObjectCount = result['sampleSetSize']
         experimentIterationCount = len(result['sampleObjectCounts'])
@@ -100,10 +100,10 @@ with open(outfile, 'w') as outputFile:
             if result['version'] == 'v8':
                 index = str(i)
             if '0' in result['QSIhistograms'][index]:
-                qsiPercentageAtPlace0[i] = float(result['QSIhistograms'][index]['0']) / float(referenceVertexCount)
+                qsiPercentageAtPlace0[i] = float(result['QSIhistograms'][index]['0']) / float(totalImageCount)
 
             if '0' in result['SIhistograms'][index]:
-                siPercentageAtPlace0[i] = float(result['SIhistograms'][index]['0']) / float(referenceVertexCount)
+                siPercentageAtPlace0[i] = float(result['SIhistograms'][index]['0']) / float(totalImageCount)
 
             QSITop10Sum = 0
             SITop10Sum = 0
@@ -113,8 +113,8 @@ with open(outfile, 'w') as outputFile:
                 if str(j) in result['SIhistograms'][index]:
                     SITop10Sum += result['SIhistograms'][index][str(j)]
 
-            qsiPercentageInTop10[i] = float(QSITop10Sum) / float(referenceVertexCount)
-            siPercentageInTop10[i] = float(SITop10Sum) / float(referenceVertexCount)
+            qsiPercentageInTop10[i] = float(QSITop10Sum) / float(totalImageCount)
+            siPercentageInTop10[i] = float(SITop10Sum) / float(totalImageCount)
 
         outputFile.write('%i, %i, %i, %i, ,' % (fileindex, seed, sum(result['vertexCounts']), sum(result['imageCounts'])))
         outputFile.write(', '.join([str(f) for f in result['vertexCounts']]) + ', , ')
