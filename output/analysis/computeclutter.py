@@ -5,6 +5,7 @@ from os.path import isfile, join
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import math
 import re
 from scipy import stats
@@ -181,8 +182,8 @@ else:
 	hist_qsi = readCacheFile('hist_qsi_cache.txt')
 	hist_si = readCacheFile('hist_si_cache.txt')
 
-hist_qsi = np.log(np.maximum(hist_qsi,0.1))
-hist_si = np.log(np.maximum(hist_si,0.1))
+hist_qsi = np.log10(np.maximum(hist_qsi,0.1))
+hist_si = np.log10(np.maximum(hist_si,0.1))
 
 
 
@@ -192,21 +193,33 @@ extent = [0, size, 0, size]
 
 #np.savetxt('hist.txt',hist,delimiter='\n')
 
+
 # Plot heatmap
-plt.clf()
+plt.clf()	
+
+colorbar_ticks = np.arange(0, 8, 1)
+total_minimum_value = min(np.amin(hist_qsi), np.amin(hist_si))
+total_maximum_value = max(np.amax(hist_qsi), np.amax(hist_si))
+print('range:', total_minimum_value, total_maximum_value)
+normalisation = colors.Normalize(vmin=total_minimum_value,vmax=total_maximum_value)
+
 qsiplt = plt.figure(1)
 plt.title('')
 plt.ylabel('rank')
 plt.xlabel('clutter percentage')
-plt.imshow(hist_qsi, extent=extent)
+qsi_im = plt.imshow(hist_qsi, extent=extent, cmap='nipy_spectral', norm=normalisation)
 plt.xticks(np.arange(0,256,25.599), [("%.1f" % x) for x in np.arange(0,1.1,0.1)])
+qsi_cbar = plt.colorbar(qsi_im, ticks=colorbar_ticks)
+qsi_cbar.ax.set_yticklabels(["{:.0E}".format(x) for x in np.power(10, colorbar_ticks)])
 
 siplt = plt.figure(2)
 plt.title('')
 plt.ylabel('rank')
 plt.xlabel('clutter percentage')
-plt.imshow(hist_si, extent=extent)
+si_im = plt.imshow(hist_si, extent=extent, cmap='nipy_spectral', norm=normalisation)
 plt.xticks(np.arange(0,256,25.599), [("%.1f" % x) for x in np.arange(0,1.1,0.1)])
+si_cbar = plt.colorbar(si_im, ticks=colorbar_ticks)
+si_cbar.ax.set_yticklabels(["{:.0E}".format(x) for x in np.power(10, colorbar_ticks)])
 
 qsiplt.show()
 siplt.show()
