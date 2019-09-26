@@ -6,6 +6,7 @@
 void runClutterBoxExperiment(
         std::string objectDirectory,
         std::vector<int> objectCountList,
+        int overrideObjectCount,
         float boxSize,
         float spinImageWidth,
         float spinImageSupportAngleDegrees,

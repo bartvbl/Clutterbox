@@ -37,6 +37,7 @@ int main(int argc, const char **argv)
 	const auto& dumpRawResults = parser.add<bool>("dump-raw-search-results", "Enable dumping of raw search result index values", '\0', arrrgh::Optional, false);
 	const auto& outputDirectory = parser.add<std::string>("output-directory", "Specify the location where output files should be dumped", '\0', arrrgh::Optional, "../output/");
     const auto& objectCounts = parser.add<std::string>("object-counts", "Specify the number of objects the experiment should be performed with, as a comma separated list WITHOUT spaces (e.g. --object-counts=1,2,5)", '\0', arrrgh::Optional, "NONE");
+    const auto& overrideObjectCount = parser.add<int>("override-total-object-count", "If you want a specified number of objects to be used for the experiment (for ensuring consistency between seeds)", '\0', arrrgh::Optional, -1);
 
 	try
 	{
@@ -97,7 +98,7 @@ int main(int argc, const char **argv)
 
     std::sort(objectCountList.begin(), objectCountList.end());
 
-	runClutterBoxExperiment(objectDirectory.value(), objectCountList, boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), val);
+	runClutterBoxExperiment(objectDirectory.value(), objectCountList, overrideObjectCount, boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), val);
 
     return 0;
 }

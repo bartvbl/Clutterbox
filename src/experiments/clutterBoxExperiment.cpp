@@ -318,6 +318,7 @@ void dumpQuasiSpinImages(std::string filename, array<quasiSpinImagePixelType> de
 void runClutterBoxExperiment(
         std::string objectDirectory,
         std::vector<int> objectCountList,
+        int overrideObjectCount,
         float boxSize,
         float spinImageWidth,
         float spinImageSupportAngleDegrees,
@@ -347,6 +348,16 @@ void runClutterBoxExperiment(
 
     // The number of sample objects that need to be loaded depends on the largest number of objects required in the list
     int sampleObjectCount = *std::max_element(objectCountList.begin(), objectCountList.end());
+
+    if(overrideObjectCount != -1) {
+        if(overrideObjectCount < sampleObjectCount) {
+            std::cout << "ERROR: override object count is lower than highest count specified in object count list!" << std::endl;
+            return;
+        }
+
+        std::cout << "Using overridden object count: " << overrideObjectCount << std::endl;
+        sampleObjectCount = overrideObjectCount;
+    }
 
     // 1 Seeding the random number generator
     std::random_device rd;
@@ -472,7 +483,7 @@ void runClutterBoxExperiment(
         std::cout << "\t\tVertex count: " << boxScene.vertexCount << ", Image count: " << imageCount << std::endl;
 
         // If the object count is not on the list, skip it.
-        if((objectCount + 1) != objectCountList.at(currentObjectListIndex)) {
+        if(currentObjectListIndex >= objectCountList.size() || (objectCount + 1) != objectCountList.at(currentObjectListIndex)) {
             std::cout << "\tSample count is not on the list. Skipping." << std::endl;
             continue;
         }
