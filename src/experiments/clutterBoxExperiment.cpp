@@ -574,8 +574,10 @@ void runClutterBoxExperiment(
     cudaFree(device_referenceSpinImages.content);
     cudaFree(device_uniqueSpinOrigins.content);
 
+    std::string timestring = getCurrentDateTimeString();
+
     dumpResultsFile(
-            outputDirectory + getCurrentDateTimeString() + ".json",
+            outputDirectory + timestring + "_" + std::to_string(randomSeed) + ".json",
             randomSeed,
             QSIHistograms,
             spinImageHistograms,
@@ -594,7 +596,7 @@ void runClutterBoxExperiment(
 
     if(dumpRawSearchResults) {
         dumpRawSearchResultFile(
-                outputDirectory + "raw/" + getCurrentDateTimeString() + ".json",
+                outputDirectory + "raw/" + timestring + "_" + std::to_string(randomSeed) + ".json",
                 objectCountList,
                 rawQSISearchResults,
                 rawSISearchResults);
