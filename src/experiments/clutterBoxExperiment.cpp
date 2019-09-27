@@ -80,6 +80,7 @@ void dumpResultsFile(
         std::vector<Histogram> SIHistograms,
         const std::string &sourceFileDirectory,
         std::vector<int> objectCountList,
+        int overrideObjectCount,
         float boxSize,
         float spinImageWidth,
         size_t assertionRandomToken,
@@ -95,6 +96,12 @@ void dumpResultsFile(
     std::default_random_engine generator{seed};
 
     int sampleObjectCount = *std::max_element(objectCountList.begin(), objectCountList.end());
+    int originalObjectCount = sampleObjectCount;
+
+    if(overrideObjectCount != -1) {
+        std::cout << "Using overridden object count: " << overrideObjectCount << std::endl;
+        sampleObjectCount = overrideObjectCount;
+    }
 
     std::vector<std::string> chosenFiles = generateRandomFileList(sourceFileDirectory, sampleObjectCount, generator);
 
@@ -145,6 +152,7 @@ void dumpResultsFile(
     outJson["seed"] = seed;
     outJson["sampleSetSize"] = sampleObjectCount;
     outJson["sampleObjectCounts"] = objectCountList;
+    outJson["overrideObjectCount"] = overrideObjectCount;
     outJson["uniqueVertexCounts"] = uniqueVertexCounts;
     outJson["imageCounts"] = uniqueVertexCounts;
     outJson["boxSize"] = boxSize;
@@ -583,6 +591,7 @@ void runClutterBoxExperiment(
             spinImageHistograms,
             objectDirectory,
             objectCountList,
+            overrideObjectCount,
             boxSize,
             spinImageWidth,
             generator(),
