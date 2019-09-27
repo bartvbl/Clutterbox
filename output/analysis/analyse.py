@@ -37,7 +37,7 @@ with open(outfile, 'w') as outputFile:
     for i in range(0, anyResult['sampleSetSize']):
         outputFile.write('Vertex Count Object ' + str(i) + ', ')
     outputFile.write(', ')
-    for i in range(0, anyResult['sampleSetSize']):
+    for i in range(0, len(anyResult['uniqueVertexCounts'])):
         outputFile.write('Image Count Object ' + str(i) + ', ')
     outputFile.write(', ')
     for i in range(0, anyResult['sampleSetSize']):
