@@ -38,6 +38,7 @@ int main(int argc, const char **argv)
 	const auto& outputDirectory = parser.add<std::string>("output-directory", "Specify the location where output files should be dumped", '\0', arrrgh::Optional, "../output/");
     const auto& objectCounts = parser.add<std::string>("object-counts", "Specify the number of objects the experiment should be performed with, as a comma separated list WITHOUT spaces (e.g. --object-counts=1,2,5)", '\0', arrrgh::Optional, "NONE");
     const auto& overrideObjectCount = parser.add<int>("override-total-object-count", "If you want a specified number of objects to be used for the experiment (for ensuring consistency between seeds)", '\0', arrrgh::Optional, -1);
+    const auto& descriptors = parser.add<std::string>("descriptors", "Specify the descriptors that should be used in the experiment, with as valid options \"qsi\", \"si\", and \"all\", as a comma separated list WITHOUT spaces (e.g. --object-counts=qsi,si). Use value \"all\" for using all supported descriptors", '\0', arrrgh::Optional, "all");
 
 	try
 	{
@@ -82,10 +83,10 @@ int main(int argc, const char **argv)
 
 	// Interpret seed value
     std::stringstream sstr(forcedSeed.value());
-    size_t val;
-    sstr >> val;
-    if(val != 0) {
-        std::cout << "Using overridden seed: " << val << std::endl;
+    size_t randomSeed;
+    sstr >> randomSeed;
+    if(randomSeed != 0) {
+        std::cout << "Using overridden seed: " << randomSeed << std::endl;
     }
 
     // Interpret the object counts string
@@ -96,9 +97,26 @@ int main(int argc, const char **argv)
         objectCountList.push_back(std::stoi(objectCountPart));
     }
 
+    // Interpret the descriptor list string
+    std::vector<std::string> descriptorListParts;
+    splitByCharacter(&descriptorListParts, descriptors.value(), ',');
+    std::vector<std::string> descriptorList;
+    bool containsAll = false;
+    for (const auto &descriptorPart : descriptorListParts) {
+        descriptorList.push_back(descriptorPart);
+        if(descriptorPart == "all") {
+            containsAll = true;
+        } else if(descriptorPart != "qsi" && descriptorPart != "si") {
+            std::cout << "Error: Unknown descriptor name detected: \"" + descriptorPart + "\". Ignoring." << std::endl;
+        }
+    }
+    if(containsAll /*|| descriptorList.size() == 0 feature, not a bug*/) {
+        descriptorList = {"qsi", "si"};
+    }
+
     std::sort(objectCountList.begin(), objectCountList.end());
 
-	runClutterBoxExperiment(objectDirectory.value(), objectCountList, overrideObjectCount, boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), val);
+	runClutterBoxExperiment(objectDirectory.value(), descriptorList, objectCountList, overrideObjectCount, boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), randomSeed);
 
     return 0;
 }

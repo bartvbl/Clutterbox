@@ -82,6 +82,7 @@ std::vector<std::string> generateRandomFileList(const std::string &objectDirecto
 
 void dumpResultsFile(
         std::string outputFile,
+        std::vector<std::string> descriptorList,
         size_t seed,
         std::vector<Histogram> QSIHistograms,
         std::vector<Histogram> SIHistograms,
@@ -153,10 +154,22 @@ void dumpResultsFile(
         std::cerr << "Expected: " << finalCheckToken << ", got: " << assertionRandomToken << std::endl;
     }
 
+    bool qsiDescriptorActive = false;
+    bool siDescriptorActive = false;
+
+    for(const auto& descriptor : descriptorList) {
+        if(descriptor == "qsi") {
+            qsiDescriptorActive = true;
+        } else if(descriptor == "si") {
+            siDescriptorActive = true;
+        }
+    }
+
     json outJson;
 
     outJson["version"] = "v8";
     outJson["seed"] = seed;
+    outJson["descriptors"] = descriptorList;
     outJson["sampleSetSize"] = sampleObjectCount;
     outJson["sampleObjectCounts"] = objectCountList;
     outJson["overrideObjectCount"] = overrideObjectCount;
@@ -182,80 +195,91 @@ void dumpResultsFile(
         outJson["translations"].push_back({translation.x, translation.y, translation.z});
     }
 
-    outJson["runtimes"]["QSIReferenceGeneration"]["total"] = QSIRuns.at(0).totalExecutionTimeSeconds;
-    outJson["runtimes"]["QSIReferenceGeneration"]["meshScale"] = QSIRuns.at(0).meshScaleTimeSeconds;
-    outJson["runtimes"]["QSIReferenceGeneration"]["redistribution"] = QSIRuns.at(0).redistributionTimeSeconds;
-    outJson["runtimes"]["QSIReferenceGeneration"]["generation"] = QSIRuns.at(0).generationTimeSeconds;
+    if(qsiDescriptorActive) {
+        outJson["runtimes"]["QSIReferenceGeneration"]["total"] = QSIRuns.at(0).totalExecutionTimeSeconds;
+        outJson["runtimes"]["QSIReferenceGeneration"]["meshScale"] = QSIRuns.at(0).meshScaleTimeSeconds;
+        outJson["runtimes"]["QSIReferenceGeneration"]["redistribution"] = QSIRuns.at(0).redistributionTimeSeconds;
+        outJson["runtimes"]["QSIReferenceGeneration"]["generation"] = QSIRuns.at(0).generationTimeSeconds;
 
-    outJson["runtimes"]["SIReferenceGeneration"]["total"] = SIRuns.at(0).totalExecutionTimeSeconds;
-    outJson["runtimes"]["SIReferenceGeneration"]["initialisation"] = SIRuns.at(0).initialisationTimeSeconds;
-    outJson["runtimes"]["SIReferenceGeneration"]["sampling"] = SIRuns.at(0).meshSamplingTimeSeconds;
-    outJson["runtimes"]["SIReferenceGeneration"]["generation"] = SIRuns.at(0).generationTimeSeconds;
-
-    outJson["runtimes"]["QSISampleGeneration"]["total"] = {};
-    outJson["runtimes"]["QSISampleGeneration"]["meshScale"] = {};
-    outJson["runtimes"]["QSISampleGeneration"]["redistribution"] = {};
-    outJson["runtimes"]["QSISampleGeneration"]["generation"] = {};
-    for(unsigned int i = 1; i < QSIRuns.size(); i++) {
-        outJson["runtimes"]["QSISampleGeneration"]["total"].push_back(QSIRuns.at(i).totalExecutionTimeSeconds);
-        outJson["runtimes"]["QSISampleGeneration"]["meshScale"].push_back(QSIRuns.at(i).meshScaleTimeSeconds);
-        outJson["runtimes"]["QSISampleGeneration"]["redistribution"].push_back(QSIRuns.at(i).redistributionTimeSeconds);
-        outJson["runtimes"]["QSISampleGeneration"]["generation"].push_back(QSIRuns.at(i).generationTimeSeconds);
-    }
-
-    outJson["runtimes"]["SISampleGeneration"]["total"] = {};
-    outJson["runtimes"]["SISampleGeneration"]["initialisation"] = {};
-    outJson["runtimes"]["SISampleGeneration"]["sampling"] = {};
-    outJson["runtimes"]["SISampleGeneration"]["generation"] = {};
-    for(unsigned int i = 1; i < SIRuns.size(); i++) {
-        outJson["runtimes"]["SISampleGeneration"]["total"].push_back(SIRuns.at(i).totalExecutionTimeSeconds);
-        outJson["runtimes"]["SISampleGeneration"]["initialisation"].push_back(SIRuns.at(i).initialisationTimeSeconds);
-        outJson["runtimes"]["SISampleGeneration"]["sampling"].push_back(SIRuns.at(i).meshSamplingTimeSeconds);
-        outJson["runtimes"]["SISampleGeneration"]["generation"].push_back(SIRuns.at(i).generationTimeSeconds);
-    }
-
-    outJson["runtimes"]["QSISearch"]["total"] = {};
-    outJson["runtimes"]["QSISearch"]["search"] = {};
-    for (auto &QSISearchRun : QSISearchRuns) {
-        outJson["runtimes"]["QSISearch"]["total"].push_back(QSISearchRun.totalExecutionTimeSeconds);
-        outJson["runtimes"]["QSISearch"]["search"].push_back(QSISearchRun.searchExecutionTimeSeconds);
-    }
-
-    outJson["runtimes"]["SISearch"]["total"] = {};
-    outJson["runtimes"]["SISearch"]["averaging"] = {};
-    outJson["runtimes"]["SISearch"]["search"] = {};
-    for (auto &SISearchRun : SISearchRuns) {
-        outJson["runtimes"]["SISearch"]["total"].push_back(SISearchRun.totalExecutionTimeSeconds);
-        outJson["runtimes"]["SISearch"]["averaging"].push_back(SISearchRun.averagingExecutionTimeSeconds);
-        outJson["runtimes"]["SISearch"]["search"].push_back(SISearchRun.searchExecutionTimeSeconds);
-    }
-
-
-
-    outJson["QSIhistograms"] = {};
-    for(unsigned int i = 0; i < objectCountList.size(); i++) {
-        std::map<unsigned int, size_t> qsiMap = QSIHistograms.at(i).getMap();
-        std::vector<unsigned int> keys;
-        for (auto &content : qsiMap) {
-            keys.push_back(content.first);
-        }
-        std::sort(keys.begin(), keys.end());
-
-        for(auto &key : keys) {
-            outJson["QSIhistograms"][std::to_string(i)][std::to_string(key)] = qsiMap[key];
+        outJson["runtimes"]["QSISampleGeneration"]["total"] = {};
+        outJson["runtimes"]["QSISampleGeneration"]["meshScale"] = {};
+        outJson["runtimes"]["QSISampleGeneration"]["redistribution"] = {};
+        outJson["runtimes"]["QSISampleGeneration"]["generation"] = {};
+        for(unsigned int i = 1; i < QSIRuns.size(); i++) {
+            outJson["runtimes"]["QSISampleGeneration"]["total"].push_back(QSIRuns.at(i).totalExecutionTimeSeconds);
+            outJson["runtimes"]["QSISampleGeneration"]["meshScale"].push_back(QSIRuns.at(i).meshScaleTimeSeconds);
+            outJson["runtimes"]["QSISampleGeneration"]["redistribution"].push_back(QSIRuns.at(i).redistributionTimeSeconds);
+            outJson["runtimes"]["QSISampleGeneration"]["generation"].push_back(QSIRuns.at(i).generationTimeSeconds);
         }
     }
-    outJson["SIhistograms"] = {};
-    for(unsigned int i = 0; i < objectCountList.size(); i++) {
-        std::map<unsigned int, size_t> siMap = SIHistograms.at(i).getMap();
-        std::vector<unsigned int> keys;
-        for (auto &content : siMap) {
-            keys.push_back(content.first);
-        }
-        std::sort(keys.begin(), keys.end());
 
-        for(auto &key : keys) {
-            outJson["SIhistograms"][std::to_string(i)][std::to_string(key)] = siMap[key];
+    if(siDescriptorActive) {
+        outJson["runtimes"]["SIReferenceGeneration"]["total"] = SIRuns.at(0).totalExecutionTimeSeconds;
+        outJson["runtimes"]["SIReferenceGeneration"]["initialisation"] = SIRuns.at(0).initialisationTimeSeconds;
+        outJson["runtimes"]["SIReferenceGeneration"]["sampling"] = SIRuns.at(0).meshSamplingTimeSeconds;
+        outJson["runtimes"]["SIReferenceGeneration"]["generation"] = SIRuns.at(0).generationTimeSeconds;
+
+        outJson["runtimes"]["SISampleGeneration"]["total"] = {};
+        outJson["runtimes"]["SISampleGeneration"]["initialisation"] = {};
+        outJson["runtimes"]["SISampleGeneration"]["sampling"] = {};
+        outJson["runtimes"]["SISampleGeneration"]["generation"] = {};
+        for(unsigned int i = 1; i < SIRuns.size(); i++) {
+            outJson["runtimes"]["SISampleGeneration"]["total"].push_back(SIRuns.at(i).totalExecutionTimeSeconds);
+            outJson["runtimes"]["SISampleGeneration"]["initialisation"].push_back(SIRuns.at(i).initialisationTimeSeconds);
+            outJson["runtimes"]["SISampleGeneration"]["sampling"].push_back(SIRuns.at(i).meshSamplingTimeSeconds);
+            outJson["runtimes"]["SISampleGeneration"]["generation"].push_back(SIRuns.at(i).generationTimeSeconds);
+        }
+    }
+
+    if(qsiDescriptorActive) {
+        outJson["runtimes"]["QSISearch"]["total"] = {};
+        outJson["runtimes"]["QSISearch"]["search"] = {};
+        for (auto &QSISearchRun : QSISearchRuns) {
+            outJson["runtimes"]["QSISearch"]["total"].push_back(QSISearchRun.totalExecutionTimeSeconds);
+            outJson["runtimes"]["QSISearch"]["search"].push_back(QSISearchRun.searchExecutionTimeSeconds);
+        }
+    }
+
+    if(siDescriptorActive) {
+        outJson["runtimes"]["SISearch"]["total"] = {};
+        outJson["runtimes"]["SISearch"]["averaging"] = {};
+        outJson["runtimes"]["SISearch"]["search"] = {};
+        for (auto &SISearchRun : SISearchRuns) {
+            outJson["runtimes"]["SISearch"]["total"].push_back(SISearchRun.totalExecutionTimeSeconds);
+            outJson["runtimes"]["SISearch"]["averaging"].push_back(SISearchRun.averagingExecutionTimeSeconds);
+            outJson["runtimes"]["SISearch"]["search"].push_back(SISearchRun.searchExecutionTimeSeconds);
+        }
+    }
+
+    if(qsiDescriptorActive) {
+        outJson["QSIhistograms"] = {};
+        for(unsigned int i = 0; i < objectCountList.size(); i++) {
+            std::map<unsigned int, size_t> qsiMap = QSIHistograms.at(i).getMap();
+            std::vector<unsigned int> keys;
+            for (auto &content : qsiMap) {
+                keys.push_back(content.first);
+            }
+            std::sort(keys.begin(), keys.end());
+
+            for(auto &key : keys) {
+                outJson["QSIhistograms"][std::to_string(i)][std::to_string(key)] = qsiMap[key];
+            }
+        }
+    }
+
+    if(siDescriptorActive) {
+        outJson["SIhistograms"] = {};
+        for(unsigned int i = 0; i < objectCountList.size(); i++) {
+            std::map<unsigned int, size_t> siMap = SIHistograms.at(i).getMap();
+            std::vector<unsigned int> keys;
+            for (auto &content : siMap) {
+                keys.push_back(content.first);
+            }
+            std::sort(keys.begin(), keys.end());
+
+            for(auto &key : keys) {
+                outJson["SIhistograms"][std::to_string(i)][std::to_string(key)] = siMap[key];
+            }
         }
     }
 
@@ -270,6 +294,7 @@ void dumpResultsFile(
 
 void dumpRawSearchResultFile(
         std::string outputFile,
+        std::vector<std::string> descriptorList,
         std::vector<int> objectCountList,
         std::vector<array<unsigned int>> rawQSISearchResults,
         std::vector<array<unsigned int>> rawSISearchResults) {
@@ -279,23 +304,38 @@ void dumpRawSearchResultFile(
     outJson["version"] = "rawfile_v2";
     outJson["sampleObjectCounts"] = objectCountList;
 
-    // QSI block
-    outJson["QSI"] = {};
-    for(int i = 0; i < rawQSISearchResults.size(); i++) {
-        std::string indexString = std::to_string(objectCountList.at(i));
-        outJson["QSI"][indexString] = {};
-        for(int j = 0; j < rawQSISearchResults.at(i).length; j++) {
-            outJson["QSI"][indexString].push_back(rawQSISearchResults.at(i).content[j]);
+    bool qsiDescriptorActive = false;
+    bool siDescriptorActive = false;
+
+    for(const auto& descriptor : descriptorList) {
+        if(descriptor == "qsi") {
+            qsiDescriptorActive = true;
+        } else if(descriptor == "si") {
+            siDescriptorActive = true;
         }
     }
 
-    // SI block
-    outJson["SI"] = {};
-    for(int i = 0; i < rawSISearchResults.size(); i++) {
-        std::string indexString = std::to_string(objectCountList.at(i));
-        outJson["SI"][indexString] = {};
-        for(int j = 0; j < rawSISearchResults.at(i).length; j++) {
-            outJson["SI"][indexString].push_back(rawSISearchResults.at(i).content[j]);
+    // QSI block
+    if(qsiDescriptorActive) {
+        outJson["QSI"] = {};
+        for(int i = 0; i < rawQSISearchResults.size(); i++) {
+            std::string indexString = std::to_string(objectCountList.at(i));
+            outJson["QSI"][indexString] = {};
+            for(int j = 0; j < rawQSISearchResults.at(i).length; j++) {
+                outJson["QSI"][indexString].push_back(rawQSISearchResults.at(i).content[j]);
+            }
+        }
+    }
+
+    if(siDescriptorActive) {
+        // SI block
+        outJson["SI"] = {};
+        for(int i = 0; i < rawSISearchResults.size(); i++) {
+            std::string indexString = std::to_string(objectCountList.at(i));
+            outJson["SI"][indexString] = {};
+            for(int j = 0; j < rawSISearchResults.at(i).length; j++) {
+                outJson["SI"][indexString].push_back(rawSISearchResults.at(i).content[j]);
+            }
         }
     }
 
@@ -332,6 +372,7 @@ void dumpQuasiSpinImages(std::string filename, array<quasiSpinImagePixelType> de
 
 void runClutterBoxExperiment(
         std::string objectDirectory,
+        std::vector<std::string> descriptorList,
         std::vector<int> objectCountList,
         int overrideObjectCount,
         float boxSize,
@@ -340,7 +381,26 @@ void runClutterBoxExperiment(
         bool dumpRawSearchResults,
         std::string outputDirectory,
         size_t overrideSeed) {
-	// --- Overview ---
+
+    // Determine which algorithms to enable
+    bool qsiDescriptorActive = false;
+    bool siDescriptorActive = false;
+
+    std::cout << "Running clutterbox experiment for the following descriptors: ";
+
+    for(const auto& descriptor : descriptorList) {
+        if(descriptor == "qsi") {
+            qsiDescriptorActive = true;
+            std::cout << (siDescriptorActive ? ", " : "") << "Quasi Spin Image";
+        } else if(descriptor == "si") {
+            siDescriptorActive = true;
+            std::cout << (qsiDescriptorActive ? ", " : "") << "Spin Image";
+        }
+    }
+    std::cout << std::endl;
+
+
+    // --- Overview ---
 	//
 	// 1 Search SHREC directory for files
 	// 2 Make a sample set of n sample objects
@@ -423,32 +483,43 @@ void runClutterBoxExperiment(
     std::cout << "\tUsing sample count: " << spinImageSampleCount << std::endl;
 
     // 9 Compute spin image for reference model
-    std::cout << "\tGenerating reference QSI images.. (" << referenceImageCount << " images)" << std::endl;
-    SpinImage::debug::QSIRunInfo qsiReferenceRunInfo;
-    array<quasiSpinImagePixelType> device_referenceQSIImages = SpinImage::gpu::generateQuasiSpinImages(
-                                                                                     scaledMeshesOnGPU.at(0),
-                                                                                     spinOrigins_reference,
-                                                                                     spinImageWidth,
-                                                                                     &qsiReferenceRunInfo);
+    array<quasiSpinImagePixelType> device_referenceQSIImages;
+    array<spinImagePixelType> device_referenceSpinImages;
 
-    QSIRuns.push_back(qsiReferenceRunInfo);
-    std::cout << "\t\tExecution time: " << qsiReferenceRunInfo.generationTimeSeconds << std::endl;
+    if(qsiDescriptorActive) {
+        std::cout << "\tGenerating reference QSI images.. (" << referenceImageCount << " images)" << std::endl;
+        SpinImage::debug::QSIRunInfo qsiReferenceRunInfo;
+        device_referenceQSIImages = SpinImage::gpu::generateQuasiSpinImages(
+                scaledMeshesOnGPU.at(0),
+                spinOrigins_reference,
+                spinImageWidth,
+                &qsiReferenceRunInfo);
 
-    std::cout << "\tGenerating reference spin images.." << std::endl;
-    SpinImage::debug::SIRunInfo siReferenceRunInfo;
-    array<spinImagePixelType> device_referenceSpinImages = SpinImage::gpu::generateSpinImages(
-                                                                                     scaledMeshesOnGPU.at(0),
-                                                                                     spinOrigins_reference,
-                                                                                     spinImageWidth,
-                                                                                     spinImageSampleCount,
-                                                                                     spinImageSupportAngleDegrees,
-                                                                                     generator(),
-                                                                                     &siReferenceRunInfo);
+        QSIRuns.push_back(qsiReferenceRunInfo);
+        std::cout << "\t\tExecution time: " << qsiReferenceRunInfo.generationTimeSeconds << std::endl;
+    }
+
+    if(siDescriptorActive) {
+        std::cout << "\tGenerating reference spin images.." << std::endl;
+        SpinImage::debug::SIRunInfo siReferenceRunInfo;
+        device_referenceSpinImages = SpinImage::gpu::generateSpinImages(
+                scaledMeshesOnGPU.at(0),
+                spinOrigins_reference,
+                spinImageWidth,
+                spinImageSampleCount,
+                spinImageSupportAngleDegrees,
+                generator(),
+                &siReferenceRunInfo);
+
+        SIRuns.push_back(siReferenceRunInfo);
+        std::cout << "\t\tExecution time: " << siReferenceRunInfo.generationTimeSeconds << std::endl;
+    } else {
+        // This keeps the random number generator in a constant state
+        // Generating spin images causes a single random number to be generated.
+        generator();
+    }
 
     checkCudaErrors(cudaFree(spinOrigins_reference.content));
-
-    SIRuns.push_back(siReferenceRunInfo);
-    std::cout << "\t\tExecution time: " << siReferenceRunInfo.generationTimeSeconds << std::endl;
 
     // 10 Combine meshes into one larger scene
     DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
@@ -507,81 +578,89 @@ void runClutterBoxExperiment(
         currentObjectListIndex++;
 
         // Generating quasi spin images
-        std::cout << "\tGenerating QSI images.. (" << imageCount << " images)" << std::endl;
-        SpinImage::debug::QSIRunInfo qsiSampleRunInfo;
-        array<quasiSpinImagePixelType> device_sampleQSIImages = SpinImage::gpu::generateQuasiSpinImages(
-                boxScene,
-                device_uniqueSpinOrigins,
-                spinImageWidth,
-                &qsiSampleRunInfo);
-        QSIRuns.push_back(qsiSampleRunInfo);
-        std::cout << "\t\tTimings: (total " << qsiSampleRunInfo.totalExecutionTimeSeconds
-                  << ", scaling " << qsiSampleRunInfo.meshScaleTimeSeconds
-                  << ", redistribution " << qsiSampleRunInfo.redistributionTimeSeconds
-                  << ", generation " << qsiSampleRunInfo.generationTimeSeconds << ")" << std::endl;
+        if(qsiDescriptorActive) {
+            std::cout << "\tGenerating QSI images.. (" << imageCount << " images)" << std::endl;
+            SpinImage::debug::QSIRunInfo qsiSampleRunInfo;
+            array<quasiSpinImagePixelType> device_sampleQSIImages = SpinImage::gpu::generateQuasiSpinImages(
+                    boxScene,
+                    device_uniqueSpinOrigins,
+                    spinImageWidth,
+                    &qsiSampleRunInfo);
+            QSIRuns.push_back(qsiSampleRunInfo);
+            std::cout << "\t\tTimings: (total " << qsiSampleRunInfo.totalExecutionTimeSeconds
+                      << ", scaling " << qsiSampleRunInfo.meshScaleTimeSeconds
+                      << ", redistribution " << qsiSampleRunInfo.redistributionTimeSeconds
+                      << ", generation " << qsiSampleRunInfo.generationTimeSeconds << ")" << std::endl;
 
-        std::cout << "\tSearching in quasi spin images.." << std::endl;
-        SpinImage::debug::QSISearchRunInfo qsiSearchRun;
-        array<unsigned int> QSIsearchResults = SpinImage::gpu::computeQuasiSpinImageSearchResultRanks(
-                device_referenceQSIImages,
-                referenceMeshImageCount,
-                device_sampleQSIImages,
-                imageCount,
-                &qsiSearchRun);
-        QSISearchRuns.push_back(qsiSearchRun);
-        rawQSISearchResults.push_back(QSIsearchResults);
-        std::cout << "\t\tTimings: (total " << qsiSearchRun.totalExecutionTimeSeconds
-                  << ", searching " << qsiSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
-        Histogram QSIHistogram = computeSearchResultHistogram(referenceMeshImageCount, QSIsearchResults);
-        cudaFree(device_sampleQSIImages.content);
-        if(!dumpRawSearchResults) {
-            delete[] QSIsearchResults.content;
+            std::cout << "\tSearching in quasi spin images.." << std::endl;
+            SpinImage::debug::QSISearchRunInfo qsiSearchRun;
+            array<unsigned int> QSIsearchResults = SpinImage::gpu::computeQuasiSpinImageSearchResultRanks(
+                    device_referenceQSIImages,
+                    referenceMeshImageCount,
+                    device_sampleQSIImages,
+                    imageCount,
+                    &qsiSearchRun);
+            QSISearchRuns.push_back(qsiSearchRun);
+            rawQSISearchResults.push_back(QSIsearchResults);
+            std::cout << "\t\tTimings: (total " << qsiSearchRun.totalExecutionTimeSeconds
+                      << ", searching " << qsiSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
+            Histogram QSIHistogram = computeSearchResultHistogram(referenceMeshImageCount, QSIsearchResults);
+            cudaFree(device_sampleQSIImages.content);
+            if(!dumpRawSearchResults) {
+                delete[] QSIsearchResults.content;
+            }
+
+            // Storing results
+            QSIHistograms.push_back(QSIHistogram);
         }
 
 
 
         // Generating spin images
-        spinImageSampleCount = computeSpinImageSampleCount(imageCount);
-        spinImageSampleCounts.push_back(spinImageSampleCount);
-        std::cout << "\tGenerating spin images.. (" << imageCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
-        SpinImage::debug::SIRunInfo siSampleRunInfo;
-        array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(
-                boxScene,
-                device_uniqueSpinOrigins,
-                spinImageWidth,
-                spinImageSampleCount,
-                spinImageSupportAngleDegrees,
-                generator(),
-                &siSampleRunInfo);
-        SIRuns.push_back(siSampleRunInfo);
-        std::cout << "\t\tTimings: (total " << siSampleRunInfo.totalExecutionTimeSeconds
-                  << ", initialisation " << siSampleRunInfo.initialisationTimeSeconds
-                  << ", sampling " << siSampleRunInfo.meshSamplingTimeSeconds
-                  << ", generation " << siSampleRunInfo.generationTimeSeconds << ")" << std::endl;
+        if(siDescriptorActive) {
+            spinImageSampleCount = computeSpinImageSampleCount(imageCount);
+            spinImageSampleCounts.push_back(spinImageSampleCount);
+            std::cout << "\tGenerating spin images.. (" << imageCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
+            SpinImage::debug::SIRunInfo siSampleRunInfo;
+            array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(
+                    boxScene,
+                    device_uniqueSpinOrigins,
+                    spinImageWidth,
+                    spinImageSampleCount,
+                    spinImageSupportAngleDegrees,
+                    generator(),
+                    &siSampleRunInfo);
+            SIRuns.push_back(siSampleRunInfo);
+            std::cout << "\t\tTimings: (total " << siSampleRunInfo.totalExecutionTimeSeconds
+                      << ", initialisation " << siSampleRunInfo.initialisationTimeSeconds
+                      << ", sampling " << siSampleRunInfo.meshSamplingTimeSeconds
+                      << ", generation " << siSampleRunInfo.generationTimeSeconds << ")" << std::endl;
 
-        std::cout << "\tSearching in spin images.." << std::endl;
-        SpinImage::debug::SISearchRunInfo siSearchRun;
-        array<unsigned int> SpinImageSearchResults = SpinImage::gpu::computeSpinImageSearchResultRanks(
-                device_referenceSpinImages,
-                referenceMeshImageCount,
-                device_sampleSpinImages,
-                imageCount,
-                &siSearchRun);
-        SISearchRuns.push_back(siSearchRun);
-        rawSISearchResults.push_back(SpinImageSearchResults);
-        std::cout << "\t\tTimings: (total " << siSearchRun.totalExecutionTimeSeconds
-                  << ", averaging " << siSearchRun.averagingExecutionTimeSeconds
-                  << ", searching " << siSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
-        Histogram SIHistogram = computeSearchResultHistogram(referenceMeshImageCount, SpinImageSearchResults);
-        cudaFree(device_sampleSpinImages.content);
-        if(!dumpRawSearchResults) {
-            delete[] SpinImageSearchResults.content;
+            std::cout << "\tSearching in spin images.." << std::endl;
+            SpinImage::debug::SISearchRunInfo siSearchRun;
+            array<unsigned int> SpinImageSearchResults = SpinImage::gpu::computeSpinImageSearchResultRanks(
+                    device_referenceSpinImages,
+                    referenceMeshImageCount,
+                    device_sampleSpinImages,
+                    imageCount,
+                    &siSearchRun);
+            SISearchRuns.push_back(siSearchRun);
+            rawSISearchResults.push_back(SpinImageSearchResults);
+            std::cout << "\t\tTimings: (total " << siSearchRun.totalExecutionTimeSeconds
+                      << ", averaging " << siSearchRun.averagingExecutionTimeSeconds
+                      << ", searching " << siSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
+            Histogram SIHistogram = computeSearchResultHistogram(referenceMeshImageCount, SpinImageSearchResults);
+            cudaFree(device_sampleSpinImages.content);
+            if(!dumpRawSearchResults) {
+                delete[] SpinImageSearchResults.content;
+            }
+
+            // Storing results
+            spinImageHistograms.push_back(SIHistogram);
+        } else {
+            // Keeping the random number generator in sync
+            generator();
         }
-
-        // Storing results
-        QSIHistograms.push_back(QSIHistogram);
-        spinImageHistograms.push_back(SIHistogram);
-
     }
 
     SpinImage::gpu::freeDeviceMesh(boxScene);
@@ -593,6 +672,7 @@ void runClutterBoxExperiment(
 
     dumpResultsFile(
             outputDirectory + timestring + "_" + std::to_string(randomSeed) + ".json",
+            descriptorList,
             randomSeed,
             QSIHistograms,
             spinImageHistograms,
@@ -613,11 +693,13 @@ void runClutterBoxExperiment(
     if(dumpRawSearchResults) {
         dumpRawSearchResultFile(
                 outputDirectory + "raw/" + timestring + "_" + std::to_string(randomSeed) + ".json",
+                descriptorList,
                 objectCountList,
                 rawQSISearchResults,
                 rawSISearchResults);
 
         // Cleanup
+        // If one of the descriptors is not enabled, this will iterate over an empty vector.
         for(auto results : rawQSISearchResults) {
             delete[] results.content;
         }

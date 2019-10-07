@@ -5,6 +5,7 @@
 
 void runClutterBoxExperiment(
         std::string objectDirectory,
+        std::vector<std::string> descriptorList,
         std::vector<int> objectCountList,
         int overrideObjectCount,
         float boxSize,
