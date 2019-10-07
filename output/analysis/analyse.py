@@ -99,7 +99,7 @@ with open(outfile, 'w') as outputFile:
             index = i
             if result['version'] == 'v8':
                 index = str(i)
-            if '0' in result['QSIhistograms'][index]:
+            if 'QSIhistograms' in result and '0' in result['QSIhistograms'][index]:
                 qsiPercentageAtPlace0[i] = float(result['QSIhistograms'][index]['0']) / float(totalImageCount)
 
             if '0' in result['SIhistograms'][index]:
@@ -108,13 +108,29 @@ with open(outfile, 'w') as outputFile:
             QSITop10Sum = 0
             SITop10Sum = 0
             for j in range(0, 10):
-                if str(j) in result['QSIhistograms'][index]:
+                if 'QSIhistograms' in result and str(j) in result['QSIhistograms'][index]:
                     QSITop10Sum += result['QSIhistograms'][index][str(j)]
                 if str(j) in result['SIhistograms'][index]:
                     SITop10Sum += result['SIhistograms'][index][str(j)]
 
             qsiPercentageInTop10[i] = float(QSITop10Sum) / float(totalImageCount)
             siPercentageInTop10[i] = float(SITop10Sum) / float(totalImageCount)
+
+        qsiSampleGenerationTimes = None
+        siSampleGenerationTimes = result['runtimes']['SISampleGeneration']['total']
+        qsiSearchTimes = None
+        siSearchTimes = result['runtimes']['SISearch']['total']
+
+        if not 'QSIhistograms' in result:
+            qsiPercentageAtPlace0 = [''] * len(siPercentageAtPlace0)
+            qsiPercentageInTop10 = [''] * len(siPercentageInTop10)
+            qsiSampleGenerationTimes = [''] * len(siSampleGenerationTimes)
+            qsiSearchTimes = [''] * len(siSearchTimes)
+        else:
+            qsiSampleGenerationTimes = result['runtimes']['QSISampleGeneration']['total']
+            qsiSearchTimes = result['runtimes']['QSISearch']['total']
+
+
 
         outputFile.write('%i, %i, %i, %i, ,' % (fileindex, seed, sum(result['vertexCounts']), sum(result['imageCounts'])))
         outputFile.write(', '.join([str(f) for f in result['vertexCounts']]) + ', , ')
@@ -124,10 +140,10 @@ with open(outfile, 'w') as outputFile:
         outputFile.write(', '.join([str(f) for f in siPercentageAtPlace0]) + ', , ')
         outputFile.write(', '.join([str(f) for f in qsiPercentageInTop10]) + ', , ')
         outputFile.write(', '.join([str(f) for f in siPercentageInTop10]) + ', , ')
-        outputFile.write(', '.join([str(f) for f in result['runtimes']['QSISampleGeneration']['total']]) + ', , ')
-        outputFile.write(', '.join([str(f) for f in result['runtimes']['SISampleGeneration']['total']]) + ', , ')
-        outputFile.write(', '.join([str(f) for f in result['runtimes']['QSISearch']['total']]) + ', , ')
-        outputFile.write(', '.join([str(f) for f in result['runtimes']['SISearch']['total']]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in qsiSampleGenerationTimes]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in siSampleGenerationTimes]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in qsiSearchTimes]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in siSearchTimes]) + ', , ')
         outputFile.write('\n')
 print()
 print('Complete.')
