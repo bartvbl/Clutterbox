@@ -102,7 +102,7 @@ with open(outfile, 'w') as outputFile:
             if 'QSIhistograms' in result and '0' in result['QSIhistograms'][index]:
                 qsiPercentageAtPlace0[i] = float(result['QSIhistograms'][index]['0']) / float(totalImageCount)
 
-            if '0' in result['SIhistograms'][index]:
+            if 'SIhistograms' in result and '0' in result['SIhistograms'][index]:
                 siPercentageAtPlace0[i] = float(result['SIhistograms'][index]['0']) / float(totalImageCount)
 
             QSITop10Sum = 0
@@ -110,22 +110,31 @@ with open(outfile, 'w') as outputFile:
             for j in range(0, 10):
                 if 'QSIhistograms' in result and str(j) in result['QSIhistograms'][index]:
                     QSITop10Sum += result['QSIhistograms'][index][str(j)]
-                if str(j) in result['SIhistograms'][index]:
+                if 'SIhistograms' in result and str(j) in result['SIhistograms'][index]:
                     SITop10Sum += result['SIhistograms'][index][str(j)]
 
             qsiPercentageInTop10[i] = float(QSITop10Sum) / float(totalImageCount)
             siPercentageInTop10[i] = float(SITop10Sum) / float(totalImageCount)
 
         qsiSampleGenerationTimes = None
-        siSampleGenerationTimes = result['runtimes']['SISampleGeneration']['total']
+        siSampleGenerationTimes = None
         qsiSearchTimes = None
-        siSearchTimes = result['runtimes']['SISearch']['total']
+        siSearchTimes = None
+
+        if not 'SIhistograms' in result:
+            siPercentageAtPlace0 = [''] * experimentIterationCount
+            siPercentageInTop10 = [''] * experimentIterationCount
+            siSampleGenerationTimes = [''] * experimentIterationCount
+            siSearchTimes = [''] * experimentIterationCount
+        else:
+            siSampleGenerationTimes = result['runtimes']['SISampleGeneration']['total']
+            siSearchTimes = result['runtimes']['SISearch']['total']
 
         if not 'QSIhistograms' in result:
-            qsiPercentageAtPlace0 = [''] * len(siPercentageAtPlace0)
-            qsiPercentageInTop10 = [''] * len(siPercentageInTop10)
-            qsiSampleGenerationTimes = [''] * len(siSampleGenerationTimes)
-            qsiSearchTimes = [''] * len(siSearchTimes)
+            qsiPercentageAtPlace0 = [''] * experimentIterationCount
+            qsiPercentageInTop10 = [''] * experimentIterationCount
+            qsiSampleGenerationTimes = [''] * experimentIterationCount
+            qsiSearchTimes = [''] * experimentIterationCount
         else:
             qsiSampleGenerationTimes = result['runtimes']['QSISampleGeneration']['total']
             qsiSearchTimes = result['runtimes']['QSISearch']['total']
