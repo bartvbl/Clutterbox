@@ -48,7 +48,7 @@ def launchInstance(gpuID):
 
 	log("Launching job with ID " + str(DAEMONONLY_currentSeedIndex) + ' on GPU ' + str(gpuID))
 
-	cmd = subprocess.run(['nvidia-docker run -ti -d -v "/home/bartiver/SHREC17:/home/bartiver/SHREC17" --rm --device /dev/nvidia3:/dev/nvidia0 bartiver_qsiverification:latest ' + str(gpuID) + " " + str(DAEMONONLY_currentSeedIndex) + " " + str(DAEMONONLY_currentSeedIndex+1) + ' "' + seedfile + '" ' + '"--source-directory=/home/bartiver/SHREC17/ --object-counts=1,5,10 --descriptors=qsi --box-size=1 --spin-image-support-angle-degrees=180 --spin-image-width=0.3"'], shell=True, stdout=subprocess.PIPE)
+	cmd = subprocess.run(['nvidia-docker run -ti -d -v "/home/bartiver/SHREC17:/home/bartiver/SHREC17" --rm --device /dev/nvidia3:/dev/nvidia0 bartiver_qsiverification:latest ' + str(gpuID) + " " + str(DAEMONONLY_currentSeedIndex) + " " + str(DAEMONONLY_currentSeedIndex+1) + ' "' + seedfile + '" ' + '"--source-directory=/home/bartiver/SHREC17/ --object-counts=5 --descriptors=qsi --box-size=1 --spin-image-support-angle-degrees=180 --spin-image-width=0.3 --dump-raw-search-results --override-total-object-count=10"'], shell=True, stdout=subprocess.PIPE)
 	subprocess.run(['docker rename ' + cmd.stdout.decode('ascii').strip() + ' bartiver_qsiverification_gpu' + str(gpuID)], shell=True)
 
 	DAEMONONLY_activeseeds[gpuIndex] = DAEMONONLY_currentSeedIndex
