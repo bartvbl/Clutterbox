@@ -59,13 +59,19 @@ def launchInstance(gpuID):
 def checkInstance(gpuID):
 	global outputDir
 
+	result = subprocess.run(['docker ps --filter="name=bartiver_qsiverification_gpu' + str(gpuID) + '"'], shell=True, stdout=subprocess.PIPE)
+	containerHasCrashed = len(result.stdout.decode('utf-8').split('\n')) > 3
+	if containerHasCrashed:
+		log('Job running on GPU ' + str(gpuID) + ' has crashed!')
+		return containerHasCrashed
+
 	beforeCount = len([name for name in os.listdir(outputDir + 'output/')])
 	subprocess.run(['docker cp bartiver_qsiverification_gpu' + str(gpuID) + ':/qsiverification/output/ ' + outputDir], shell=True)
 	afterCount = len([name for name in os.listdir(outputDir + 'output/')])
 	return afterCount > beforeCount
 
 def stopInstance(gpuID):
-	subprocess.run(['docker stop bartiver_qsiverification_gpu' + str(gpuID)], shell=True)
+	subprocess.run(['docker stop bartiver_qsiverification_gpu' + str(gpuID)], shell=True, stdout=subprocess.PIPE)
 
 
 
