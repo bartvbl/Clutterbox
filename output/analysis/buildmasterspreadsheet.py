@@ -26,17 +26,21 @@ inputDirectoryDatasetNames = [
 ]
 outfile = 'final_results/master_spreadsheet.xls'
 
-# Any results after the 7th of October are valid (AFAIK anyway)
+# Last known fault in code: unsigned integer subtraction in QSI comparison function
+# Date threshold corresponds to this commit
 qsiResultsValidAfter = datetime.datetime(year=2019, month=10, day=7, hour=15, minute=14, second=0, microsecond=0)
 
-# I haven't modified the SI descriptor in a while. 1st of September is a pretty safe limit
-siResultsValidAfter = datetime.datetime(year=2019, month=9, day=1, hour=0, minute=0, second=0, microsecond=0)
+# Last known fault in code: override object count did not match
+# Date threshold corresponds to this commit
+siResultsValidAfter = datetime.datetime(year=2019, month=9, day=26, hour=17, minute=28, second=0, microsecond=0)
 
 # -- global initialisation --
 
 # Maps seeds to a list of (dataset, value) tuples
-seedmap_top_result = {}
-seedmap_top10_results = {}
+seedmap_top_result_qsi = {}
+seedmap_top_result_si = {}
+seedmap_top10_results_qsi = {}
+seedmap_top10_results_si = {}
 
 # Settings used to construct the experiment settings table
 
@@ -46,6 +50,25 @@ seedmap_top10_results = {}
 def loadOutputFileDirectory(path):
     originalFiles = os.listdir(path)
     results = {}
+
+    ignored_count_si = 0
+    ignored_count_qsi = 0
+    for fileindex, file in enumerate(originalFiles):
+        if file == 'raw' or file == 'rawless':
+            continue
+        filename_creation_time_part = file.split('_')[0]
+        creation_time = datetime.datetime.strptime(filename_creation_time_part, "%Y-%m-%d %H-%M-%S")
+        if creation_time < qsiResultsValidAfter:
+            ignored_count_qsi += 1
+        if creation_time < siResultsValidAfter:
+            ignored_count_si += 1
+
+    if ignored_count_qsi > 0:
+        print('\t%i/%i QSI images were created before the threshold deadline. QSI images will be ignored from this dataset.' % (ignored_count_qsi, len(originalFiles)))
+    if ignored_count_si > 0:
+        print('\t%i/%i SI images were created before the threshold deadline. SI images will be ignored from this dataset.' % (ignored_count_si, len(originalFiles)))
+
+
     for fileindex, file in enumerate(originalFiles):
         print(str(fileindex+1) + '/' + str(len(originalFiles)), file + '        ', end='\r')
         if file == 'raw' or file == 'rawless':
@@ -53,6 +76,8 @@ def loadOutputFileDirectory(path):
         with open(os.path.join(path, file), 'r') as openFile:
             fileContents = json.loads(openFile.read())
             results[fileContents['seed']] = fileContents
+    print()
+
     return results
 
 def objects(count):
@@ -66,7 +91,7 @@ loadedResults = {}
 for directory in inputDirectories:
     print('Loading directory:', directory)
     loadedResults[directory] = loadOutputFileDirectory(directory)
-    print()
+
 
 print('Processing..')
 with open(outfile, 'w') as outputFile:
