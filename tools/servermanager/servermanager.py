@@ -32,7 +32,7 @@ SHARED_jobqueue = []
 print('Loaded', DAEMONONLY_seedCount, 'seeds.')
 
 if len(sys.argv) > 1:
-	DAEMONONLY_currentSeedIndex = max(0, sys.argv[1])
+	DAEMONONLY_currentSeedIndex = max(0, int(sys.argv[1]))
 
 def log(message):
 	time = datetime.datetime.now()
