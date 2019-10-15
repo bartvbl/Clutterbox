@@ -47,9 +47,25 @@ seedmap_top10_results_si = {}
 
 # -- code --
 
+def extractExperimentSettings(loadedJson):
+    settings = {}
+    settings['boxSize'] = loadedJson['boxSize']
+    settings['sampleObjectCounts'] = loadedJson['sampleObjectCounts']
+    settings['sampleSetSize'] = loadedJson['sampleSetSize']
+    settings['searchResultCount'] = loadedJson['searchResultCount']
+    settings['spinImageSupportAngle'] = loadedJson['spinImageSupportAngle']
+    settings['spinImageWidth'] = loadedJson['spinImageWidth']
+    settings['spinImageWidthPixels'] = loadedJson['spinImageWidthPixels']
+    settings['version'] = loadedJson['version']
+    return settings
+
 def loadOutputFileDirectory(path):
     originalFiles = os.listdir(path)
-    results = {}
+    results = {
+        'path': path,
+        'results': {},
+        'settings': {}
+    }
 
     ignored_count_si = 0
     ignored_count_qsi = 0
@@ -69,14 +85,23 @@ def loadOutputFileDirectory(path):
         print('\t%i/%i SI images were created before the threshold deadline. SI images will be ignored from this dataset.' % (ignored_count_si, len(originalFiles)))
 
 
+    previousExperimentSettings = None
     for fileindex, file in enumerate(originalFiles):
         print(str(fileindex+1) + '/' + str(len(originalFiles)), file + '        ', end='\r')
         if file == 'raw' or file == 'rawless':
             continue
         with open(os.path.join(path, file), 'r') as openFile:
             fileContents = json.loads(openFile.read())
+            currentExperimentSettings = extractExperimentSettings(fileContents)
+            if previousExperimentSettings is not None:
+                if currentExperimentSettings != previousExperimentSettings:
+                    raise Exception("Experiment settings mismatch in the same batch! File: " + file)
             results[fileContents['seed']] = fileContents
+            previousExperimentSettings = currentExperimentSettings
     print()
+
+    results['settings'] = previousExperimentSettings
+    print('\t' + str(results['settings']))
 
     return results
 
