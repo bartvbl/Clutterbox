@@ -10,7 +10,6 @@ from math import sqrt
 inputDirectories = [
     '../HEIDRUNS/output_qsifix_v4_noearlyexit/output',
     '../HEIDRUNS/output_qsifix_v4_withearlyexit/output',
-    '../HEIDRUNS/output_majorfix_v2_lotsofobjects_5_v2/output',
     '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output',
     '../IDUNRUNS/output_lotsofobjects_v4',
     '../IDUNRUNS/output_lotsofobjects_5_v3',
