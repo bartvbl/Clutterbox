@@ -15,14 +15,20 @@ inputDirectories = [
     '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output',
     '../IDUNRUNS/output_smallsupportangle_lotsofobjects',
     '../IDUNRUNS/output_qsifix_smallsupportangle_rerun',
+    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output',
+    '../IDUNRUNS/output_mainchart_si_v4_15',
+    '../IDUNRUNS/output_mainchart_si_v4_10',
 ]
 inputDirectoryDatasetNames = [
-    'QSI, no early exit',
-    'QSI, with early exit',
-    'QSI, primary QSI IDUN run',
-    'QSI, failed jobs from IDUN run',
-    'SI, 60 support angle, primary IDUN run',
-    'SI, 60 support angle, secondary IDUN run'
+    'QSI\nno early exit',
+    'QSI\nwith early exit',
+    'QSI\nprimary QSI IDUN run',
+    'QSI\nfailed jobs from IDUN run',
+    'SI\n60 support angle\nprimary IDUN run',
+    'SI\n60 support angle\nsecondary IDUN run',
+    'SI\n180 support angle\nHEID',
+    'SI\n180 support angle\nIDUN',
+    'SI\n180 support angle\nIDUN',
 ]
 outfile = 'final_results/master_spreadsheet.xls'
 
@@ -221,21 +227,19 @@ for directoryIndex, directory in enumerate(inputDirectories):
         for seedIndex, seed in enumerate(seedList):
             top0sheetQSI.write(seedIndex + 1, 0, str(seed))
             top0sheetSI.write(seedIndex + 1, 0, str(seed))
+            top10sheetQSI.write(seedIndex + 1, 0, str(seed))
+            top10sheetSI.write(seedIndex + 1, 0, str(seed))
+            vertexCountSheet.write(seedIndex + 1, 0, str(seed))
     resultSet = loadedResults[directory]
     directoryName = inputDirectoryDatasetNames[directoryIndex]
     for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
-        top0sheetQSI.write(0, currentColumn + sampleCountIndex,
-                           directoryName + ' (' + str(sampleObjectCount) + ' ' + objects(
-                               len(resultSet['settings']['sampleObjectCounts'])) + ')')
-        top0sheetSI.write(0, currentColumn + sampleCountIndex,
-                          directoryName + ' (' + str(sampleObjectCount) + ' ' + objects(
-                              len(resultSet['settings']['sampleObjectCounts'])) + ')')
-        top10sheetQSI.write(0, currentColumn + sampleCountIndex,
-                           directoryName + ' (' + str(sampleObjectCount) + ' ' + objects(
-                               len(resultSet['settings']['sampleObjectCounts'])) + ')')
-        top10sheetSI.write(0, currentColumn + sampleCountIndex,
-                          directoryName + ' (' + str(sampleObjectCount) + ' ' + objects(
-                              len(resultSet['settings']['sampleObjectCounts'])) + ')')
+        columnHeader = directoryName + ' (' + str(sampleObjectCount) + ' ' + objects(
+                               len(resultSet['settings']['sampleObjectCounts'])) + ')'
+        top0sheetQSI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        top0sheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        top10sheetQSI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        top10sheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        vertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
     for seedIndex, seed in enumerate(seedList):
         if seed in resultSet['results']['QSI']:
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
