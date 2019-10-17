@@ -13,9 +13,7 @@ inputDirectories = [
     '../HEIDRUNS/output_qsifix_v4_withearlyexit/output',
     '../IDUNRUNS/output_lotsofobjects_v4',
     '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output',
-    '../IDUNRUNS/output_lotsofobjects_5_v3',
     '../IDUNRUNS/output_smallsupportangle_lotsofobjects',
-    '../IDUNRUNS/output_smallsupportangle_lotsofobjects_run2',
     '../IDUNRUNS/output_qsifix_smallsupportangle_rerun',
 ]
 inputDirectoryDatasetNames = [
