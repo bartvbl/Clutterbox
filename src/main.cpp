@@ -111,7 +111,7 @@ int main(int argc, const char **argv)
 
     std::sort(objectCountList.begin(), objectCountList.end());
 
-	runClutterBoxExperiment(objectDirectory.value(), descriptorList, objectCountList, overrideObjectCount, boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), randomSeed);
+	runClutterBoxExperiment(objectDirectory.value(), descriptorList, objectCountList, overrideObjectCount.value(), boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), randomSeed);
 
     return 0;
 }
