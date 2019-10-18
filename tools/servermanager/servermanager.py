@@ -22,6 +22,7 @@ DAEMONONLY_currentSeedIndex = 0
 DAEMONONLY_seedCount = sum(1 for line in open('bench/' + seedfile))
 DAEMONONLY_activeseeds = []
 DAEMONONLY_gpuIDs = []
+DAEMONONLY_failedSeedQueue = []
 
 SHARED_activegpus = []
 SHARED_serverlog = []
@@ -46,19 +47,30 @@ def launchInstance(gpuID):
 	global DAEMONONLY_gpuIDs
 
 	gpuIndex = DAEMONONLY_gpuIDs.index(gpuID)
-	# Don't launch if we have reached the end
-	if DAEMONONLY_currentSeedIndex >= DAEMONONLY_seedCount:
-		SHARED_activegpus[gpuIndex] = False
-		return
 
-	log("Launching job with ID " + str(DAEMONONLY_currentSeedIndex) + ' on GPU ' + str(gpuID))
+	seedIndex = -1
+	if len(DAEMONONLY_failedSeedQueue) > 0:
+		# Pick the first seed that was reinserted back into the queue
+		seedIndex = DAEMONONLY_failedSeedQueue[0]
+		del DAEMONONLY_failedSeedQueue[0]
+		log("Launching job with previously failed seed ID " + str(seedIndex) + " on GPU " + str(gpuID))
+	else:
+		# Pick the next seed we haven't looked at
+		seedIndex = DAEMONONLY_currentSeedIndex
+		log("Launching job with ID " + str(DAEMONONLY_currentSeedIndex) + ' on GPU ' + str(gpuID))
 
-	cmd = subprocess.run(['nvidia-docker run -ti -d -v "/home/bartiver/SHREC17:/home/bartiver/SHREC17" --rm --device /dev/nvidia3:/dev/nvidia0 bartiver_qsiverification:latest ' + str(gpuID) + " " + str(DAEMONONLY_currentSeedIndex) + " " + str(DAEMONONLY_currentSeedIndex+1) + ' "' + seedfile + '" ' + '"--source-directory=/home/bartiver/SHREC17/ --object-counts=10 --descriptors=si --box-size=1 --spin-image-support-angle-degrees=180 --spin-image-width=0.3 --dump-raw-search-results --override-total-object-count=10"'], shell=True, stdout=subprocess.PIPE)
+		# Don't launch if we have reached the end
+		if DAEMONONLY_currentSeedIndex >= DAEMONONLY_seedCount:
+			# In which case we can simply quit entirely
+			SHARED_jobqueue.append({'command': 'remove', 'id': gpuID})
+			return
+		else:
+			DAEMONONLY_currentSeedIndex += 1
+
+	DAEMONONLY_activeseeds[gpuIndex] = seedIndex
+
+	cmd = subprocess.run(['nvidia-docker run -ti -d -v "/home/bartiver/SHREC17:/home/bartiver/SHREC17" --rm --device /dev/nvidia3:/dev/nvidia0 bartiver_qsiverification:latest ' + str(gpuID) + " " + str(seedIndex) + " " + str(seedIndex+1) + ' "' + seedfile + '" ' + '"--source-directory=/home/bartiver/SHREC17/ --object-counts=10 --descriptors=si --box-size=1 --spin-image-support-angle-degrees=180 --spin-image-width=0.3 --dump-raw-search-results --override-total-object-count=10"'], shell=True, stdout=subprocess.PIPE)
 	subprocess.run(['docker rename ' + cmd.stdout.decode('ascii').strip() + ' bartiver_qsiverification_gpu' + ('0' if gpuID < 10 else '') + str(gpuID)], shell=True)
-
-	DAEMONONLY_activeseeds[gpuIndex] = DAEMONONLY_currentSeedIndex
-	DAEMONONLY_currentSeedIndex += 1
-
 
 
 def checkInstance(gpuID):
@@ -137,7 +149,9 @@ def gpuDaemon():
 						stopInstance(gpuID)
 						gpuIndex = DAEMONONLY_gpuIDs.index(gpuID)
 						processingSeed = DAEMONONLY_activeseeds[gpuIndex]
-						log("Processing seed index " + str(processingSeed) + " on GPU " + str(gpuIndex) + " failed!")
+						log("Processing seed index " + str(processingSeed) + " on GPU " + str(gpuID) + " was aborted!")
+						# queue aborted job for a later retry
+						DAEMONONLY_failedSeedQueue.append(processingSeed)
 						del DAEMONONLY_gpuIDs[gpuIndex]
 						del DAEMONONLY_activeseeds[gpuIndex]
 						del SHARED_activegpus[gpuIndex]
