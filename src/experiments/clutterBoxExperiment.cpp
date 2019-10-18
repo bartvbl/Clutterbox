@@ -438,7 +438,7 @@ void runClutterBoxExperiment(
     std::random_device rd;
     size_t randomSeed = overrideSeed != 0 ? overrideSeed : rd();
     std::cout << "Random seed: " << randomSeed << std::endl;
-    std::default_random_engine generator{randomSeed};
+    std::minstd_rand0 generator{randomSeed};
 
     std::cout << std::endl << "Running experiment initialisation sequence.." << std::endl;
 
