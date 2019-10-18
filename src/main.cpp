@@ -29,7 +29,7 @@ int main(int argc, const char **argv)
 	const auto& showHelp = parser.add<bool>("help", "Show this help message.", 'h', arrrgh::Optional, false);
 	const auto& listGPUs = parser.add<bool>("list-gpus", "List all GPU's, used for the --force-gpu parameter.", 'a', arrrgh::Optional, false);
 	const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", 'b', arrrgh::Optional, -1);
-	const auto& boxSize = parser.add<int>("box-size", "Size of the cube box for the clutter box experiment", '\0', arrrgh::Optional, -1);
+	const auto& boxSize = parser.add<float>("box-size", "Size of the cube box for the clutter box experiment", '\0', arrrgh::Optional, 1);
 	const auto& objectDirectory = parser.add<std::string>("source-directory", "Defines the directory from which input objects are read", '\0', arrrgh::Optional, "");
 	const auto& spinImageWidth = parser.add<float>("spin-image-width", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
 	const auto& spinImageSupportAngle = parser.add<float>("spin-image-support-angle-degrees", "The support angle to use for filtering spin image point samples", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_SUPPORT_ANGLE_DEGREES);
@@ -68,11 +68,6 @@ int main(int argc, const char **argv)
 
 	if(objectCounts.value() == "NONE") {
 		std::cout << "Experiment requires the --object-counts parameter to be set" << std::endl;
-		exit(0);
-	}
-
-	if(boxSize.value() == -1) {
-		std::cout << "Experiment requires the --box-size parameter to be set" << std::endl;
 		exit(0);
 	}
 
