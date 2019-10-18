@@ -2,15 +2,6 @@
 
 #include <string>
 #include <vector>
+#include <experiments/clutterBox/types/ExperimentSettings.h>
 
-void runClutterBoxExperiment(
-        std::string objectDirectory,
-        std::vector<std::string> descriptorList,
-        std::vector<int> objectCountList,
-        int overrideObjectCount,
-        float boxSize,
-        float spinImageWidth,
-        float spinImageSupportAngleDegrees,
-        bool dumpRawSearchResults,
-        std::string outputDirectory,
-        size_t overrideSeed = 0);
+void runClutterBoxExperiment(ExperimentSettings settings);

@@ -7,6 +7,9 @@
 
 
 #include <stdexcept>
+#include <experiments/clutterBox/types/ExperimentSettings.h>
+#include <experiments/clutterBox/experimentSettingsGenerator.h>
+#include <random>
 
 cudaDeviceProp setCurrentCUDADevice(bool listOnly, int forceGPU);
 
@@ -29,7 +32,7 @@ int main(int argc, const char **argv)
 	const auto& showHelp = parser.add<bool>("help", "Show this help message.", 'h', arrrgh::Optional, false);
 	const auto& listGPUs = parser.add<bool>("list-gpus", "List all GPU's, used for the --force-gpu parameter.", 'a', arrrgh::Optional, false);
 	const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", 'b', arrrgh::Optional, -1);
-	const auto& boxSize = parser.add<int>("box-size", "Size of the cube box for the clutter box experiment", '\0', arrrgh::Optional, -1);
+	const auto& boxSize = parser.add<float>("box-size", "Size of the cube box for the clutter box experiment", '\0', arrrgh::Optional, 1);
 	const auto& objectDirectory = parser.add<std::string>("source-directory", "Defines the directory from which input objects are read", '\0', arrrgh::Optional, "");
 	const auto& spinImageWidth = parser.add<float>("spin-image-width", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
 	const auto& spinImageSupportAngle = parser.add<float>("spin-image-support-angle-degrees", "The support angle to use for filtering spin image point samples", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_SUPPORT_ANGLE_DEGREES);
@@ -87,6 +90,10 @@ int main(int argc, const char **argv)
     sstr >> randomSeed;
     if(randomSeed != 0) {
         std::cout << "Using overridden seed: " << randomSeed << std::endl;
+    } else {
+        // Generate random seed
+        std::random_device rd;
+        randomSeed = rd();
     }
 
     // Interpret the object counts string
@@ -110,13 +117,25 @@ int main(int argc, const char **argv)
             std::cout << "Error: Unknown descriptor name detected: \"" + descriptorPart + "\". Ignoring." << std::endl;
         }
     }
-    if(containsAll /*|| descriptorList.size() == 0 feature, not a bug*/) {
+    if(containsAll /*|| descriptorList.size() == 0 feature, not a bug. Will dump experiment settings only. */) {
         descriptorList = {"qsi", "si"};
     }
 
     std::sort(objectCountList.begin(), objectCountList.end());
 
-	runClutterBoxExperiment(objectDirectory.value(), descriptorList, objectCountList, overrideObjectCount, boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), randomSeed);
+    ExperimentSettings settings = generateRandomExperimentSettings(
+            objectDirectory.value(),
+            descriptorList,
+            objectCountList,
+            overrideObjectCount.value(),
+            boxSize.value(),
+            spinImageWidth.value(),
+            spinImageSupportAngle.value(),
+            dumpRawResults.value(),
+            outputDirectory.value(),
+            randomSeed);
+
+	runClutterBoxExperiment(settings);
 
     return 0;
 }

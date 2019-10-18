@@ -24,6 +24,8 @@
 #include <spinImage/utilities/dumpers/searchResultDumper.h>
 
 #include <experiments/clutterBox/clutterBoxUtilities.h>
+#include <experiments/clutterBox/types/ExperimentSettings.h>
+
 #include <fstream>
 #include <glm/vec3.hpp>
 #include <map>
@@ -32,6 +34,8 @@
 #include <cuda_runtime_api.h>
 #include <json.hpp>
 #include <tsl/ordered_map.h>
+
+
 
 template<class Key, class T, class Ignore, class Allocator,
         class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
@@ -58,106 +62,34 @@ using json = nlohmann::basic_json<ordered_map>;
 
 Histogram computeSearchResultHistogram(size_t vertexCount, const array<unsigned int> &searchResults);
 
-std::vector<std::string> generateRandomFileList(const std::string &objectDirectory, unsigned int sampleSetSize,
-                                                std::default_random_engine &generator) {
-
-    std::vector<std::string> filePaths(sampleSetSize);
-
-    std::cout << "\tListing object directory..";
-    std::vector<std::string> fileList = listDir(objectDirectory);
-    std::cout << " (found " << fileList.size() << " files)" << std::endl;
-
-    // Sort the file list to avoid the effects of operating systems ordering files inconsistently.
-    std::sort(fileList.begin(), fileList.end());
-
-    std::shuffle(std::begin(fileList), std::end(fileList), generator);
-
-    for (unsigned int i = 0; i < sampleSetSize; i++) {
-        filePaths[i] = objectDirectory + (endsWith(objectDirectory, "/") ? "" : "/") + fileList.at(i);
-        std::cout << "\t\tSample " << i << ": " << filePaths.at(i) << std::endl;
-    }
-
-    return filePaths;
-}
-
 void dumpResultsFile(
         std::string outputFile,
-        std::vector<std::string> descriptorList,
-        size_t seed,
+        ExperimentSettings experimentSettings,
         std::vector<Histogram> QSIHistograms,
         std::vector<Histogram> SIHistograms,
-        const std::string &sourceFileDirectory,
-        std::vector<int> objectCountList,
-        int overrideObjectCount,
-        float boxSize,
-        float spinImageWidth,
-        size_t assertionRandomToken,
         std::vector<SpinImage::debug::QSIRunInfo> QSIRuns,
         std::vector<SpinImage::debug::SIRunInfo> SIRuns,
         std::vector<SpinImage::debug::QSISearchRunInfo> QSISearchRuns,
         std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns,
-        float spinImageSupportAngleDegrees,
-        std::vector<size_t> uniqueVertexCounts,
-        std::vector<size_t> spinImageSampleCounts) {
+        std::vector<size_t> uniqueVertexCounts) {
     std::cout << std::endl << "Dumping results file.." << std::endl;
 
-    std::default_random_engine generator{seed};
+    int sampleObjectCount = *std::max_element(experimentSettings.objectCountList.begin(), experimentSettings.objectCountList.end());
 
-    int sampleObjectCount = *std::max_element(objectCountList.begin(), objectCountList.end());
-    int originalObjectCount = sampleObjectCount;
-
-    if(overrideObjectCount != -1) {
-        std::cout << "Using overridden object count: " << overrideObjectCount << std::endl;
-        sampleObjectCount = overrideObjectCount;
-    }
-
-    std::vector<std::string> chosenFiles = generateRandomFileList(sourceFileDirectory, sampleObjectCount, generator);
-
-    std::shuffle(std::begin(chosenFiles), std::end(chosenFiles), generator);
-
-    // This represents an random number generation for the spin image seed selection
-    generator();
-
-    std::uniform_real_distribution<float> distribution(0, 1);
-
-    std::vector<glm::vec3> rotations(sampleObjectCount);
-    std::vector<glm::vec3> translations(sampleObjectCount);
-
-    for(unsigned int i = 0; i < sampleObjectCount; i++) {
-        float yaw = float(distribution(generator) * 2.0 * M_PI);
-        float pitch = float((distribution(generator) - 0.5) * M_PI);
-        float roll = float(distribution(generator) * 2.0 * M_PI);
-
-        float distanceX = boxSize * distribution(generator);
-        float distanceY = boxSize * distribution(generator);
-        float distanceZ = boxSize * distribution(generator);
-
-        rotations.at(i) = glm::vec3(yaw, pitch, roll);
-        translations.at(i) = glm::vec3(distanceX, distanceY, distanceZ);
-
-        std::cout << "\tRotation: (" << yaw << ", " << pitch << ", "<< roll << "), Translation: (" << distanceX << ", "<< distanceY << ", "<< distanceZ << ")" << std::endl;
+    if(experimentSettings.overrideObjectCount != -1) {
+        std::cout << "Using overridden object count: " << experimentSettings.overrideObjectCount << std::endl;
+        sampleObjectCount = experimentSettings.overrideObjectCount;
     }
 
     std::vector<HostMesh> sampleMeshes(sampleObjectCount);
     for (unsigned int i = 0; i < sampleObjectCount; i++) {
-        sampleMeshes.at(i) = SpinImage::utilities::loadOBJ(chosenFiles.at(i), true);
-    }
-
-    // This represents random number generations for the spin image seed selections during the experiment
-    for(int i = 0; i < objectCountList.size(); i++) {
-        generator();
-    }
-
-    size_t finalCheckToken = generator();
-    if(finalCheckToken != assertionRandomToken) {
-        std::cerr << "ERROR: the verification token generated by the metadata dump function was different than the one used to generate the program output. This means that due to changes the metadata computed by the dump function is likely wrong and should be corrected." << std::endl;
-        std::cerr << "Expected: " << finalCheckToken << ", got: " << assertionRandomToken << std::endl;
+        sampleMeshes.at(i) = SpinImage::utilities::loadOBJ(experimentSettings.chosenFiles.at(i), true);
     }
 
     bool qsiDescriptorActive = false;
     bool siDescriptorActive = false;
 
-    for(const auto& descriptor : descriptorList) {
+    for(const auto& descriptor : experimentSettings.descriptorsToGenerateList) {
         if(descriptor == "qsi") {
             qsiDescriptorActive = true;
         } else if(descriptor == "si") {
@@ -168,30 +100,30 @@ void dumpResultsFile(
     json outJson;
 
     outJson["version"] = "v8";
-    outJson["seed"] = seed;
-    outJson["descriptors"] = descriptorList;
+    outJson["seed"] = experimentSettings.seed;
+    outJson["descriptors"] = experimentSettings.descriptorsToGenerateList;
     outJson["sampleSetSize"] = sampleObjectCount;
-    outJson["sampleObjectCounts"] = objectCountList;
-    outJson["overrideObjectCount"] = overrideObjectCount;
+    outJson["sampleObjectCounts"] = experimentSettings.objectCountList;
+    outJson["overrideObjectCount"] = experimentSettings.overrideObjectCount;
     outJson["uniqueVertexCounts"] = uniqueVertexCounts;
     outJson["imageCounts"] = uniqueVertexCounts;
-    outJson["boxSize"] = boxSize;
-    outJson["spinImageWidth"] = spinImageWidth;
+    outJson["boxSize"] = experimentSettings.boxSize;
+    outJson["spinImageWidth"] = experimentSettings.spinImageWidth;
     outJson["spinImageWidthPixels"] = spinImageWidthPixels;
-    outJson["spinImageSupportAngle"] = spinImageSupportAngleDegrees;
-    outJson["spinImageSampleCounts"] = spinImageSampleCounts;
+    outJson["spinImageSupportAngle"] = experimentSettings.spinImageSupportAngleDegrees;
+    outJson["spinImageSampleCounts"] = experimentSettings.spinImageSampleCounts;
     outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
-    outJson["inputFiles"] = chosenFiles;
+    outJson["inputFiles"] = experimentSettings.chosenFiles;
     outJson["vertexCounts"] = {};
     for (auto &sampleMesh : sampleMeshes) {
         outJson["vertexCounts"].push_back(sampleMesh.vertexCount);
     }
     outJson["rotations"] = {};
-    for (auto &rotation : rotations) {
+    for (auto &rotation : experimentSettings.rotations) {
         outJson["rotations"].push_back({rotation.x, rotation.y, rotation.z});
     }
     outJson["translations"] = {};
-    for (auto &translation : translations) {
+    for (auto &translation : experimentSettings.translations) {
         outJson["translations"].push_back({translation.x, translation.y, translation.z});
     }
 
@@ -253,7 +185,7 @@ void dumpResultsFile(
 
     if(qsiDescriptorActive) {
         outJson["QSIhistograms"] = {};
-        for(unsigned int i = 0; i < objectCountList.size(); i++) {
+        for(unsigned int i = 0; i < experimentSettings.objectCountList.size(); i++) {
             std::map<unsigned int, size_t> qsiMap = QSIHistograms.at(i).getMap();
             std::vector<unsigned int> keys;
             for (auto &content : qsiMap) {
@@ -269,7 +201,7 @@ void dumpResultsFile(
 
     if(siDescriptorActive) {
         outJson["SIhistograms"] = {};
-        for(unsigned int i = 0; i < objectCountList.size(); i++) {
+        for(unsigned int i = 0; i < experimentSettings.objectCountList.size(); i++) {
             std::map<unsigned int, size_t> siMap = SIHistograms.at(i).getMap();
             std::vector<unsigned int> keys;
             for (auto &content : siMap) {
@@ -370,17 +302,7 @@ void dumpQuasiSpinImages(std::string filename, array<quasiSpinImagePixelType> de
     delete[] hostDescriptors.content;
 }
 
-void runClutterBoxExperiment(
-        std::string objectDirectory,
-        std::vector<std::string> descriptorList,
-        std::vector<int> objectCountList,
-        int overrideObjectCount,
-        float boxSize,
-        float spinImageWidth,
-        float spinImageSupportAngleDegrees,
-        bool dumpRawSearchResults,
-        std::string outputDirectory,
-        size_t overrideSeed) {
+void runClutterBoxExperiment(ExperimentSettings experimentSettings) {
 
     // Determine which algorithms to enable
     bool qsiDescriptorActive = false;
@@ -421,6 +343,8 @@ void runClutterBoxExperiment(
     std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns;
     std::vector<SpinImage::debug::QSISearchRunInfo> QSISearchRuns;
 
+    // 1. Preamble
+
     // The number of sample objects that need to be loaded depends on the largest number of objects required in the list
     int sampleObjectCount = *std::max_element(objectCountList.begin(), objectCountList.end());
 
@@ -433,12 +357,6 @@ void runClutterBoxExperiment(
         std::cout << "Using overridden object count: " << overrideObjectCount << std::endl;
         sampleObjectCount = overrideObjectCount;
     }
-
-    // 1 Seeding the random number generator
-    std::random_device rd;
-    size_t randomSeed = overrideSeed != 0 ? overrideSeed : rd();
-    std::cout << "Random seed: " << randomSeed << std::endl;
-    std::default_random_engine generator{randomSeed};
 
     std::cout << std::endl << "Running experiment initialisation sequence.." << std::endl;
 
