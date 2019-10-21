@@ -117,6 +117,8 @@ def loadOutputFileDirectory(path):
 
             # Check if settings are the same as other files in the folder
             currentExperimentSettings = extractExperimentSettings(fileContents)
+# MASSIVE HACK
+            currentExperimentSettings['cluster'] = 'IDUN' if 'IDUN' in path else 'HEID'
             if previousExperimentSettings is not None:
                 if currentExperimentSettings != previousExperimentSettings:
                     # Any discrepancy here is a fatal exception. It NEEDS attention regardless
@@ -202,17 +204,27 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
     result = loadedResults[directory]
     allColumns = allColumns.union(set(result['settings']))
 
+# Overview table headers
+for keyIndex, key in enumerate(allColumns):
+    experimentSheet.write(0, keyIndex + 1, str(key))
+experimentSheet.write(0, len(allColumns) + 1, 'QSI Count')
+experimentSheet.write(0, len(allColumns) + 2, 'SI Count')
+
+# Overview table contents
 for directoryIndex, directory in enumerate(inputDirectories.keys()):
     directoryName = inputDirectories[directory]
     experimentSheet.write(directoryIndex + 1, 0, directoryName)
     result = loadedResults[directory]
     for keyIndex, key in enumerate(allColumns):
-        if directoryIndex == 0:
-            experimentSheet.write(0, keyIndex + 1, str(key))
         if key in result['settings']:
             experimentSheet.write(directoryIndex + 1, keyIndex + 1, str(result['settings'][key]))
         else:
             experimentSheet.write(directoryIndex + 1, keyIndex + 1, ' ')
+
+    experimentSheet.write(directoryIndex + 1, len(allColumns) + 1, len(result['results']['QSI']))
+    experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len(result['results']['SI']))
+
+
 
 # Sheets
 top0sheetQSI = book.add_sheet("Rank 0 QSI results")
