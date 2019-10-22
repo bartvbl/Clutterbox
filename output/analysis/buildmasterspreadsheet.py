@@ -255,15 +255,15 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
         vertexCountSheet.write(0, 0, 'seed')
 
         for seedIndex, seed in enumerate(seedList):
-            top0sheetQSI.write(seedIndex + 1, 0, str(seed))
-            top0sheetSI.write(seedIndex + 1, 0, str(seed))
-            top10sheetQSI.write(seedIndex + 1, 0, str(seed))
-            top10sheetSI.write(seedIndex + 1, 0, str(seed))
-            qsiGenerationSpeedSheet.write(seedIndex + 1, 0, str(seed))
-            siGenerationSpeedSheet.write(seedIndex + 1, 0, str(seed))
-            qsiComparisonSpeedSheet.write(seedIndex + 1, 0, str(seed))
-            siComparisonSpeedSheet.write(seedIndex + 1, 0, str(seed))
-            vertexCountSheet.write(seedIndex + 1, 0, str(seed))
+            top0sheetQSI.write(seedIndex + 1, 0, seed)
+            top0sheetSI.write(seedIndex + 1, 0, seed)
+            top10sheetQSI.write(seedIndex + 1, 0, seed)
+            top10sheetSI.write(seedIndex + 1, 0, seed)
+            qsiGenerationSpeedSheet.write(seedIndex + 1, 0, seed)
+            siGenerationSpeedSheet.write(seedIndex + 1, 0, seed)
+            qsiComparisonSpeedSheet.write(seedIndex + 1, 0, seed)
+            siComparisonSpeedSheet.write(seedIndex + 1, 0, seed)
+            vertexCountSheet.write(seedIndex + 1, 0, seed)
 
     resultSet = loadedResults[directory]
     directoryName, _ = inputDirectories[directory]
@@ -293,22 +293,22 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
                 totalImageCount = entry['imageCounts'][0]
                 experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
                 percentageAtPlace0 = float(entry['QSIhistograms'][str(sampleCountIndex)]['0']) / float(totalImageCount)
-                top0sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, str(percentageAtPlace0))
+                top0sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
 
                 # Top 10 performance
                 totalImageCountInTop10 = sum(
                     [entry['QSIhistograms'][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
                     str(x) in entry['QSIhistograms'][str(sampleCountIndex)]])
                 percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
-                top10sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, str(percentInTop10))
+                top10sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
 
                 # generation execution time
                 generationTime = entry['runtimes']['QSISampleGeneration']['total'][sampleCountIndex]
-                qsiGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, str(generationTime))
+                qsiGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
 
                 # search execution time
                 comparisonTime = entry['runtimes']['QSISearch']['total'][sampleCountIndex]
-                qsiComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, str(comparisonTime))
+                qsiComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
 
                 # Vertex count sanity check
                 vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
@@ -326,22 +326,22 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
                 totalImageCount = entry['imageCounts'][0]
                 experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
                 percentageAtPlace0 = float(entry['SIhistograms'][str(sampleCountIndex)]['0']) / float(totalImageCount)
-                top0sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, str(percentageAtPlace0))
+                top0sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
 
                 # Top 10 performance
                 totalImageCountInTop10 = sum(
                     [entry['SIhistograms'][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
                     str(x) in entry['SIhistograms'][str(sampleCountIndex)]])
                 percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
-                top10sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, str(percentInTop10))
+                top10sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
 
                 # generation execution time
                 generationTime = entry['runtimes']['SISampleGeneration']['total'][sampleCountIndex]
-                siGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, str(generationTime))
+                siGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
 
                 # search execution time
                 comparisonTime = entry['runtimes']['SISearch']['total'][sampleCountIndex]
-                siComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, str(comparisonTime))
+                siComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
 
                 # Vertex count sanity check
                 vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
