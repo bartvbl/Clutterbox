@@ -20,6 +20,9 @@ inputDirectories = {
     '../IDUNRUNS/output_qsifix_smallsupportangle_rerun': ('60 support angle, secondary', 'IDUN'),
     '../IDUNRUNS/output_mainchart_si_v4_15': ('180 support angle, 1 & 5 objects', 'IDUN'),
     '../IDUNRUNS/output_mainchart_si_v4_10': ('180 support angle, 10 objects', 'IDUN'),
+    '../IDUNRUNS/output_mainchart_si_v4_1': ('180 support angle, 1 object', 'IDUN'),
+    '../IDUNRUNS/output_supportanglechart60_si_v4_1': ('60 support angle, 1 object', 'IDUN'),
+    '../IDUNRUNS/output_supportanglechart60_si_v4_5': ('60 support angle, 5 objects', 'IDUN'),
 }
 outfile = 'final_results/master_spreadsheet.xls'
 
