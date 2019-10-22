@@ -204,6 +204,9 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
     loadedResults[newdirectoryName] = combinedResults
     inputDirectories[newdirectoryName] = (newdirectoryName, newDirectoryClusterName)
 
+print('Merging similar datasets..')
+merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output', '../IDUNRUNS/output_lotsofobjects_v4', 'Primary QSI run', 'HEID + IDUN')
+
 print('Processing..')
 seedSet = set()
 for directory in inputDirectories.keys():
