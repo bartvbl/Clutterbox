@@ -267,7 +267,9 @@ qsiGenerationSpeedSheet = book.add_sheet("QSI Generation Times")
 siGenerationSpeedSheet = book.add_sheet("SI Generation Times")
 qsiComparisonSpeedSheet = book.add_sheet("QSI Comparison Times")
 siComparisonSpeedSheet = book.add_sheet("SI Comparison Times")
-vertexCountSheet = book.add_sheet("Vertex Count Sanity Check")
+vertexCountSheet = book.add_sheet("Reference Image Count")
+totalVertexCountSheet = book.add_sheet("Total Image Count")
+totalTriangleCountSheet = book.add_sheet("Total Triangle Count")
 
 # seed column is 0, data starts at column 1
 currentColumn = 1
@@ -285,6 +287,8 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
         qsiComparisonSpeedSheet.write(0, 0, 'seed')
         siComparisonSpeedSheet.write(0, 0, 'seed')
         vertexCountSheet.write(0, 0, 'seed')
+        totalVertexCountSheet.write(0, 0, 'seed')
+        totalTriangleCountSheet.write(0, 0, 'seed')
 
         for seedIndex, seed in enumerate(seedList):
             top0sheetQSI.write(seedIndex + 1, 0, seed)
@@ -296,6 +300,8 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
             qsiComparisonSpeedSheet.write(seedIndex + 1, 0, seed)
             siComparisonSpeedSheet.write(seedIndex + 1, 0, seed)
             vertexCountSheet.write(seedIndex + 1, 0, seed)
+            totalVertexCountSheet.write(seedIndex + 1, 0, seed)
+            totalTriangleCountSheet.write(seedIndex + 1, 0, seed)
 
     resultSet = loadedResults[directory]
     directoryName, _ = inputDirectories[directory]
@@ -315,6 +321,8 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
         siComparisonSpeedSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
 
         vertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
+        totalVertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
+        totalTriangleCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
 
 
     for seedIndex, seed in enumerate(seedList):
@@ -344,6 +352,8 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 
                 # Vertex count sanity check
                 vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
+                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['imageCounts']))
+                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['vertexCounts']) / 3)
         else:
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
                 top0sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
@@ -377,6 +387,8 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 
                 # Vertex count sanity check
                 vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
+                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['imageCounts']))
+                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['vertexCounts']) / 3)
         else:
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
                 top0sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
@@ -400,6 +412,8 @@ for seedIndex, seed in enumerate(seedList + ['dummy entry for final row']):
     siComparisonSpeedSheet.write(seedIndex, currentColumn, ' ')
 
     vertexCountSheet.write(seedIndex, currentColumn, ' ')
+    totalVertexCountSheet.write(seedIndex, currentColumn, ' ')
+    totalTriangleCountSheet.write(seedIndex, currentColumn, ' ')
 
 
 
