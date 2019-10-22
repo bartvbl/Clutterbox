@@ -9,17 +9,17 @@ from math import sqrt
 # -- settings --
 
 inputDirectories = {
-    '../HEIDRUNS/output_qsifix_v4_noearlyexit/output': 'No early exit',
-    '../HEIDRUNS/output_qsifix_v4_withearlyexit/output': 'Early exit',
-    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output': 'Failed jobs from IDUN run',
-    '../IDUNRUNS/output_lotsofobjects_v4': 'primary QSI IDUN run',
+    '../HEIDRUNS/output_qsifix_v4_noearlyexit/output': ('No early exit', 'HEID'),
+    '../HEIDRUNS/output_qsifix_v4_withearlyexit/output': ('Early exit', 'HEID'),
+    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output': ('Failed jobs from IDUN run', 'HEID'),
+    '../IDUNRUNS/output_lotsofobjects_v4': ('primary QSI IDUN run', 'IDUN'),
 
-    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output': '180 support angle, 10 objects',
-    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output': '180 support angle, 5 objects',
-    '../IDUNRUNS/output_smallsupportangle_lotsofobjects': '60 support angle, primary',
-    '../IDUNRUNS/output_qsifix_smallsupportangle_rerun': '60 support angle, secondary',
-    '../IDUNRUNS/output_mainchart_si_v4_15': '180 support angle, 1 & 5 objects',
-    '../IDUNRUNS/output_mainchart_si_v4_10': '180 support angle, 10 objects',
+    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output': ('180 support angle, 10 objects', 'HEID'),
+    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output': ('180 support angle, 5 objects', 'HEID'),
+    '../IDUNRUNS/output_smallsupportangle_lotsofobjects': ('60 support angle, primary', 'IDUN'),
+    '../IDUNRUNS/output_qsifix_smallsupportangle_rerun': ('60 support angle, secondary', 'IDUN'),
+    '../IDUNRUNS/output_mainchart_si_v4_15': ('180 support angle, 1 & 5 objects', 'IDUN'),
+    '../IDUNRUNS/output_mainchart_si_v4_10': ('180 support angle, 10 objects', 'IDUN'),
 }
 outfile = 'final_results/master_spreadsheet.xls'
 
@@ -117,8 +117,6 @@ def loadOutputFileDirectory(path):
 
             # Check if settings are the same as other files in the folder
             currentExperimentSettings = extractExperimentSettings(fileContents)
-# MASSIVE HACK
-            currentExperimentSettings['cluster'] = 'IDUN' if 'IDUN' in path else 'HEID'
             if previousExperimentSettings is not None:
                 if currentExperimentSettings != previousExperimentSettings:
                     # Any discrepancy here is a fatal exception. It NEEDS attention regardless
@@ -207,12 +205,13 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 # Overview table headers
 for keyIndex, key in enumerate(allColumns):
     experimentSheet.write(0, keyIndex + 1, str(key))
-experimentSheet.write(0, len(allColumns) + 1, 'QSI Count')
-experimentSheet.write(0, len(allColumns) + 2, 'SI Count')
+experimentSheet.write(0, len(allColumns) + 1, 'Cluster')
+experimentSheet.write(0, len(allColumns) + 2, 'QSI Count')
+experimentSheet.write(0, len(allColumns) + 3, 'SI Count')
 
 # Overview table contents
 for directoryIndex, directory in enumerate(inputDirectories.keys()):
-    directoryName = inputDirectories[directory]
+    directoryName, cluster = inputDirectories[directory]
     experimentSheet.write(directoryIndex + 1, 0, directoryName)
     result = loadedResults[directory]
     for keyIndex, key in enumerate(allColumns):
@@ -221,8 +220,9 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
         else:
             experimentSheet.write(directoryIndex + 1, keyIndex + 1, ' ')
 
-    experimentSheet.write(directoryIndex + 1, len(allColumns) + 1, len(result['results']['QSI']))
-    experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len(result['results']['SI']))
+    experimentSheet.write(directoryIndex + 1, len(allColumns) + 1, cluster)
+    experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len(result['results']['QSI']))
+    experimentSheet.write(directoryIndex + 1, len(allColumns) + 3, len(result['results']['SI']))
 
 
 
@@ -266,7 +266,7 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
             vertexCountSheet.write(seedIndex + 1, 0, str(seed))
 
     resultSet = loadedResults[directory]
-    directoryName = inputDirectories[directory]
+    directoryName, _ = inputDirectories[directory]
 
     # Writing column headers
     for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
