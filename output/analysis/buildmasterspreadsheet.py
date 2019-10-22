@@ -183,9 +183,11 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
 
     del loadedResults[directory1]
     del loadedResults[directory2]
+    del inputDirectories[directory1]
+    del inputDirectories[directory2]
 
     if directory1_contents['settings'] != directory2_contents['settings']:
-        raise Exception('Directories %s and %s have different generation settings, and are therefore not compatible to be merged!' % (directory1, directory2))
+        print('WARNING: Directories %s and %s have different generation settings, and may therefore not be compatible to be merged!' % (directory1, directory2))
 
     combinedResults = {'results': {'QSI': {}, 'SI': {}}, 'settings': directory1_contents['settings']}
 
