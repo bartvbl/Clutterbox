@@ -174,6 +174,33 @@ for directory in inputDirectories.keys():
     print('Loading directory:', directory)
     loadedResults[directory] = loadOutputFileDirectory(directory)
 
+def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
+    global loadedResults
+    global inputDirectories
+
+    directory1_contents = loadedResults[directory1]
+    directory2_contents = loadedResults[directory2]
+
+    del loadedResults[directory1]
+    del loadedResults[directory2]
+
+    if directory1_contents['settings'] != directory2_contents['settings']:
+        raise Exception('Directories %s and %s have different generation settings, and are therefore not compatible to be merged!' % (directory1, directory2))
+
+    combinedResults = {'results': {'QSI': {}, 'SI': {}}, 'settings': directory1_contents['settings']}
+
+    # Initialising with the original results
+    combinedResults['results']['QSI'] = directory1_contents['results']['QSI']
+    combinedResults['results']['SI'] = directory1_contents['results']['SI']
+
+    # Now we merge any missing results into it
+    for type in directory2_contents['results']:
+        for seed in directory2_contents['results'][type].keys():
+            if seed not in combinedResults['results'][type]:
+                combinedResults['results'][type][seed] = directory2_contents['results'][type][seed]
+
+    loadedResults[newdirectoryName] = combinedResults
+    inputDirectories[newdirectoryName] = (newdirectoryName, newDirectoryClusterName)
 
 print('Processing..')
 seedSet = set()
