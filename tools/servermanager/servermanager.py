@@ -62,7 +62,8 @@ def launchInstance(gpuID):
 		# Don't launch if we have reached the end
 		if DAEMONONLY_currentSeedIndex >= DAEMONONLY_seedCount:
 			# In which case we can simply quit entirely
-			SHARED_jobqueue.append({'command': 'remove', 'id': gpuID})
+			log('GPU ' + str(gpuID) + ' has run out of jobs and is therefore being removed from the pool')
+			SHARED_jobqueue.append({'command': 'remove', 'id': gpuID, 'requeue': False})
 			return
 		else:
 			DAEMONONLY_currentSeedIndex += 1
@@ -150,8 +151,9 @@ def gpuDaemon():
 						gpuIndex = DAEMONONLY_gpuIDs.index(gpuID)
 						processingSeed = DAEMONONLY_activeseeds[gpuIndex]
 						log("Processing seed index " + str(processingSeed) + " on GPU " + str(gpuID) + " was aborted!")
-						# queue aborted job for a later retry
-						DAEMONONLY_failedSeedQueue.append(DAEMONONLY_activeseeds[gpuIndex])
+						if job['requeue'] if 'requeue' in job else True:
+							# queue aborted job for a later retry
+							DAEMONONLY_failedSeedQueue.append(DAEMONONLY_activeseeds[gpuIndex])
 						del DAEMONONLY_gpuIDs[gpuIndex]
 						del DAEMONONLY_activeseeds[gpuIndex]
 						del SHARED_activegpus[gpuIndex]
