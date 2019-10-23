@@ -358,8 +358,8 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 
                 # Vertex count sanity check
                 vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
-                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['imageCounts']))
-                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['vertexCounts']) / 3)
+                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['imageCounts'][0:sampleObjectCount]))
+                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
         else:
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
                 top0sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
@@ -393,8 +393,8 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 
                 # Vertex count sanity check
                 vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
-                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['imageCounts']))
-                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['vertexCounts']) / 3)
+                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['imageCounts'][0:sampleObjectCount]))
+                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
         else:
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
                 top0sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
