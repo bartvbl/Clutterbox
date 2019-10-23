@@ -16,6 +16,7 @@ inputDirectories = {
 
     '../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output': ('180 support angle, 10 objects', 'HEID'),
     '../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output': ('180 support angle, 5 objects', 'HEID'),
+    '../HEIDRUNS/output_qsifix_v4_180deg_si_missing/output': ('180 support angle, 10 objects', 'HEID'),
     '../IDUNRUNS/output_smallsupportangle_lotsofobjects': ('60 support angle, primary', 'IDUN'),
     '../IDUNRUNS/output_qsifix_smallsupportangle_rerun': ('60 support angle, secondary', 'IDUN'),
     '../IDUNRUNS/output_mainchart_si_v4_15': ('180 support angle, 1 & 5 objects', 'IDUN'),
@@ -210,6 +211,7 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
 print('Merging similar datasets..')
 merge('../IDUNRUNS/output_lotsofobjects_v4', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output', 'Primary QSI run', 'HEID + IDUN')
 merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output', '../IDUNRUNS/output_mainchart_si_v4_10', 'SI 180 degrees, 10 objects', 'HEID + IDUN')
+merge('SI 180 degrees, 10 objects', '../HEIDRUNS/output_qsifix_v4_180deg_si_missing/output', 'SI 180 degrees, 10 objects', 'HEID + IDUN')
 
 print('Processing..')
 seedSet = set()
