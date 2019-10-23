@@ -11,9 +11,10 @@ import re
 from scipy import stats
 from PIL import Image
 
-metafiles_directory = "/mnt/a666854b-88ec-4fb7-9cc5-c167acbd5e9c/home/bart/git/QuasiSpinImageVerification/output/HEIDRUNS/output_majorfix_v1/output"
-rawfiles_directory = "/mnt/a666854b-88ec-4fb7-9cc5-c167acbd5e9c/home/bart/git/QuasiSpinImageVerification/output/HEIDRUNS/output_majorfix_v1/output/raw"
-clutterfiles_directory = "/mnt/a666854b-88ec-4fb7-9cc5-c167acbd5e9c/home/bart/git/QuasiSpinImageVerification/output/clutter/base"
+# COMPUTED CLUTTER IS BASED ON 10 OBJECT SCENES!!!
+metafiles_directory = "../HEIDRUNS/output_majorfix_v1/output"
+rawfiles_directory = "../HEIDRUNS/output_majorfix_v1/output/raw"
+clutterfiles_directory = "../clutter/base"
 
 #metafiles_directory = "/media/ntfsHOME/git/quasispinimageverification/output/HEIDRUNS/output_majorfix_v1/output"
 #rawfiles_directory = "/media/ntfsHOME/git/quasispinimageverification/output/HEIDRUNS/output_majorfix_v1/output/raw"
