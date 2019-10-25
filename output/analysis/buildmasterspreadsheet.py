@@ -67,8 +67,17 @@ def extractExperimentSettings(loadedJson):
     settings['spinImageWidthPixels'] = loadedJson['spinImageWidthPixels']
     if 'overrideObjectCount' in loadedJson:
         settings['overrideObjectCount'] = loadedJson['overrideObjectCount']
+    else:
+        settings['overrideObjectCount'] = max(loadedJson['sampleObjectCounts'])
     if 'descriptors' in loadedJson:
         settings['descriptors'] = loadedJson['descriptors']
+    else:
+        descriptors = []
+        if 'QSIhistograms' in loadedJson:
+            descriptors.append('qsi')
+        if 'SIhistograms' in loadedJson:
+            descriptors.append('si')
+        settings['descriptors'] = descriptors
     settings['version'] = loadedJson['version']
     return settings
 
