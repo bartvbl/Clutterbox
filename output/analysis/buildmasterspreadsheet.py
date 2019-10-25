@@ -187,9 +187,75 @@ for directory in inputDirectories.keys():
     print('Loading directory:', directory)
     loadedResults[directory] = loadOutputFileDirectory(directory)
 
+def filterResultSet(resultSet, index):
+
+    out = copy.deepcopy(resultSet)
+
+    if 'QSISampleGeneration' in out['runtimes']:
+        out['runtimes']['QSISampleGeneration']['total'] = [out['runtimes']['QSISampleGeneration']['total'][index]]
+        out['runtimes']['QSISampleGeneration']['meshScale'] = [out['runtimes']['QSISampleGeneration']['meshScale'][index]]
+        out['runtimes']['QSISampleGeneration']['redistribution'] = [out['runtimes']['QSISampleGeneration']['redistribution'][index]]
+        out['runtimes']['QSISampleGeneration']['generation'] = [out['runtimes']['QSISampleGeneration']['generation'][index]]
+
+    if 'QSISearch' in out['runtimes']:
+        out['runtimes']['QSISearch']['total'] = [out['runtimes']['QSISearch']['total'][index]]
+        out['runtimes']['QSISearch']['search'] = [out['runtimes']['QSISearch']['search'][index]]
+
+    if 'SISampleGeneration' in out['runtimes']:
+        out['runtimes']['SISampleGeneration']['total'] = [out['runtimes']['SISampleGeneration']['total'][index]]
+        out['runtimes']['SISampleGeneration']['initialisation'] = [out['runtimes']['SISampleGeneration']['initialisation'][index]]
+        out['runtimes']['SISampleGeneration']['sampling'] = [out['runtimes']['SISampleGeneration']['sampling'][index]]
+        out['runtimes']['SISampleGeneration']['generation'] = [out['runtimes']['SISampleGeneration']['generation'][index]]
+
+    if 'SISearch' in out['runtimes']:
+        out['runtimes']['SISearch']['total'] = [out['runtimes']['SISearch']['total'][index]]
+        out['runtimes']['SISearch']['averaging'] = [out['runtimes']['SISearch']['averaging'][index]]
+        out['runtimes']['SISearch']['search'] = [out['runtimes']['SISearch']['search'][index]]
+
+    if 'QSIhistograms' in out:
+        out['QSIhistograms'] = {'0': out['QSIhistograms'][str(index)]}
+
+    if 'SIhistograms' in out:
+        out['SIhistograms'] = {'0': out['SIhistograms'][str(index)]}
+
+    return out
+
+def split(directory):
+    print('Splitting', directory)
+    global loadedResults
+
+    result = loadedResults[directory]
+    del loadedResults[directory]
+
+    setMeta = inputDirectories[directory]
+    del inputDirectories[directory]
+
+    for itemCountIndex, itemCount in enumerate(result['settings']['sampleObjectCounts']):
+        out = {
+            'results': {'QSI': {}, 'SI': {}},
+            'settings': {}}
+        out['settings'] = result['settings'].copy()
+        out['settings']['sampleObjectCounts'] = [itemCount]
+
+        for qsiSeed in result['results']['QSI']:
+            out['results']['QSI'][qsiSeed] = filterResultSet(result['results']['QSI'][qsiSeed], itemCountIndex)
+
+        for siSeed in result['results']['SI']:
+            out['results']['SI'][siSeed] = filterResultSet(result['results']['SI'][siSeed], itemCountIndex)
+
+        newDirectoryName = directory + ' (' + str(itemCount) + ' objects)'
+
+        loadedResults[newDirectoryName] = out
+        inputDirectories[newDirectoryName] = (setMeta[0] + ' (' + str(itemCount) + ' objects)', setMeta[1])
+
+
+
+
 def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
     global loadedResults
     global inputDirectories
+
+    print('Merging', directory2, 'into', directory1)
 
     directory1_contents = loadedResults[directory1]
     directory2_contents = loadedResults[directory2]
