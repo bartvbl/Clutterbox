@@ -276,16 +276,22 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
     combinedResults['results']['QSI'] = directory1_contents['results']['QSI']
     combinedResults['results']['SI'] = directory1_contents['results']['SI']
 
+    additionCount = 0
+
     # Now we merge any missing results into it
     for type in directory2_contents['results']:
         for seed in directory2_contents['results'][type].keys():
             if seed not in combinedResults['results'][type]:
                 combinedResults['results'][type][seed] = directory2_contents['results'][type][seed]
+                additionCount += 1
 
     loadedResults[newdirectoryName] = combinedResults
     inputDirectories[newdirectoryName] = (newdirectoryName, newDirectoryClusterName)
 
-print('Merging similar datasets..')
+    print('\tAdded', additionCount, 'new values')
+    return additionCount
+
+print('\n\nMerging similar datasets..')
 split('../IDUNRUNS/output_smallsupportangle_lotsofobjects')
 split('../IDUNRUNS/output_qsifix_smallsupportangle_rerun')
 split('../IDUNRUNS/output_mainchart_si_v4_15')
@@ -297,7 +303,10 @@ merge('../IDUNRUNS/output_lotsofobjects_v4', '../HEIDRUNS/output_qsifix_v4_lotso
 merge('../IDUNRUNS/output_mainchart_si_v4_1', '../IDUNRUNS/output_mainchart_si_v4_15 (1 objects)', 'SI 180 degrees, 1 object', 'IDUN')
 
 # SI 180 degrees, 5 objects
-merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output', '../IDUNRUNS/output_mainchart_si_v4_15 (5 objects)', 'SI 180 degrees, 5 objects', 'HEID + IDUN')
+additionCount = merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output', '../IDUNRUNS/output_mainchart_si_v4_15 (5 objects)', 'SI 180 degrees, 5 objects', 'HEID')
+# this merge is mainly to remove the dataset from the input batch. We ultimately want the HEIDRUNS results exclusively because
+# we use these results to compare runtimes
+assert(additionCount == 0)
 
 # SI 180 degrees, 10 objects
 merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output', '../IDUNRUNS/output_mainchart_si_v4_10', 'SI 180 degrees, 10 objects', 'HEID + IDUN')
