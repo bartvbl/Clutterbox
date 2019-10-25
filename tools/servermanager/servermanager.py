@@ -138,10 +138,11 @@ def gpuDaemon():
 					return
 				elif job['command'] == 'add':
 					gpuID = job['id']
-					SHARED_activegpus.append(True)
-					DAEMONONLY_gpuIDs.append(gpuID)
-					DAEMONONLY_activeseeds.append(-1)
-					launchInstance(gpuID)
+					if not gpuID in DAEMONONLY_gpuIDs:
+						SHARED_activegpus.append(True)
+						DAEMONONLY_gpuIDs.append(gpuID)
+						DAEMONONLY_activeseeds.append(-1)
+						launchInstance(gpuID)
 				elif job['command'] == 'remove':
 					gpuID = job['id']
 					if gpuID in DAEMONONLY_gpuIDs:
