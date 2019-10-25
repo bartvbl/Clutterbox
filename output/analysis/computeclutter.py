@@ -12,9 +12,11 @@ from scipy import stats
 from PIL import Image
 
 # COMPUTED CLUTTER IS BASED ON 10 OBJECT SCENES!!!
-metafiles_directory = "../HEIDRUNS/output_majorfix_v1/output"
-rawfiles_directory = "../HEIDRUNS/output_majorfix_v1/output/raw"
-clutterfiles_directory = "../clutter/base"
+qsi_metafiles_directory = "../COMBINED/qsi_primary"
+qsi_rawfiles_directory = qsi_metafiles_directory + "/raw"
+si_metafiles_directory = "../COMBINED/si_primary"
+si_rawfiles_directory = si_metafiles_directory + "/raw"
+clutterfiles_directory = "../clutter/lotsofobjects"
 
 #metafiles_directory = "/media/ntfsHOME/git/quasispinimageverification/output/HEIDRUNS/output_majorfix_v1/output"
 #rawfiles_directory = "/media/ntfsHOME/git/quasispinimageverification/output/HEIDRUNS/output_majorfix_v1/output/raw"
@@ -23,7 +25,7 @@ clutterfiles_directory = "../clutter/base"
 
 outFile = 'clutter_out.csv'
 
-use_cached_results = True
+use_cached_results = False
 size = 256
 
 def readJsonFile(file):
@@ -43,69 +45,62 @@ hist_qsi = np.zeros(shape=(size,size), dtype=np.int64)
 hist_si  = np.zeros(shape=(size,size), dtype=np.int64)
 
 if not use_cached_results:
-	rawfiles = [f for f in listdir(rawfiles_directory) if isfile(join(rawfiles_directory, f))]
-	metafiles = [f for f in listdir(metafiles_directory) if isfile(join(metafiles_directory, f))]
+	qsi_rawfiles = [f for f in listdir(qsi_rawfiles_directory) if isfile(join(qsi_rawfiles_directory, f))]
+	qsi_metafiles = [f for f in listdir(qsi_metafiles_directory) if isfile(join(qsi_metafiles_directory, f))]
+	qsi_seeds = [x.split("_")[2] for x in qsi_metafiles]
+
+	si_rawfiles = [f for f in listdir(si_rawfiles_directory) if isfile(join(si_rawfiles_directory, f))]
+	si_metafiles = [f for f in listdir(si_metafiles_directory) if isfile(join(si_metafiles_directory, f))]
+	si_seeds = [x.split("_")[2] for x in si_metafiles]
+
+	# Find out which seeds are present in both result sets
+	combined_seeds = [x for x in qsi_seeds if x in si_seeds]
+
 	clutterfiles = [f for f in listdir(clutterfiles_directory) if isfile(join(clutterfiles_directory, f))]
 
-	print("Found", len(metafiles), "result files.")
-	print("Found", len(rawfiles), "raw files.")
+	print("Found", len(qsi_metafiles), " QSI result files.")
+	print("Found", len(si_metafiles), " SI result files.")
 	print("Found", len(clutterfiles), "clutter files.")
-
-	pairCount = min(len(rawfiles), len(clutterfiles))
-
-	print("Pair count:", pairCount)
-
-	rawfiles_timeStrings = [datetime.strptime(f.split('.json')[0], '%d-%m-%Y %H-%M-%S') for f in rawfiles]
-	rawfiles_timeStrings = sorted(rawfiles_timeStrings)
-	sorted_rawfile_filenames = [t.strftime('%d-%m-%Y %H-%M-%S') + '.json' for t in rawfiles_timeStrings]
-
-	metafiles_timeStrings = [datetime.strptime(f.split('.json')[0], '%d-%m-%Y %H-%M-%S') for f in metafiles]
-	metafiles_timeStrings = sorted(metafiles_timeStrings)
-	sorted_metafile_filenames = [t.strftime('%d-%m-%Y %H-%M-%S') + '.json' for t in metafiles_timeStrings]
+	print("Found", len(combined_seeds), " seeds.")
 
 	clutterfilesContent = {}
-	metafilesContent = {}
-	rawfilesContent = {}
+	qsi_metafilesContent = {}
+	qsi_rawfilesContent = {}
+	si_metafilesContent = {}
+	si_rawfilesContent = {}
 
-	clutterfile_sources = {}
 	for index, clutterfile in enumerate(clutterfiles):
-		print('\rGenerating clutter file map.. (' + str(index+1) + '/' + str(len(clutterfiles)) + ')', end="", flush=True)
+		print('\rLoading clutter files.. (' + str(index+1) + '/' + str(len(clutterfiles)) + ')', end="", flush=True)
 		clutterfile_contents = readJsonFile(os.path.join(clutterfiles_directory, clutterfile))
-		clutterfilesContent[clutterfile] = clutterfile_contents
-		clutterfile_sources[clutterfile_contents['sourceFile']] = clutterfile
+		# hacky, but works for my purposes
+		seed = clutterfile_contents['sourceFile'].split("_")[2]
+		clutterfilesContent[seed] = clutterfile_contents
 	print()
 
-	rawfile_offset = 0
-	experimentfile_map = {}
-	with open(outFile, 'w') as outFile:
-		for fileIndex in range(0, pairCount):
-			rawfile = sorted_rawfile_filenames[fileIndex + rawfile_offset]
-			metafile = sorted_metafile_filenames[fileIndex]
-
-			print('\rGenerating experiment info map.. (' + str(fileIndex+1) + '/' + str(pairCount) + ')', end="", flush=True)
-
-			rawfile_contents = readJsonFile(os.path.join(rawfiles_directory, rawfile))
-			metafile_contents = readJsonFile(os.path.join(metafiles_directory, metafile))
-
-			metafilesContent[metafile] = metafile_contents
-			rawfilesContent[rawfile] = rawfile_contents
-
-			if len(rawfile_contents['QSI']['5']) != metafile_contents['uniqueVertexCounts'][0]:
-				rawfile_offset += 1
-				print()
-				print('VERTEX COUNT MISMATCH!!')
-				continue
-
-			experimentfile_map[metafile] = (rawfile, metafile)
-
+	for fileIndex, qsi_metafile in enumerate(qsi_metafiles):
+		print('\rLoading QSI meta files.. (' + str(fileIndex+1) + '/' + str(len(qsi_metafiles)) + ')', end="", flush=True)
+		seed = qsi_metafile.split("_")[2]
+		qsi_metafilesContent[seed] = readJsonFile(os.path.join(qsi_metafiles_directory, qsi_metafile))
 	print()
-	print('Merging corresponding files..')
-	corresponding_files = []
-	for metafile in clutterfile_sources:
-		if metafile in experimentfile_map:
-			corresponding_files.append((metafile, experimentfile_map[metafile][0], clutterfile_sources[metafile]))
 
-	print('Final experiment count:', len(corresponding_files))
+	for fileIndex, si_metafile in enumerate(si_metafiles):
+		print('\rLoading SI meta files.. (' + str(fileIndex+1) + '/' + str(len(si_metafiles)) + ')', end="", flush=True)
+		seed = si_metafile.split("_")[2]
+		si_metafilesContent[seed] = readJsonFile(os.path.join(si_metafiles_directory, si_metafile))
+	print()
+
+	for fileIndex, qsi_rawfile in enumerate(qsi_rawfiles):
+		print('\rLoading QSI raw files.. (' + str(fileIndex+1) + '/' + str(len(qsi_rawfiles)) + ')', end="", flush=True)
+		seed = qsi_rawfile.split("_")[2]
+		qsi_rawfilesContent[seed] = readJsonFile(os.path.join(qsi_rawfiles_directory, qsi_rawfile))
+	print()
+
+	for fileIndex, si_rawfile in enumerate(si_rawfiles):
+		print('\rLoading SI raw files.. (' + str(fileIndex+1) + '/' + str(len(si_rawfiles)) + ')', end="", flush=True)
+		seed = si_rawfile.split("_")[2]
+		si_rawfilesContent[seed] = readJsonFile(os.path.join(si_rawfiles_directory, si_rawfile))
+	print()
+
 	clutterValues = []
 	indices_qsi = []
 	indices_si = []
