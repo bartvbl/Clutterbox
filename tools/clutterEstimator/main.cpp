@@ -42,6 +42,7 @@ int main(int argc, const char** argv) {
     const auto& resultDir = parser.add<std::string>("result-dump-dir", "Define the directory containing experiment output dumps.", '\0', arrrgh::Optional, DIRECTORY_UNSPECIFIED);
     const auto& objectDir = parser.add<std::string>("object-dir", "Define the directory containing input objects.", '\0', arrrgh::Optional, DIRECTORY_UNSPECIFIED);
     const auto& outDir = parser.add<std::string>("output-dir", "Define the directory where computed clutter values should be dumped.", '\0', arrrgh::Optional, DIRECTORY_UNSPECIFIED);
+    const auto& startIndex = parser.add<int>("start-index", "Start processing at the given file index.", '\0', arrrgh::Optional, 0);
 
 
     try
@@ -88,7 +89,7 @@ int main(int argc, const char** argv) {
 
     std::vector<std::string> parts;
 
-    for (unsigned int resultFileIndex = 0; resultFileIndex < resultFileList.size(); resultFileIndex++) {
+    for (unsigned int resultFileIndex = startIndex.value(); resultFileIndex < resultFileList.size(); resultFileIndex++) {
         std::string resultFile = resultFileList.at(resultFileIndex);
         if(resultFile == "raw") {
             continue;
