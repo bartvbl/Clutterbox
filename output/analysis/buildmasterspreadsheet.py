@@ -4,13 +4,14 @@ import os.path
 import datetime
 import xlwt
 import pprint
+import copy
 from math import sqrt
 
 # -- settings --
 
 inputDirectories = {
-    '../HEIDRUNS/output_qsifix_v4_noearlyexit/output': ('No early exit', 'HEID'),
-    '../HEIDRUNS/output_qsifix_v4_withearlyexit/output': ('Early exit', 'HEID'),
+    '../HEIDRUNS/output_qsifix_v4_noearlyexit/output': ('QSI, No early exit, 5 objects', 'HEID'),
+    '../HEIDRUNS/output_qsifix_v4_withearlyexit/output': ('QSI, Early exit, 5 objects', 'HEID'),
     '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output': ('Failed jobs from IDUN run', 'HEID'),
     '../IDUNRUNS/output_lotsofobjects_v4': ('primary QSI IDUN run', 'IDUN'),
 
@@ -285,9 +286,33 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
     inputDirectories[newdirectoryName] = (newdirectoryName, newDirectoryClusterName)
 
 print('Merging similar datasets..')
-merge('../IDUNRUNS/output_lotsofobjects_v4', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output', 'Primary QSI run', 'HEID + IDUN')
+split('../IDUNRUNS/output_smallsupportangle_lotsofobjects')
+split('../IDUNRUNS/output_qsifix_smallsupportangle_rerun')
+split('../IDUNRUNS/output_mainchart_si_v4_15')
+
+# QSI runs
+merge('../IDUNRUNS/output_lotsofobjects_v4', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output', 'QSI, 1, 5, and 10 objects', 'HEID + IDUN')
+
+# SI 180 degrees, 1 object
+merge('../IDUNRUNS/output_mainchart_si_v4_1', '../IDUNRUNS/output_mainchart_si_v4_15 (1 objects)', 'SI 180 degrees, 1 object', 'IDUN')
+
+# SI 180 degrees, 5 objects
+merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output', '../IDUNRUNS/output_mainchart_si_v4_15 (5 objects)', 'SI 180 degrees, 5 objects', 'HEID + IDUN')
+
+# SI 180 degrees, 10 objects
 merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output', '../IDUNRUNS/output_mainchart_si_v4_10', 'SI 180 degrees, 10 objects', 'HEID + IDUN')
 merge('SI 180 degrees, 10 objects', '../HEIDRUNS/output_qsifix_v4_180deg_si_missing/output', 'SI 180 degrees, 10 objects', 'HEID + IDUN')
+
+# SI 60 degrees, 1 object
+merge('../IDUNRUNS/output_supportanglechart60_si_v4_1', '../IDUNRUNS/output_smallsupportangle_lotsofobjects (1 objects)', 'SI 60 degrees, 1 object intermediate', 'IDUN')
+merge('SI 60 degrees, 1 object intermediate', '../IDUNRUNS/output_qsifix_smallsupportangle_rerun (1 objects)', 'SI 60 degrees, 1 object', 'IDUN')
+
+# SI 60 degrees, 5 objects
+merge('../IDUNRUNS/output_supportanglechart60_si_v4_5', '../IDUNRUNS/output_smallsupportangle_lotsofobjects (5 objects)', 'SI 60 degrees, 5 objects', 'IDUN')
+
+# SO 60 degrees, 10 objects
+merge('../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/', '../IDUNRUNS/output_smallsupportangle_lotsofobjects (10 objects)', 'SI 60 deg 10 objects intermediate', 'HEID + IDUN')
+merge('SI 60 deg 10 objects intermediate', '../IDUNRUNS/output_qsifix_smallsupportangle_rerun (10 objects)', 'SI 60 degrees, 10 objects', 'HEID + IDUN')
 
 print('Processing..')
 seedSet = set()
