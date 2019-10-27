@@ -7,7 +7,7 @@ import pprint
 import copy
 from math import sqrt
 
-# -- settings --
+# --- settings ---
 
 inputDirectories = {
     '../HEIDRUNS/output_qsifix_v4_noearlyexit/output': ('QSI, No early exit, 5 objects', 'HEID'),
@@ -28,6 +28,16 @@ inputDirectories = {
     '../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/': ('60 support angle, 10 objects', 'HEID'),
 }
 outfile = 'final_results/master_spreadsheet.xls'
+
+computeClutterHeatmaps = True
+loadClutterHeatmapsFromCache = True
+showClutterHeatmaps = True
+
+
+
+
+
+# --- start of code ---
 
 # Last known fault in code: unsigned integer subtraction in QSI comparison function
 # Date threshold corresponds to this commit
@@ -52,9 +62,6 @@ seedmap_top_result_qsi = {}
 seedmap_top_result_si = {}
 seedmap_top10_results_qsi = {}
 seedmap_top10_results_si = {}
-
-# Settings used to construct the experiment settings table
-
 
 # -- code --
 
