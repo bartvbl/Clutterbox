@@ -29,6 +29,8 @@ inputDirectories = {
 }
 outfile = 'final_results/master_spreadsheet.xls'
 
+removeSeedsWithMissingEntries = True
+
 # Last known fault in code: unsigned integer subtraction in QSI comparison function
 # Date threshold corresponds to this commit
 def isQsiResultValid(fileCreationDateTime, resultJson):
@@ -334,6 +336,31 @@ seedList = [x for x in seedSet]
 
 print('\tFound', len(seedSet), 'seeds in result sets')
 
+print()
+
+if removeSeedsWithMissingEntries:
+	print('Removing missing entries')
+	missingSeeds = []
+
+	for directory in loadedResults:
+		print(directory)
+		for seed in seedList:
+			if len(loadedResults[directory]['results']['QSI']) > 0:
+				if not seed in loadedResults[directory]['results']['QSI']:
+					missingSeeds.append(seed)
+			if len(loadedResults[directory]['results']['SI']) > 0:
+				if not seed in loadedResults[directory]['results']['SI']:
+					missingSeeds.append(seed)
+
+	print('Detected', len(missingSeeds), 'seeds with missing entries. Removing..')
+
+	for missingSeed in missingSeeds:
+		for directory in loadedResults:
+			if missingSeed in loadedResults[directory]['results']['QSI']:
+				del loadedResults[directory]['results']['QSI'][missingSeed]
+			if missingSeed in loadedResults[directory]['results']['SI']:
+				del loadedResults[directory]['results']['SI'][missingSeed]
+		del seedList[missingSeed]
 
 
 
