@@ -7,7 +7,6 @@ import pprint
 import copy
 from math import sqrt
 
-# --- settings ---
 
 inputDirectories = {
     '../HEIDRUNS/output_qsifix_v4_noearlyexit/output': ('QSI, No early exit, 5 objects', 'HEID'),
@@ -34,7 +33,7 @@ loadClutterHeatmapsFromCache = True
 showClutterHeatmaps = True
 
 
-
+removeSeedsWithMissingEntries = True
 
 
 # --- start of code ---
@@ -341,6 +340,32 @@ seedList = [x for x in seedSet]
 
 print('\tFound', len(seedSet), 'seeds in result sets')
 
+print()
+
+if removeSeedsWithMissingEntries:
+	print('Removing missing entries')
+	missingSeeds = []
+
+	for directory in loadedResults:
+		print(directory)
+		for seed in seedList:
+			if len(loadedResults[directory]['results']['QSI']) > 0:
+				if not seed in loadedResults[directory]['results']['QSI']:
+					missingSeeds.append(seed)
+			if len(loadedResults[directory]['results']['SI']) > 0:
+				if not seed in loadedResults[directory]['results']['SI']:
+					missingSeeds.append(seed)
+
+	print('Detected', len(missingSeeds), 'seeds with missing entries. Removing..')
+
+	for missingSeed in missingSeeds:
+		for directory in loadedResults:
+			if missingSeed in loadedResults[directory]['results']['QSI']:
+				del loadedResults[directory]['results']['QSI'][missingSeed]
+			if missingSeed in loadedResults[directory]['results']['SI']:
+				del loadedResults[directory]['results']['SI'][missingSeed]
+		if missingSeed in seedList:
+			del seedList[seedList.index(missingSeed)]
 
 
 
