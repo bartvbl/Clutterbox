@@ -360,7 +360,8 @@ if removeSeedsWithMissingEntries:
 				del loadedResults[directory]['results']['QSI'][missingSeed]
 			if missingSeed in loadedResults[directory]['results']['SI']:
 				del loadedResults[directory]['results']['SI'][missingSeed]
-		del seedList[missingSeed]
+		if missingSeed in seedList:
+			del seedList[seedList.index(missingSeed)]
 
 
 
