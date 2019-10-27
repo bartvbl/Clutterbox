@@ -43,6 +43,8 @@ int main(int argc, const char** argv) {
     const auto& objectDir = parser.add<std::string>("object-dir", "Define the directory containing input objects.", '\0', arrrgh::Optional, DIRECTORY_UNSPECIFIED);
     const auto& outDir = parser.add<std::string>("output-dir", "Define the directory where computed clutter values should be dumped.", '\0', arrrgh::Optional, DIRECTORY_UNSPECIFIED);
     const auto& startIndex = parser.add<int>("start-index", "Start processing at the given file index.", '\0', arrrgh::Optional, 0);
+    const auto& computeSingleIndex = parser.add<int>("compute-single-index", "Instead of processing the entire directory, only process one clutter file.", '\0', arrrgh::Optional, -1);
+    const auto& overrideObjectCount = parser.add<int>("override-object-count", "Rather than compute clutter over all objects present in each result file, limit the clutter values to n objects instead.", '\0', arrrgh::Optional, -1);
 
 
     try
@@ -88,8 +90,10 @@ int main(int argc, const char** argv) {
 
 
     std::vector<std::string> parts;
+    unsigned int firstIndex = (computeSingleIndex.value() != -1) ? computeSingleIndex.value() : startIndex.value();
+    unsigned int lastIndex = (computeSingleIndex.value() != -1) ? computeSingleIndex.value() + 1 : resultFileList.size();
 
-    for (unsigned int resultFileIndex = startIndex.value(); resultFileIndex < resultFileList.size(); resultFileIndex++) {
+    for (unsigned int resultFileIndex = firstIndex; resultFileIndex < lastIndex; resultFileIndex++) {
         std::string resultFile = resultFileList.at(resultFileIndex);
         if(resultFile == "raw") {
             continue;
@@ -101,6 +105,9 @@ int main(int argc, const char** argv) {
         inputResultFile.close();
 
         int sampleObjectCount = resultFileContents["sampleSetSize"];
+        if(overrideObjectCount.value() != -1) {
+            sampleObjectCount = overrideObjectCount.value();
+        }
         float boxSize = float(resultFileContents["boxSize"]);
 
         std::vector<HostMesh> objects;
