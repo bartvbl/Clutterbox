@@ -35,6 +35,10 @@ showClutterHeatmaps = True
 # Distill the result set down to the entries we have all data for
 removeSeedsWithMissingEntries = True
 
+# Cut down the result set to a specific number of entries
+resultSetSizeLimit = 1500
+enableResultSetSizeLimit = True
+
 
 # --- start of code ---
 
@@ -398,6 +402,13 @@ if removeSeedsWithMissingEntries:
                 del loadedResults[directory]['results']['SI'][missingSeed]
         if missingSeed in seedList:
             del seedList[seedList.index(missingSeed)]
+
+if enableResultSetSizeLimit:
+    seedList = [x for index, x in enumerate(seedList) if index < resultSetSizeLimit]
+
+print()
+print('Reduced result set to size', len(seedList))
+print()
 
 # -- Dump to spreadsheet --
 
