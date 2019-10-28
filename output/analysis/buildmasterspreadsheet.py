@@ -7,7 +7,6 @@ import pprint
 import copy
 from math import sqrt
 
-
 inputDirectories = {
     '../HEIDRUNS/output_qsifix_v4_noearlyexit/output': ('QSI, No early exit, 5 objects', 'HEID'),
     '../HEIDRUNS/output_qsifix_v4_withearlyexit/output': ('QSI, Early exit, 5 objects', 'HEID'),
@@ -25,6 +24,7 @@ inputDirectories = {
     '../IDUNRUNS/output_supportanglechart60_si_v4_1': ('60 support angle, 1 object', 'IDUN'),
     '../IDUNRUNS/output_supportanglechart60_si_v4_5': ('60 support angle, 5 objects', 'IDUN'),
     '../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/': ('60 support angle, 10 objects', 'HEID'),
+    '../HEIDRUNS/output_qsifix_si_v4_60deg_5objects_missing/output/': ('60 support angle, 5 objects', 'HEID'),
 }
 outfile = 'final_results/master_spreadsheet.xls'
 
@@ -32,7 +32,7 @@ computeClutterHeatmaps = True
 loadClutterHeatmapsFromCache = True
 showClutterHeatmaps = True
 
-
+# Distill the result set down to the entries we have all data for
 removeSeedsWithMissingEntries = True
 
 
@@ -44,6 +44,7 @@ def isQsiResultValid(fileCreationDateTime, resultJson):
     qsiResultsValidAfter = datetime.datetime(year=2019, month=10, day=7, hour=15, minute=14, second=0, microsecond=0)
     return fileCreationDateTime > qsiResultsValidAfter
 
+
 # Last known fault in code: override object count did not match
 # Date threshold corresponds to this commit
 def isSiResultValid(fileCreationDateTime, resultJson):
@@ -54,6 +55,7 @@ def isSiResultValid(fileCreationDateTime, resultJson):
 
     return hasCorrectOverrideObjectCount or hasCorrectSampleSetSize
 
+
 # -- global initialisation --
 
 # Maps seeds to a list of (dataset, value) tuples
@@ -61,6 +63,7 @@ seedmap_top_result_qsi = {}
 seedmap_top_result_si = {}
 seedmap_top10_results_qsi = {}
 seedmap_top10_results_si = {}
+
 
 # -- code --
 
@@ -89,6 +92,7 @@ def extractExperimentSettings(loadedJson):
     settings['version'] = loadedJson['version']
     return settings
 
+
 def loadOutputFileDirectory(path):
     originalFiles = os.listdir(path)
     # Filter out the raw output file directories
@@ -108,7 +112,7 @@ def loadOutputFileDirectory(path):
     allQSIResultsInvalid = False
     allSIResultsInvalid = False
     for fileindex, file in enumerate(originalFiles):
-        print(str(fileindex+1) + '/' + str(len(originalFiles)), file + '        ', end='\r')
+        print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r')
         with open(os.path.join(path, file), 'r') as openFile:
             # Read JSON file
             try:
@@ -131,7 +135,7 @@ def loadOutputFileDirectory(path):
 
     previousExperimentSettings = None
     for fileindex, file in enumerate(originalFiles):
-        print(str(fileindex+1) + '/' + str(len(originalFiles)), file + '        ', end='\r')
+        print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r')
         with open(os.path.join(path, file), 'r') as openFile:
             # Read JSON file
             fileContents = jsonCache[file]
@@ -151,7 +155,7 @@ def loadOutputFileDirectory(path):
                     ignoredListQSI.append(file)
                 if file not in ignoredListSI:
                     ignoredListSI.append(file)
-                #print('ignored 0',file)
+                # print('ignored 0',file)
             if fileContents['spinImageWidthPixels'] == 32:
                 if file not in ignoredListQSI:
                     ignoredListQSI.append(file)
@@ -164,8 +168,10 @@ def loadOutputFileDirectory(path):
             if file not in ignoredListSI and allSIResultsInvalid:
                 ignoredListSI.append(file)
 
-            containsQSIResults = ('descriptors' in fileContents and 'qsi' in fileContents['descriptors']) or 'QSIhistograms' in fileContents
-            containsSIResults = ('descriptors' in fileContents and 'si' in fileContents['descriptors']) or 'SIhistograms' in fileContents
+            containsQSIResults = ('descriptors' in fileContents and 'qsi' in fileContents[
+                'descriptors']) or 'QSIhistograms' in fileContents
+            containsSIResults = ('descriptors' in fileContents and 'si' in fileContents[
+                'descriptors']) or 'SIhistograms' in fileContents
 
             # Sanity checks are done. We can now add any remaining valid entries to the result lists
             if not file in ignoredListQSI and not allQSIResultsInvalid and containsQSIResults:
@@ -179,9 +185,10 @@ def loadOutputFileDirectory(path):
 
     results['settings'] = previousExperimentSettings
     pp = pprint.PrettyPrinter(indent=4)
-    #print(pp.pformat(results['settings']))
+    # print(pp.pformat(results['settings']))
 
     return results
+
 
 def objects(count):
     if count > 1:
@@ -189,21 +196,25 @@ def objects(count):
     else:
         return 'Object'
 
+
 print('Loading original files..')
 loadedResults = {}
 for directory in inputDirectories.keys():
     print('Loading directory:', directory)
     loadedResults[directory] = loadOutputFileDirectory(directory)
 
-def filterResultSet(resultSet, index):
 
+def filterResultSet(resultSet, index):
     out = copy.deepcopy(resultSet)
 
     if 'QSISampleGeneration' in out['runtimes']:
         out['runtimes']['QSISampleGeneration']['total'] = [out['runtimes']['QSISampleGeneration']['total'][index]]
-        out['runtimes']['QSISampleGeneration']['meshScale'] = [out['runtimes']['QSISampleGeneration']['meshScale'][index]]
-        out['runtimes']['QSISampleGeneration']['redistribution'] = [out['runtimes']['QSISampleGeneration']['redistribution'][index]]
-        out['runtimes']['QSISampleGeneration']['generation'] = [out['runtimes']['QSISampleGeneration']['generation'][index]]
+        out['runtimes']['QSISampleGeneration']['meshScale'] = [
+            out['runtimes']['QSISampleGeneration']['meshScale'][index]]
+        out['runtimes']['QSISampleGeneration']['redistribution'] = [
+            out['runtimes']['QSISampleGeneration']['redistribution'][index]]
+        out['runtimes']['QSISampleGeneration']['generation'] = [
+            out['runtimes']['QSISampleGeneration']['generation'][index]]
 
     if 'QSISearch' in out['runtimes']:
         out['runtimes']['QSISearch']['total'] = [out['runtimes']['QSISearch']['total'][index]]
@@ -211,9 +222,11 @@ def filterResultSet(resultSet, index):
 
     if 'SISampleGeneration' in out['runtimes']:
         out['runtimes']['SISampleGeneration']['total'] = [out['runtimes']['SISampleGeneration']['total'][index]]
-        out['runtimes']['SISampleGeneration']['initialisation'] = [out['runtimes']['SISampleGeneration']['initialisation'][index]]
+        out['runtimes']['SISampleGeneration']['initialisation'] = [
+            out['runtimes']['SISampleGeneration']['initialisation'][index]]
         out['runtimes']['SISampleGeneration']['sampling'] = [out['runtimes']['SISampleGeneration']['sampling'][index]]
-        out['runtimes']['SISampleGeneration']['generation'] = [out['runtimes']['SISampleGeneration']['generation'][index]]
+        out['runtimes']['SISampleGeneration']['generation'] = [
+            out['runtimes']['SISampleGeneration']['generation'][index]]
 
     if 'SISearch' in out['runtimes']:
         out['runtimes']['SISearch']['total'] = [out['runtimes']['SISearch']['total'][index]]
@@ -227,6 +240,7 @@ def filterResultSet(resultSet, index):
         out['SIhistograms'] = {'0': out['SIhistograms'][str(index)]}
 
     return out
+
 
 def split(directory):
     print('Splitting', directory)
@@ -257,8 +271,6 @@ def split(directory):
         inputDirectories[newDirectoryName] = (setMeta[0] + ' (' + str(itemCount) + ' objects)', setMeta[1])
 
 
-
-
 def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
     global loadedResults
     global inputDirectories
@@ -274,7 +286,11 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
     del inputDirectories[directory2]
 
     if directory1_contents['settings'] != directory2_contents['settings']:
-        print('WARNING: Directories %s and %s have different generation settings, and may therefore not be compatible to be merged!' % (directory1, directory2))
+        print(
+            'WARNING: Directories %s and %s have different generation settings, and may therefore not be compatible to be merged!' % (
+            directory1, directory2))
+        print('Directory 1:', directory1_contents['settings'])
+        print('Directory 2:', directory2_contents['settings'])
 
     combinedResults = {'results': {'QSI': {}, 'SI': {}}, 'settings': directory1_contents['settings']}
 
@@ -297,37 +313,50 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
     print('\tAdded', additionCount, 'new values')
     return additionCount
 
+
 print('\n\nMerging similar datasets..')
 split('../IDUNRUNS/output_smallsupportangle_lotsofobjects')
 split('../IDUNRUNS/output_qsifix_smallsupportangle_rerun')
 split('../IDUNRUNS/output_mainchart_si_v4_15')
 
 # QSI runs
-merge('../IDUNRUNS/output_lotsofobjects_v4', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output', 'QSI, 1, 5, and 10 objects', 'HEID + IDUN')
+merge('../IDUNRUNS/output_lotsofobjects_v4', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output',
+      'QSI, 1, 5, and 10 objects', 'HEID + IDUN')
 
 # SI 180 degrees, 1 object
-merge('../IDUNRUNS/output_mainchart_si_v4_1', '../IDUNRUNS/output_mainchart_si_v4_15 (1 objects)', 'SI 180 degrees, 1 object', 'IDUN')
+merge('../IDUNRUNS/output_mainchart_si_v4_1', '../IDUNRUNS/output_mainchart_si_v4_15 (1 objects)',
+      'SI 180 degrees, 1 object', 'IDUN')
 
 # SI 180 degrees, 5 objects
-additionCount = merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output', '../IDUNRUNS/output_mainchart_si_v4_15 (5 objects)', 'SI 180 degrees, 5 objects', 'HEID')
+additionCount = merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output',
+                      '../IDUNRUNS/output_mainchart_si_v4_15 (5 objects)', 'SI 180 degrees, 5 objects', 'HEID')
 # this merge is mainly to remove the dataset from the input batch. We ultimately want the HEIDRUNS results exclusively because
 # we use these results to compare runtimes
-assert(additionCount == 0)
+assert (additionCount == 0)
 
 # SI 180 degrees, 10 objects
-merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output', '../IDUNRUNS/output_mainchart_si_v4_10', 'SI 180 degrees, 10 objects', 'HEID + IDUN')
-merge('SI 180 degrees, 10 objects', '../HEIDRUNS/output_qsifix_v4_180deg_si_missing/output', 'SI 180 degrees, 10 objects', 'HEID + IDUN')
+merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output', '../IDUNRUNS/output_mainchart_si_v4_10',
+      'SI 180 degrees, 10 objects', 'HEID + IDUN')
+merge('SI 180 degrees, 10 objects', '../HEIDRUNS/output_qsifix_v4_180deg_si_missing/output',
+      'SI 180 degrees, 10 objects', 'HEID + IDUN')
 
 # SI 60 degrees, 1 object
-merge('../IDUNRUNS/output_supportanglechart60_si_v4_1', '../IDUNRUNS/output_smallsupportangle_lotsofobjects (1 objects)', 'SI 60 degrees, 1 object intermediate', 'IDUN')
-merge('SI 60 degrees, 1 object intermediate', '../IDUNRUNS/output_qsifix_smallsupportangle_rerun (1 objects)', 'SI 60 degrees, 1 object', 'IDUN')
+merge('../IDUNRUNS/output_supportanglechart60_si_v4_1',
+      '../IDUNRUNS/output_smallsupportangle_lotsofobjects (1 objects)', 'SI 60 degrees, 1 object intermediate', 'IDUN')
+merge('SI 60 degrees, 1 object intermediate', '../IDUNRUNS/output_qsifix_smallsupportangle_rerun (1 objects)',
+      'SI 60 degrees, 1 object', 'IDUN')
 
 # SI 60 degrees, 5 objects
-merge('../IDUNRUNS/output_supportanglechart60_si_v4_5', '../IDUNRUNS/output_smallsupportangle_lotsofobjects (5 objects)', 'SI 60 degrees, 5 objects', 'IDUN')
+merge('../HEIDRUNS/output_qsifix_si_v4_60deg_5objects_missing/output/', '../IDUNRUNS/output_supportanglechart60_si_v4_5', 'SI 60 degrees, 5 objects, intermediate', 'HEID + IDUN')
+merge('SI 60 degrees, 5 objects, intermediate',
+      '../IDUNRUNS/output_smallsupportangle_lotsofobjects (5 objects)', 'SI 60 degrees, 5 objects', 'HEID + IDUN')
 
 # SO 60 degrees, 10 objects
-merge('../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/', '../IDUNRUNS/output_smallsupportangle_lotsofobjects (10 objects)', 'SI 60 deg 10 objects intermediate', 'HEID + IDUN')
-merge('SI 60 deg 10 objects intermediate', '../IDUNRUNS/output_qsifix_smallsupportangle_rerun (10 objects)', 'SI 60 degrees, 10 objects', 'HEID + IDUN')
+merge('../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/',
+      '../IDUNRUNS/output_smallsupportangle_lotsofobjects (10 objects)', 'SI 60 deg 10 objects intermediate',
+      'HEID + IDUN')
+merge('SI 60 deg 10 objects intermediate', '../IDUNRUNS/output_qsifix_smallsupportangle_rerun (10 objects)',
+      'SI 60 degrees, 10 objects', 'HEID + IDUN')
 
 print('Processing..')
 seedSet = set()
@@ -343,31 +372,32 @@ print('\tFound', len(seedSet), 'seeds in result sets')
 print()
 
 if removeSeedsWithMissingEntries:
-	print('Removing missing entries')
-	missingSeeds = []
+    print('Removing missing entries')
+    missingSeeds = []
 
-	for directory in loadedResults:
-		print(directory)
-		for seed in seedList:
-			if len(loadedResults[directory]['results']['QSI']) > 0:
-				if not seed in loadedResults[directory]['results']['QSI']:
-					missingSeeds.append(seed)
-			if len(loadedResults[directory]['results']['SI']) > 0:
-				if not seed in loadedResults[directory]['results']['SI']:
-					missingSeeds.append(seed)
+    for directory in loadedResults:
+        cutCount = 0
+        for seed in seedList:
+            if len(loadedResults[directory]['results']['QSI']) > 0:
+                if not seed in loadedResults[directory]['results']['QSI']:
+                    missingSeeds.append(seed)
+                    cutCount += 1
+            if len(loadedResults[directory]['results']['SI']) > 0:
+                if not seed in loadedResults[directory]['results']['SI']:
+                    missingSeeds.append(seed)
+                    cutCount += 1
+        print(directory, ' - removed seed count:', cutCount)
 
-	print('Detected', len(missingSeeds), 'seeds with missing entries. Removing..')
+    print('Detected', len(missingSeeds), 'seeds with missing entries. Removing..')
 
-	for missingSeed in missingSeeds:
-		for directory in loadedResults:
-			if missingSeed in loadedResults[directory]['results']['QSI']:
-				del loadedResults[directory]['results']['QSI'][missingSeed]
-			if missingSeed in loadedResults[directory]['results']['SI']:
-				del loadedResults[directory]['results']['SI'][missingSeed]
-		if missingSeed in seedList:
-			del seedList[seedList.index(missingSeed)]
-
-
+    for missingSeed in missingSeeds:
+        for directory in loadedResults:
+            if missingSeed in loadedResults[directory]['results']['QSI']:
+                del loadedResults[directory]['results']['QSI'][missingSeed]
+            if missingSeed in loadedResults[directory]['results']['SI']:
+                del loadedResults[directory]['results']['SI'][missingSeed]
+        if missingSeed in seedList:
+            del seedList[seedList.index(missingSeed)]
 
 # -- Dump to spreadsheet --
 
@@ -403,8 +433,6 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 1, cluster)
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len(result['results']['QSI']))
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 3, len(result['results']['SI']))
-
-
 
 # Sheets
 top0sheetQSI = book.add_sheet("Rank 0 QSI results")
@@ -457,7 +485,7 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
     # Writing column headers
     for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
         columnHeader = directoryName + ' (' + str(sampleObjectCount) + ' ' + objects(
-                               len(resultSet['settings']['sampleObjectCounts'])) + ')'
+            len(resultSet['settings']['sampleObjectCounts'])) + ')'
         top0sheetQSI.write(0, currentColumn + sampleCountIndex, columnHeader)
         top0sheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
         top10sheetQSI.write(0, currentColumn + sampleCountIndex, columnHeader)
@@ -472,7 +500,6 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
         totalVertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
         totalTriangleCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
 
-
     for seedIndex, seed in enumerate(seedList):
         if seed in resultSet['results']['QSI']:
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
@@ -486,7 +513,7 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
                 # Top 10 performance
                 totalImageCountInTop10 = sum(
                     [entry['QSIhistograms'][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
-                    str(x) in entry['QSIhistograms'][str(sampleCountIndex)]])
+                     str(x) in entry['QSIhistograms'][str(sampleCountIndex)]])
                 percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
                 top10sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
 
@@ -500,8 +527,10 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 
                 # Vertex count sanity check
                 vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
-                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['imageCounts'][0:sampleObjectCount]))
-                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
+                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
+                                            sum(entry['imageCounts'][0:sampleObjectCount]))
+                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
+                                              sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
         else:
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
                 top0sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
@@ -521,7 +550,7 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
                 # Top 10 performance
                 totalImageCountInTop10 = sum(
                     [entry['SIhistograms'][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
-                    str(x) in entry['SIhistograms'][str(sampleCountIndex)]])
+                     str(x) in entry['SIhistograms'][str(sampleCountIndex)]])
                 percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
                 top10sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
 
@@ -535,8 +564,10 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 
                 # Vertex count sanity check
                 vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
-                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['imageCounts'][0:sampleObjectCount]))
-                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
+                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
+                                            sum(entry['imageCounts'][0:sampleObjectCount]))
+                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
+                                              sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
         else:
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
                 top0sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
@@ -562,12 +593,6 @@ for seedIndex, seed in enumerate(seedList + ['dummy entry for final row']):
     vertexCountSheet.write(seedIndex, currentColumn, ' ')
     totalVertexCountSheet.write(seedIndex, currentColumn, ' ')
     totalTriangleCountSheet.write(seedIndex, currentColumn, ' ')
-
-
-
-
-
-
 
 book.save(outfile)
 print('Complete.')
