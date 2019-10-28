@@ -5,13 +5,21 @@ import datetime
 import xlwt
 import pprint
 import copy
-from math import sqrt
 
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+from PIL import Image
+
+# --- SETTINGS ---
+
+# Master input directories
 inputDirectories = {
     '../HEIDRUNS/output_qsifix_v4_noearlyexit/output': ('QSI, No early exit, 5 objects', 'HEID'),
     '../HEIDRUNS/output_qsifix_v4_withearlyexit/output': ('QSI, Early exit, 5 objects', 'HEID'),
     '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output': ('Failed jobs from IDUN run', 'HEID'),
     '../IDUNRUNS/output_lotsofobjects_v4': ('primary QSI IDUN run', 'IDUN'),
+    '../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output': ('re-run of 5 object QSI results that were missing raw files', 'HEID'),
 
     '../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output': ('180 support angle, 10 objects', 'HEID'),
     '../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output': ('180 support angle, 5 objects', 'HEID'),
@@ -322,9 +330,11 @@ print('\n\nMerging similar datasets..')
 split('../IDUNRUNS/output_smallsupportangle_lotsofobjects')
 split('../IDUNRUNS/output_qsifix_smallsupportangle_rerun')
 split('../IDUNRUNS/output_mainchart_si_v4_15')
+split('../IDUNRUNS/output_lotsofobjects_v4')
 
 # QSI runs
-merge('../IDUNRUNS/output_lotsofobjects_v4', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output',
+merge('../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output', '../IDUNRUNS/output_lotsofobjects_v4 (5 objects)', 'QSI primary intermediate', 'HEID + IDUN')
+merge('QSI primary intermediate', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output',
       'QSI, 1, 5, and 10 objects', 'HEID + IDUN')
 
 # SI 180 degrees, 1 object
@@ -333,7 +343,7 @@ merge('../IDUNRUNS/output_mainchart_si_v4_1', '../IDUNRUNS/output_mainchart_si_v
 
 # SI 180 degrees, 5 objects
 additionCount = merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output',
-                      '../IDUNRUNS/output_mainchart_si_v4_15 (5 objects)', 'SI 180 degrees, 5 objects', 'HEID')
+                      '../IDUNRUNS/output_mainchart_si_v4_15 (5 objects)', 'SI 180 degrees, 5 objects', 'HEID + IDUN')
 # this merge is mainly to remove the dataset from the input batch. We ultimately want the HEIDRUNS results exclusively because
 # we use these results to compare runtimes
 assert (additionCount == 0)
