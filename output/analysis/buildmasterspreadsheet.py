@@ -140,48 +140,48 @@ def loadOutputFileDirectory(path):
     previousExperimentSettings = None
     for fileindex, file in enumerate(originalFiles):
         print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r')
-        with open(os.path.join(path, file), 'r') as openFile:
-            # Read JSON file
-            fileContents = jsonCache[file]
 
-            # Check if settings are the same as other files in the folder
-            currentExperimentSettings = extractExperimentSettings(fileContents)
-            if previousExperimentSettings is not None:
-                if currentExperimentSettings != previousExperimentSettings:
-                    # Any discrepancy here is a fatal exception. It NEEDS attention regardless
-                    raise Exception("Experiment settings mismatch in the same batch! File: " + file)
-            previousExperimentSettings = currentExperimentSettings
-            results['settings'] = currentExperimentSettings
+        # Read JSON file
+        fileContents = jsonCache[file]
 
-            # Check for other incorrect settings. Ignore files if detected
-            if 0 in fileContents['imageCounts']:
-                if file not in ignoredListQSI:
-                    ignoredListQSI.append(file)
-                if file not in ignoredListSI:
-                    ignoredListSI.append(file)
-                # print('ignored 0',file)
-            if fileContents['spinImageWidthPixels'] == 32:
-                if file not in ignoredListQSI:
-                    ignoredListQSI.append(file)
-                if file not in ignoredListSI:
-                    ignoredListSI.append(file)
+        # Check if settings are the same as other files in the folder
+        currentExperimentSettings = extractExperimentSettings(fileContents)
+        if previousExperimentSettings is not None:
+            if currentExperimentSettings != previousExperimentSettings:
+                # Any discrepancy here is a fatal exception. It NEEDS attention regardless
+                raise Exception("Experiment settings mismatch in the same batch! File: " + file)
+        previousExperimentSettings = currentExperimentSettings
+        results['settings'] = currentExperimentSettings
 
-            # Beauty checks
-            if file not in ignoredListQSI and allQSIResultsInvalid:
+        # Check for other incorrect settings. Ignore files if detected
+        if 0 in fileContents['imageCounts']:
+            if file not in ignoredListQSI:
                 ignoredListQSI.append(file)
-            if file not in ignoredListSI and allSIResultsInvalid:
+            if file not in ignoredListSI:
+                ignoredListSI.append(file)
+            # print('ignored 0',file)
+        if fileContents['spinImageWidthPixels'] == 32:
+            if file not in ignoredListQSI:
+                ignoredListQSI.append(file)
+            if file not in ignoredListSI:
                 ignoredListSI.append(file)
 
-            containsQSIResults = ('descriptors' in fileContents and 'qsi' in fileContents[
-                'descriptors']) or 'QSIhistograms' in fileContents
-            containsSIResults = ('descriptors' in fileContents and 'si' in fileContents[
-                'descriptors']) or 'SIhistograms' in fileContents
+        # Beauty checks
+        if file not in ignoredListQSI and allQSIResultsInvalid:
+            ignoredListQSI.append(file)
+        if file not in ignoredListSI and allSIResultsInvalid:
+            ignoredListSI.append(file)
 
-            # Sanity checks are done. We can now add any remaining valid entries to the result lists
-            if not file in ignoredListQSI and not allQSIResultsInvalid and containsQSIResults:
-                results['results']['QSI'][str(fileContents['seed'])] = fileContents
-            if not file in ignoredListSI and not allSIResultsInvalid and containsSIResults:
-                results['results']['SI'][str(fileContents['seed'])] = fileContents
+        containsQSIResults = ('descriptors' in fileContents and 'qsi' in fileContents[
+            'descriptors']) or 'QSIhistograms' in fileContents
+        containsSIResults = ('descriptors' in fileContents and 'si' in fileContents[
+            'descriptors']) or 'SIhistograms' in fileContents
+
+        # Sanity checks are done. We can now add any remaining valid entries to the result lists
+        if not file in ignoredListQSI and not allQSIResultsInvalid and containsQSIResults:
+            results['results']['QSI'][str(fileContents['seed'])] = fileContents
+        if not file in ignoredListSI and not allSIResultsInvalid and containsSIResults:
+            results['results']['SI'][str(fileContents['seed'])] = fileContents
 
     print()
     print('%i/%i QSI files had discrepancies and had to be ignored.' % (len(ignoredListQSI), len(originalFiles)))
