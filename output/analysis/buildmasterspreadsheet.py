@@ -34,11 +34,22 @@ inputDirectories = {
     '../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/': ('60 support angle, 10 objects', 'HEID'),
     '../HEIDRUNS/output_qsifix_si_v4_60deg_5objects_missing/output/': ('60 support angle, 5 objects', 'HEID'),
 }
+
+# The location where the master spreadsheet should be written to
 outfile = 'final_results/master_spreadsheet.xls'
 
-computeClutterHeatmaps = True
-loadClutterHeatmapsFromCache = True
-showClutterHeatmaps = True
+# Settings for clutter heatmaps
+heatmapSize = 256
+
+rawInputDirectories = {
+    'QSI': ['../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output/raw', '../IDUNRUNS/output_lotsofobjects_v4/raw', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output/raw'],
+    'SI': ['../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output/raw', '../IDUNRUNS/output_mainchart_si_v4_15/raw'],
+}
+rawInputObjectCount = 5
+
+clutterFileDirecory = '../clutter/lotsofobjects_5objects'
+
+
 
 # Distill the result set down to the entries we have all data for
 removeSeedsWithMissingEntries = True
@@ -209,7 +220,31 @@ def objects(count):
         return 'Object'
 
 
-print('Loading original files..')
+
+print('Loading raw data files..')
+loadedRawResults = {'QSI': {}, 'SI': {}}
+for algorithm in rawInputDirectories:
+    for path in rawInputDirectories[algorithm]:
+        print('Loading raw directory:', path)
+        rawFiles = os.listdir(path)
+        for fileIndex, file in enumerate(rawFiles):
+            print(str(fileIndex + 1) + '/' + str(len(rawFiles)), file + '        ', end='\r')
+            seed = file.split('.')[0].split("_")[2]
+            if not seed in loadedRawResults[algorithm]:
+                with open(os.path.join(path, file), 'r') as openFile:
+                    # Read JSON file
+                    try:
+                        rawFileContents = json.loads(openFile.read())
+                        loadedRawResults[algorithm][seed] = rawFileContents[algorithm][str(rawInputObjectCount)]
+                    except Exception as e:
+                        print('FAILED TO READ FILE: ' + str(file))
+                        print(e)
+                        continue
+        print()
+
+
+
+print('Loading input data files..')
 loadedResults = {}
 for directory in inputDirectories.keys():
     print('Loading directory:', directory)
@@ -383,7 +418,7 @@ seedList = [x for x in seedSet]
 
 print('\tFound', len(seedSet), 'seeds in result sets')
 
-print()
+
 
 if removeSeedsWithMissingEntries:
     print('Removing missing entries')
@@ -413,12 +448,118 @@ if removeSeedsWithMissingEntries:
         if missingSeed in seedList:
             del seedList[seedList.index(missingSeed)]
 
+print('Loading clutter files..')
+clutterFileMap = {}
+clutterFiles = os.listdir(clutterFileDirecory)
+for clutterFileIndex, clutterFile in enumerate(clutterFiles):
+    print(str(clutterFileIndex + 1) + '/' + str(len(clutterFiles)), clutterFile + '        ', end='\r')
+    with open(os.path.join(clutterFileDirecory, clutterFile), 'r') as openFile:
+        # Read JSON file
+        try:
+            clutterFileContents = json.loads(openFile.read())
+            seed = clutterFileContents['sourceFile'].split('.')[0].split('_')[2]
+            clutterFileMap[seed] = clutterFileContents
+        except Exception as e:
+            print('FAILED TO READ FILE: ' + str(file))
+            print(e)
+            continue
+print()
+
+# Find the seeds for which all input sets have data
+print('Starting raw QSI seed set size:', len(loadedRawResults['QSI'].keys()))
+rawSeedList = [x for x in loadedRawResults['QSI'].keys() if x in loadedRawResults['SI'].keys()]
+print('Merged with SI:', len(rawSeedList))
+rawSeedList = [x for x in rawSeedList if x in seedList]
+print('Merged with seedList:', len(rawSeedList))
+rawSeedList = [x for x in rawSeedList if x in clutterFileMap.keys()]
+print('Seeds remaining:', len(rawSeedList), '(after merging with clutter file map)')
+
+
 if enableResultSetSizeLimit:
     seedList = [x for index, x in enumerate(seedList) if index < resultSetSizeLimit]
 
 print()
 print('Reduced result set to size', len(seedList))
 print()
+
+
+
+# Create heatmap histograms
+hist_qsi = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
+hist_si = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
+
+print('Computing histograms..')
+histogramEntryCount = 0
+for rawSeed in rawSeedList:
+    clutterValues = clutterFileMap[rawSeed]['clutterValues']
+    qsiRanks = loadedRawResults['QSI'][rawSeed]
+    siRanks = loadedRawResults['SI'][rawSeed]
+
+    histogramEntryCount += len(clutterValues)
+
+    for i in range(0, len(clutterValues)):
+        clutterValue = clutterValues[i]
+        index_qsi = qsiRanks[i]
+        index_si = siRanks[i]
+
+        # Apparently some NaN in there
+        if clutterValue is None:
+            continue
+
+        xBin = int((1.0 - clutterValue) * heatmapSize)
+        if xBin >= heatmapSize:
+            continue
+
+        yBin_qsi = index_qsi
+        if yBin_qsi < heatmapSize:
+            hist_qsi[heatmapSize - 1 - yBin_qsi, xBin] += 1
+
+        yBin_si = index_si
+        if yBin_si < heatmapSize:
+            hist_si[heatmapSize - 1 - yBin_si, xBin] += 1
+
+print('Histogram computed over', histogramEntryCount, 'values')
+
+
+
+hist_qsi = np.log10(np.maximum(hist_qsi,0.1))
+hist_si = np.log10(np.maximum(hist_si,0.1))
+
+extent = [0, heatmapSize, 0, heatmapSize]
+
+# Plot heatmap
+plt.clf()
+
+colorbar_ticks = np.arange(0, 8, 1)
+total_minimum_value = min(np.amin(hist_qsi), np.amin(hist_si))
+total_maximum_value = max(np.amax(hist_qsi), np.amax(hist_si))
+print('range:', total_minimum_value, total_maximum_value)
+normalisation = colors.Normalize(vmin=total_minimum_value,vmax=total_maximum_value)
+
+horizontal_ticks_real_coords = np.arange(0,256,25.599*2.0)
+horizontal_ticks_labels = [("%.1f" % x) for x in np.arange(0,1.1,0.2)]
+
+qsiplt = plt.figure(1)
+plt.title('')
+plt.ylabel('rank')
+plt.xlabel('clutter percentage')
+qsi_im = plt.imshow(hist_qsi, extent=extent, cmap='nipy_spectral', norm=normalisation)
+plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+
+siplt = plt.figure(2)
+plt.title('')
+plt.ylabel('rank')
+plt.xlabel('clutter percentage')
+si_im = plt.imshow(hist_si, extent=extent, cmap='nipy_spectral', norm=normalisation)
+plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+si_cbar = plt.colorbar(si_im, ticks=colorbar_ticks)
+si_cbar.ax.set_yticklabels(["{:.0E}".format(x) for x in np.power(10, colorbar_ticks)])
+si_cbar.set_label('Sample count', rotation=90)
+
+qsiplt.show()
+siplt.show()
+
+input()
 
 # -- Dump to spreadsheet --
 
