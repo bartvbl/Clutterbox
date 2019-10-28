@@ -45,6 +45,7 @@ int main(int argc, const char** argv) {
     const auto& startIndex = parser.add<int>("start-index", "Start processing at the given file index.", '\0', arrrgh::Optional, 0);
     const auto& computeSingleIndex = parser.add<int>("compute-single-index", "Instead of processing the entire directory, only process one clutter file.", '\0', arrrgh::Optional, -1);
     const auto& overrideObjectCount = parser.add<int>("override-object-count", "Rather than compute clutter over all objects present in each result file, limit the clutter values to n objects instead.", '\0', arrrgh::Optional, -1);
+    const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", 'b', arrrgh::Optional, -1);
 
 
     try
@@ -77,6 +78,10 @@ int main(int argc, const char** argv) {
     if(outDir.value() == DIRECTORY_UNSPECIFIED) {
         std::cout << "An output directory must be specified!" << std::endl;
         return 0;
+    }
+
+    if(forceGPU.value() != -1) {
+        cudaSetDevice(forceGPU.value());
     }
 
     std::cout << "Listing object directory..";
