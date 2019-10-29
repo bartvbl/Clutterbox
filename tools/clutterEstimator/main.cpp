@@ -118,28 +118,15 @@ int main(int argc, const char** argv) {
         std::vector<HostMesh> objects;
         objects.resize(sampleObjectCount);
 
+        // Normally objects are chosen randomly, and put into a random order. Here, we instead just
+        // read the objects in the shuffled order from the result dump file
         for(unsigned int object = 0; object < sampleObjectCount; object++) {
             std::string objectFile = resultFileContents["inputFiles"].at(object);
             stringSplit(&parts, objectFile, '/');
-            std::cout << "\r\t" << "Loading object " << (object + 1) << "/" << sampleObjectCount << ": " << parts.at(parts.size() - 1) << std::flush;
+            std::cout << "\t" << "Loading object " << (object + 1) << "/" << sampleObjectCount << ": " << parts.at(parts.size() - 1) << std::endl;
             objects.at(object) = SpinImage::utilities::loadOBJ(objectDir.value() + "/" + parts.at(parts.size() - 1));
         }
         std::cout << std::endl;
-
-        // 1 Seeding the random number generator
-        std::random_device rd;
-        size_t randomSeed = resultFileContents["seed"];
-        std::cout << "\tRandom seed: " << randomSeed << std::endl;
-        std::default_random_engine generator{randomSeed};
-
-        // This simulates the random generator calls for picking the random objects
-        // Used for consistent RNG when translating/rotating objects
-        std::shuffle(std::begin(objectFileList), std::end(objectFileList), generator);
-        std::vector<HostMesh> tempVector;
-        tempVector.resize(sampleObjectCount);
-        std::shuffle(std::begin(tempVector), std::end(tempVector), generator);
-        // This represents an random number generation for the spin image seed selection
-        generator();
 
         // 5 Scale all models to fit in a 1x1x1 sphere
         std::cout << "\tScaling meshes.." << std::endl;
@@ -149,12 +136,23 @@ int main(int argc, const char** argv) {
             SpinImage::cpu::freeHostMesh(objects.at(i));
         }
 
+        // We need to reduce the scene to the number of objects we want to test with
+        int numberOfObjectsInExperiment = *std::max_element(resultFileContents["sampleObjectCounts"].begin(), resultFileContents["sampleObjectCounts"].end());
+        // Avoid a memory leak
+        for(int i = numberOfObjectsInExperiment; i < scaledMeshes.size(); i++) {
+            SpinImage::cpu::freeHostMesh(scaledMeshes.at(i));
+        }
+        std::cout << "Constructing a scene with " << numberOfObjectsInExperiment << " objects.." << std::endl;
+        scaledMeshes.resize(numberOfObjectsInExperiment);
+        sampleObjectCount = numberOfObjectsInExperiment;
+
         // 6 Copy meshes to GPU
         std::cout << "\tCopying meshes to device.." << std::endl;
         std::vector<DeviceMesh> scaledMeshesOnGPU(sampleObjectCount);
         for (unsigned int i = 0; i < sampleObjectCount; i++) {
             scaledMeshesOnGPU.at(i) = SpinImage::copy::hostMeshToDevice(scaledMeshes.at(i));
         }
+
 
         // 10 Combine meshes into one larger scene
         DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
@@ -166,7 +164,25 @@ int main(int argc, const char** argv) {
 
         // 12 Randomly transform objects
         std::cout << "\tRandomly transforming input objects.." << std::endl;
-        randomlyTransformMeshes(boxScene, boxSize, scaledMeshesOnGPU, generator);
+        std::vector<Transformation> transformations;
+
+        for(int i = 0; i < scaledMeshesOnGPU.size(); i++) {
+            Transformation trans{};
+            // THESE ROTATION AXES ARE WRONG ON PURPOSE
+            // Output dump file contains incorrect rotation order: rotations.at(i) = glm::vec3(yaw, pitch, roll);
+            trans.rotation.x = resultFileContents["rotations"][i][1];
+            trans.rotation.y = resultFileContents["rotations"][i][0];
+            trans.rotation.z = resultFileContents["rotations"][i][2];
+
+            trans.position.x = resultFileContents["translations"][i][0];
+            trans.position.y = resultFileContents["translations"][i][1];
+            trans.position.z = resultFileContents["translations"][i][2];
+
+            transformations.push_back(trans);
+        }
+
+        randomlyTransformMeshes(boxScene, scaledMeshesOnGPU, transformations);
+
 
         // 13 Compute corresponding transformed vertex buffer
         //    A mapping is used here because the previously applied transformation can cause non-unique vertices to become
@@ -174,11 +190,16 @@ int main(int argc, const char** argv) {
         array<DeviceOrientedPoint> device_uniqueSpinOrigins = applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
         checkCudaErrors(cudaFree(device_indexMapping.content));
 
-        size_t sampleCount = std::max(10 * boxScene.vertexCount, (size_t) 1000000);
-
+        // Should be as large as possible, but can be selected arbitrarily
+        size_t sampleCount = std::max(samplesPerTriangle.value() * (boxScene.vertexCount / 3), (size_t) 1000000);
 
         std::cout << "\tSampling scene.. (" << sampleCount << " samples)" << std::endl;
         SpinImage::internal::MeshSamplingBuffers sampleBuffers;
+
+        // 1 Seeding the random number generator
+        std::random_device rd;
+        std::minstd_rand0 generator{rd()};
+
         SpinImage::GPUPointCloud sampledScene = SpinImage::utilities::sampleMesh(boxScene, sampleCount, generator(), &sampleBuffers);
 
         std::cout << "\tComputing reference object sample count.." << std::endl;
