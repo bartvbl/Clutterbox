@@ -216,13 +216,16 @@ int main(int argc, const char** argv) {
         outJson["version"] = "clutter_v1";
         outJson["clutterValues"] = {};
         outJson["sourceFile"] = resultFile;
+        outJson["seed"] = resultFileContents["seed"];
+        outJson["sampleObjectCount"] = resultFileContents["sampleObjectCount"];
+        outJson["sampleCount"] = sampleCount;
 
         for(size_t item = 0; item < clutterValues.length; item++) {
             outJson["clutterValues"].push_back(clutterValues.content[item]);
         }
 
         std::cout << "Writing output file.." << std::endl;
-        std::string outFilePath = outDir.value() + "/" + getCurrentDateTimeString() + ".json";
+        std::string outFilePath = outDir.value() + "/" + getCurrentDateTimeString() + "_" + std::to_string((int)resultFileContents["seed"]) + ".json";
         std::ofstream outFile(outFilePath);
         outFile << outJson.dump(4) << std::endl;
         outFile.close();
