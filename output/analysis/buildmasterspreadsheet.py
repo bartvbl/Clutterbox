@@ -47,7 +47,7 @@ rawInputDirectories = {
 }
 rawInputObjectCount = 5
 
-clutterFileDirectories = ['../clutter/output_5objects/output', '../clutter/lotsofobjects_5objects']
+clutterFileDirectories = ['../clutter/output_5objects/output']
 
 
 
@@ -509,6 +509,9 @@ for rawSeed in rawSeedList:
     clutterValues = clutterFileMap[rawSeed]['clutterValues']
     qsiRanks = loadedRawResults['QSI'][rawSeed]
     siRanks = loadedRawResults['SI'][rawSeed]
+
+    if not(len(clutterValues) == len(qsiRanks) == len(siRanks)):
+        print('WARNING: batch size mismatch!', [len(clutterValues), len(qsiRanks), len(siRanks)])
 
     histogramEntryCount += len(clutterValues)
 
