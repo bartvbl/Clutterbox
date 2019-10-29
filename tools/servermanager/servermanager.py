@@ -19,7 +19,8 @@ outputDir = '../combinedoutput/output_qsifix_v4_lotsofobjects_5_objects_only/'
 
 DAEMONONLY_timedstops = {}
 DAEMONONLY_currentSeedIndex = 0
-DAEMONONLY_seedCount = sum(1 for line in open('bench/' + seedfile))
+allseeds = [line.strip() for line in open(seedfile)]
+DAEMONONLY_seedCount = sum(1 for line in allseeds)
 DAEMONONLY_activeseeds = []
 DAEMONONLY_gpuIDs = []
 DAEMONONLY_failedSeedQueue = []
@@ -57,7 +58,6 @@ def launchInstance(gpuID):
 	else:
 		# Pick the next seed we haven't looked at
 		seedIndex = DAEMONONLY_currentSeedIndex
-		log("Launching job with ID " + str(DAEMONONLY_currentSeedIndex) + ' on GPU ' + str(gpuID))
 
 		# Don't launch if we have reached the end
 		if DAEMONONLY_currentSeedIndex >= DAEMONONLY_seedCount:
@@ -66,6 +66,7 @@ def launchInstance(gpuID):
 			SHARED_jobqueue.append({'command': 'remove', 'id': gpuID, 'requeue': False})
 			return
 		else:
+			log("Launching job with ID " + str(DAEMONONLY_currentSeedIndex) + ' and seed ' + allseeds[seedIndex] + ' on GPU ' + str(gpuID))
 			DAEMONONLY_currentSeedIndex += 1
 
 	DAEMONONLY_activeseeds[gpuIndex] = seedIndex
@@ -143,6 +144,8 @@ def gpuDaemon():
 						DAEMONONLY_gpuIDs.append(gpuID)
 						DAEMONONLY_activeseeds.append(-1)
 						launchInstance(gpuID)
+					else:
+						print('Adding GPU', gpuID, 'to the pool failed: GPU is already present!')
 				elif job['command'] == 'remove':
 					gpuID = job['id']
 					if gpuID in DAEMONONLY_gpuIDs:
