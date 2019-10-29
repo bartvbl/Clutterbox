@@ -487,6 +487,8 @@ print('Merged with seedList:', len(rawSeedList))
 rawSeedList = [x for x in rawSeedList if x in clutterFileMap.keys()]
 print('Seeds remaining:', len(rawSeedList), '(after merging with clutter file map)')
 
+# We want to make sure our dataset contains entries for ALL data points
+seedList = rawSeedList
 
 if enableResultSetSizeLimit:
     seedList = [x for index, x in enumerate(seedList) if index < resultSetSizeLimit]
