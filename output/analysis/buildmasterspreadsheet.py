@@ -47,7 +47,7 @@ rawInputDirectories = {
 }
 rawInputObjectCount = 5
 
-clutterFileDirecory = '../clutter/lotsofobjects_5objects'
+clutterFileDirectories = ['../clutter/output_5objects/output', '../clutter/lotsofobjects_5objects']
 
 
 
@@ -461,20 +461,22 @@ if removeSeedsWithMissingEntries:
 
 print('Loading clutter files..')
 clutterFileMap = {}
-clutterFiles = os.listdir(clutterFileDirecory)
-for clutterFileIndex, clutterFile in enumerate(clutterFiles):
-    print(str(clutterFileIndex + 1) + '/' + str(len(clutterFiles)), clutterFile + '        ', end='\r')
-    with open(os.path.join(clutterFileDirecory, clutterFile), 'r') as openFile:
-        # Read JSON file
-        try:
-            clutterFileContents = json.loads(openFile.read())
-            seed = clutterFileContents['sourceFile'].split('.')[0].split('_')[2]
-            clutterFileMap[seed] = clutterFileContents
-        except Exception as e:
-            print('FAILED TO READ FILE: ' + str(file))
-            print(e)
-            continue
-print()
+for clutterFileDirectory in clutterFileDirectories:
+    print('Reading directory', clutterFileDirectory)
+    clutterFiles = os.listdir(clutterFileDirectory)
+    for clutterFileIndex, clutterFile in enumerate(clutterFiles):
+        print(str(clutterFileIndex + 1) + '/' + str(len(clutterFiles)), clutterFile + '        ', end='\r')
+        with open(os.path.join(clutterFileDirectory, clutterFile), 'r') as openFile:
+            # Read JSON file
+            try:
+                clutterFileContents = json.loads(openFile.read())
+                seed = clutterFileContents['sourceFile'].split('.')[0].split('_')[2]
+                clutterFileMap[seed] = clutterFileContents
+            except Exception as e:
+                print('FAILED TO READ FILE: ' + str(file))
+                print(e)
+                continue
+    print()
 
 # Find the seeds for which all input sets have data
 print('Starting raw QSI seed set size:', len(loadedRawResults['QSI'].keys()))
