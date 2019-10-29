@@ -130,7 +130,7 @@ __global__ void mapVertices(DeviceMesh boxScene, array<DeviceOrientedPoint> orig
 
     signed long long targetIndex = mapping.content[vertexIndex];
 
-    if(targetIndex != -1) {
+    if(targetIndex != -1 && targetIndex < origins.length) {
         float3 vertex = make_float3(
                 boxScene.vertices_x[vertexIndex],
                 boxScene.vertices_y[vertexIndex],
