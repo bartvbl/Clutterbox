@@ -44,8 +44,8 @@ int main(int argc, const char** argv) {
     const auto& outDir = parser.add<std::string>("output-dir", "Define the directory where computed clutter values should be dumped.", '\0', arrrgh::Optional, DIRECTORY_UNSPECIFIED);
     const auto& startIndex = parser.add<int>("start-index", "Start processing at the given file index.", '\0', arrrgh::Optional, 0);
     const auto& computeSingleIndex = parser.add<int>("compute-single-index", "Instead of processing the entire directory, only process one clutter file.", '\0', arrrgh::Optional, -1);
-    const auto& overrideObjectCount = parser.add<int>("override-object-count", "Rather than compute clutter over all objects present in each result file, limit the clutter values to n objects instead.", '\0', arrrgh::Optional, -1);
-    const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", 'b', arrrgh::Optional, -1);
+    const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", '\0', arrrgh::Optional, -1);
+    const auto& samplesPerTriangle = parser.add<int>("samples-per-triangle", "Force the scene to be sampled with the given number of samples per triangle", '\0', arrrgh::Optional, 30);
 
 
     try
@@ -110,8 +110,8 @@ int main(int argc, const char** argv) {
         inputResultFile.close();
 
         int sampleObjectCount = resultFileContents["sampleSetSize"];
-        if(overrideObjectCount.value() != -1) {
-            sampleObjectCount = overrideObjectCount.value();
+        if(resultFileContents["overrideObjectCount"] != -1) {
+            sampleObjectCount = resultFileContents["overrideObjectCount"];
         }
         float boxSize = float(resultFileContents["boxSize"]);
 
