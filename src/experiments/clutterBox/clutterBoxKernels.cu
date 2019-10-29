@@ -210,23 +210,21 @@ __global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMat
 
 }
 
-void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<DeviceMesh> device_meshList, std::default_random_engine &randomGenerator) {
+void randomlyTransformMeshes(DeviceMesh scene, std::vector<DeviceMesh> device_meshList, std::vector<Transformation> transformations) {
     std::vector<size_t> meshEndIndices(device_meshList.size());
     size_t currentEndIndex = 0;
 
     std::vector<glm::mat4> randomTransformations(device_meshList.size());
     std::vector<glm::mat3> randomNormalTransformations(device_meshList.size());
 
-    std::uniform_real_distribution<float> distribution(0, 1);
-
     for(unsigned int i = 0; i < device_meshList.size(); i++) {
-        float yaw = float(distribution(randomGenerator) * 2.0 * M_PI);
-        float pitch = float((distribution(randomGenerator) - 0.5) * M_PI);
-        float roll = float(distribution(randomGenerator) * 2.0 * M_PI);
+        float yaw = transformations.at(i).rotation.y;
+        float pitch = transformations.at(i).rotation.x;
+        float roll = transformations.at(i).rotation.z;
 
-        float distanceX = maxDistance * distribution(randomGenerator);
-        float distanceY = maxDistance * distribution(randomGenerator);
-        float distanceZ = maxDistance * distribution(randomGenerator);
+        float distanceX = transformations.at(i).position.x;
+        float distanceY = transformations.at(i).position.y;
+        float distanceZ = transformations.at(i).position.z;
 
         std::cout << "\t\tRotation: (" << yaw << ", " << pitch << ", "<< roll << "), Translation: (" << distanceX << ", "<< distanceY << ", "<< distanceZ << "), Vertex Count: " << device_meshList.at(i).vertexCount << std::endl;
 
@@ -271,4 +269,28 @@ void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<De
     cudaFree(device_transformations);
     cudaFree(device_normalMatrices);
     cudaFree(device_endIndices);
+}
+
+void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<DeviceMesh> device_meshList, std::minstd_rand0 &randomGenerator) {
+    std::uniform_real_distribution<float> distribution(0, 1);
+
+    std::vector<Transformation> transformations;
+
+    for(unsigned int i = 0; i < device_meshList.size(); i++) {
+        Transformation trans{};
+
+        trans.rotation.y = float(distribution(randomGenerator) * 2.0 * M_PI);
+        trans.rotation.x = float((distribution(randomGenerator) - 0.5) * M_PI);
+        trans.rotation.z = float(distribution(randomGenerator) * 2.0 * M_PI);
+
+        trans.position.x = maxDistance * distribution(randomGenerator);
+        trans.position.y = maxDistance * distribution(randomGenerator);
+        trans.position.z = maxDistance * distribution(randomGenerator);
+
+        transformations.push_back(trans);
+
+    }
+
+    randomlyTransformMeshes(scene, device_meshList, transformations);
+
 }
