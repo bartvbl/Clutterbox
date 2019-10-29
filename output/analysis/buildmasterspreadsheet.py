@@ -360,17 +360,28 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
     print('\tAdded', additionCount, 'new values')
     return additionCount
 
+# Small hack, but silences a warning that does not apply here
+loadedResults['../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output']['settings']['overrideObjectCount'] = 10
 
 print('\n\nMerging similar datasets..')
 split('../IDUNRUNS/output_smallsupportangle_lotsofobjects')
 split('../IDUNRUNS/output_qsifix_smallsupportangle_rerun')
 split('../IDUNRUNS/output_mainchart_si_v4_15')
 split('../IDUNRUNS/output_lotsofobjects_v4')
+split('../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output')
 
-# QSI runs
+# QSI 1 object
+merge('../IDUNRUNS/output_lotsofobjects_v4 (1 objects)', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output (1 objects)',
+      'QSI, 1 object', 'HEID + IDUN')
+
+# QSI 5 objects
 merge('../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output', '../IDUNRUNS/output_lotsofobjects_v4 (5 objects)', 'QSI primary intermediate', 'HEID + IDUN')
-merge('QSI primary intermediate', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output',
-      'QSI, 1, 5, and 10 objects', 'HEID + IDUN')
+merge('QSI primary intermediate', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output (5 objects)',
+      'QSI, 5 objects', 'HEID + IDUN')
+
+# QSI 10 objects
+merge('../IDUNRUNS/output_lotsofobjects_v4 (10 objects)', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output (10 objects)',
+      'QSI, 10 objects', 'HEID + IDUN')
 
 # SI 180 degrees, 1 object
 merge('../IDUNRUNS/output_mainchart_si_v4_1', '../IDUNRUNS/output_mainchart_si_v4_15 (1 objects)',
