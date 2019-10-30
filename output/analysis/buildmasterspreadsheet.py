@@ -419,7 +419,8 @@ merge('../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/',
 merge('SI 60 deg 10 objects intermediate', '../IDUNRUNS/output_qsifix_smallsupportangle_rerun (10 objects)',
       'SI 60 degrees, 10 objects', 'HEID + IDUN')
 
-print('\nProcessing..')
+print('\nProcessing..\n')
+
 seedSet = set()
 for directory in inputDirectories.keys():
     for seed in loadedResults[directory]['results']['QSI'].keys():
@@ -428,12 +429,12 @@ for directory in inputDirectories.keys():
         seedSet.add(seed)
 seedList = [x for x in seedSet]
 
-print('\tFound', len(seedSet), 'seeds in result sets')
+print('Found', len(seedSet), 'seeds in result sets')
 
 
 
 if removeSeedsWithMissingEntries:
-    print('Removing missing entries')
+    print('\nRemoving missing entries..')
     missingSeeds = []
 
     for directory in loadedResults:
@@ -507,7 +508,9 @@ hist_si = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
 
 print('Computing histograms..')
 histogramEntryCount = 0
-for rawSeed in rawSeedList:
+for rawSeedIndex, rawSeed in enumerate(rawSeedList):
+    print(str(rawSeedIndex + 1) + '/' + str(len(rawSeedList)) + " processed", end='\r')
+
     clutterValues = clutterFileMap[rawSeed]['clutterValues']
     qsiRanks = loadedRawResults['QSI'][rawSeed]
     siRanks = loadedRawResults['SI'][rawSeed]
