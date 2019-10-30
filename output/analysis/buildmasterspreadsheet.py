@@ -42,7 +42,7 @@ outfile = 'final_results/master_spreadsheet.xls'
 heatmapSize = 256
 
 rawInputDirectories = {
-    'QSI': ['../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output/raw', '../IDUNRUNS/output_lotsofobjects_v4/raw', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output/raw'],
+    'QSI': ['../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output/raw', '../IDUNRUNS/output_lotsofobjects_v4/raw'],
     'SI': ['../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output/raw', '../IDUNRUNS/output_mainchart_si_v4_15/raw'],
 }
 rawInputObjectCount = 5
@@ -203,8 +203,8 @@ def loadOutputFileDirectory(path):
             results['results']['SI'][str(fileContents['seed'])] = fileContents
 
     print()
-    print('%i/%i QSI files had discrepancies and had to be ignored.' % (len(ignoredListQSI), len(originalFiles)))
-    print('%i/%i SI files had discrepancies and had to be ignored.' % (len(ignoredListSI), len(originalFiles)))
+    #print('%i/%i QSI files had discrepancies and had to be ignored.' % (len(ignoredListQSI), len(originalFiles)))
+    #print('%i/%i SI files had discrepancies and had to be ignored.' % (len(ignoredListSI), len(originalFiles)))
 
     results['settings'] = previousExperimentSettings
     pp = pprint.PrettyPrinter(indent=4)
@@ -243,7 +243,7 @@ for algorithm in rawInputDirectories:
         print()
 
 
-
+print()
 print('Loading input data files..')
 loadedResults = {}
 for directory in inputDirectories.keys():
@@ -363,12 +363,13 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
 # Small hack, but silences a warning that does not apply here
 loadedResults['../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output']['settings']['overrideObjectCount'] = 10
 
-print('\n\nMerging similar datasets..')
+print('\nRestructuring datasets..\n')
 split('../IDUNRUNS/output_smallsupportangle_lotsofobjects')
 split('../IDUNRUNS/output_qsifix_smallsupportangle_rerun')
 split('../IDUNRUNS/output_mainchart_si_v4_15')
 split('../IDUNRUNS/output_lotsofobjects_v4')
 split('../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output')
+print()
 
 # QSI 1 object
 merge('../IDUNRUNS/output_lotsofobjects_v4 (1 objects)', '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output (1 objects)',
@@ -389,7 +390,7 @@ merge('../IDUNRUNS/output_mainchart_si_v4_1', '../IDUNRUNS/output_mainchart_si_v
 
 # SI 180 degrees, 5 objects
 additionCount = merge('../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output',
-                      '../IDUNRUNS/output_mainchart_si_v4_15 (5 objects)', 'SI 180 degrees, 5 objects', 'HEID + IDUN')
+                      '../IDUNRUNS/output_mainchart_si_v4_15 (5 objects)', 'SI 180 degrees, 5 objects', 'HEID')
 # this merge is mainly to remove the dataset from the input batch. We ultimately want the HEIDRUNS results exclusively because
 # we use these results to compare runtimes
 assert (additionCount == 0)
@@ -418,7 +419,7 @@ merge('../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/',
 merge('SI 60 deg 10 objects intermediate', '../IDUNRUNS/output_qsifix_smallsupportangle_rerun (10 objects)',
       'SI 60 degrees, 10 objects', 'HEID + IDUN')
 
-print('Processing..')
+print('\nProcessing..')
 seedSet = set()
 for directory in inputDirectories.keys():
     for seed in loadedResults[directory]['results']['QSI'].keys():
@@ -446,9 +447,9 @@ if removeSeedsWithMissingEntries:
                 if not seed in loadedResults[directory]['results']['SI']:
                     missingSeeds.append(seed)
                     cutCount += 1
-        print(directory, ' - removed seed count:', cutCount)
+        print(directory, '- removed seed count:', cutCount)
 
-    print('Detected', len(missingSeeds), 'seeds with missing entries. Removing..')
+    print('Detected', len(set(missingSeeds)), 'unique seeds with missing entries. Removing..')
 
     for missingSeed in missingSeeds:
         for directory in loadedResults:
@@ -459,7 +460,7 @@ if removeSeedsWithMissingEntries:
         if missingSeed in seedList:
             del seedList[seedList.index(missingSeed)]
 
-print('Loading clutter files..')
+print('\nLoading clutter files..')
 clutterFileMap = {}
 for clutterFileDirectory in clutterFileDirectories:
     print('Reading directory', clutterFileDirectory)
@@ -479,6 +480,7 @@ for clutterFileDirectory in clutterFileDirectories:
     print()
 
 # Find the seeds for which all input sets have data
+print('\nComputing condensed seed set')
 print('Starting raw QSI seed set size:', len(loadedRawResults['QSI'].keys()))
 rawSeedList = [x for x in loadedRawResults['QSI'].keys() if x in loadedRawResults['SI'].keys()]
 print('Merged with SI:', len(rawSeedList))
@@ -611,8 +613,8 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
             experimentSheet.write(directoryIndex + 1, keyIndex + 1, ' ')
 
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 1, cluster)
-    experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len(result['results']['QSI']))
-    experimentSheet.write(directoryIndex + 1, len(allColumns) + 3, len(result['results']['SI']))
+    experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len([x for x in result['results']['QSI'] if x in seedList]))
+    experimentSheet.write(directoryIndex + 1, len(allColumns) + 3, len([x for x in result['results']['SI'] if x in seedList]))
 
 # Sheets
 top0sheetQSI = book.add_sheet("Rank 0 QSI results")
