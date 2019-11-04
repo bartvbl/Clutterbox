@@ -18,10 +18,22 @@ __host__ __device__ __inline__ size_t roundSizeToNearestCacheLine(size_t sizeInB
 }
 
 
-__global__ void detectDuplicates(DeviceMesh mesh, bool* isDuplicate) {
+__global__ void detectDuplicates(DeviceMesh mesh, bool* isDuplicate, DeviceMesh* device_meshArray, int meshCount) {
+
+
     size_t vertexIndex = blockIdx.x * blockDim.x + threadIdx.x;
     if(vertexIndex >= mesh.vertexCount) {
         return;
+    }
+
+    int meshIndex = 0;
+    size_t currentMeshBaseIndex = 0;
+    size_t currentMeshVertexCount = device_meshArray[0].vertexCount;
+
+    while(currentMeshBaseIndex + currentMeshVertexCount < vertexIndex) {
+        currentMeshBaseIndex += currentMeshVertexCount;
+        meshIndex++;
+        currentMeshVertexCount = device_meshArray[meshIndex].vertexCount;
     }
 
     float3 vertex = make_float3(
@@ -33,7 +45,7 @@ __global__ void detectDuplicates(DeviceMesh mesh, bool* isDuplicate) {
             mesh.normals_y[vertexIndex],
             mesh.normals_z[vertexIndex]);
 
-    for(size_t i = 0; i < vertexIndex; i++) {
+    for(size_t i = currentMeshBaseIndex; i < vertexIndex; i++) {
         float3 otherVertex = make_float3(
                 mesh.vertices_x[i],
                 mesh.vertices_y[i],
@@ -86,14 +98,19 @@ __global__ void computeTargetIndices(array<signed long long> targetIndices, bool
 
 array<signed long long> computeUniqueIndexMapping(DeviceMesh boxScene, std::vector<DeviceMesh> deviceMeshes, std::vector<size_t> *uniqueVertexCounts, size_t &totalUniqueVertexCount) {
     size_t sceneVertexCount = boxScene.vertexCount;
+    DeviceMesh* device_meshArray;
+    cudaMalloc(&device_meshArray, sizeof(DeviceMesh) * deviceMeshes.size());
+    cudaMemcpy(device_meshArray, deviceMeshes.data(), sizeof(DeviceMesh) * deviceMeshes.size(), cudaMemcpyHostToHost);
 
     bool* device_duplicateVertices;
     checkCudaErrors(cudaMalloc(&device_duplicateVertices, sceneVertexCount * sizeof(bool)));
-    detectDuplicates<<<(boxScene.vertexCount / 256) + 1, 256>>>(boxScene, device_duplicateVertices);
+    detectDuplicates<<<(boxScene.vertexCount / 256) + 1, 256>>>(boxScene, device_duplicateVertices, device_meshArray, deviceMeshes.size());
     checkCudaErrors(cudaDeviceSynchronize());
 
     bool* temp_duplicateVertices = new bool[sceneVertexCount];
     checkCudaErrors(cudaMemcpy(temp_duplicateVertices, device_duplicateVertices, boxScene.vertexCount * sizeof(bool), cudaMemcpyDeviceToHost));
+
+    cudaFree(device_meshArray);
 
     size_t baseIndex = 0;
     totalUniqueVertexCount = 0;
