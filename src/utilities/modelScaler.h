@@ -1,5 +1,5 @@
 #pragma once
 
-#include <spinImage/cpu/types/HostMesh.h>
+#include <spinImage/cpu/types/Mesh.h>
 
-HostMesh fitMeshInsideSphereOfRadius(HostMesh input, float radius);
+SpinImage::cpu::Mesh fitMeshInsideSphereOfRadius(SpinImage::cpu::Mesh input, float radius);

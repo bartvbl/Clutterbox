@@ -2,14 +2,14 @@
 #include <iostream>
 #include "modelScaler.h"
 
-HostMesh fitMeshInsideSphereOfRadius(HostMesh input, float radius) {
+SpinImage::cpu::Mesh fitMeshInsideSphereOfRadius(SpinImage::cpu::Mesh input, float radius) {
 	double averageX = 0;
 	double averageY = 0;
 	double averageZ = 0;
 
 	// I use a running average mean computing method here for better accuracy with large models
 	for(unsigned int i = 0; i < input.vertexCount; i++) {
-		float3_cpu vertex = input.vertices[i];
+		SpinImage::cpu::float3 vertex = input.vertices[i];
 
 		averageX += (vertex.x - averageX) / float(i + 1);
 		averageY += (vertex.y - averageY) / float(i + 1);
@@ -19,7 +19,7 @@ HostMesh fitMeshInsideSphereOfRadius(HostMesh input, float radius) {
 	double maxDistance = -std::numeric_limits<double>::max();
 
 	for(unsigned int i = 0; i < input.vertexCount; i++) {
-		float3_cpu vertex = input.vertices[i];
+		SpinImage::cpu::float3 vertex = input.vertices[i];
 
 		double deltaX = vertex.x - averageX;
 		double deltaY = vertex.y - averageY;
@@ -30,7 +30,7 @@ HostMesh fitMeshInsideSphereOfRadius(HostMesh input, float radius) {
 	}
 
 
-	HostMesh scaledMesh(input.vertexCount, input.indexCount);
+	SpinImage::cpu::Mesh scaledMesh(input.vertexCount, input.indexCount);
 
     std::copy(input.normals, input.normals + scaledMesh.vertexCount, scaledMesh.normals);
     std::copy(input.indices, input.indices + scaledMesh.indexCount, scaledMesh.indices);

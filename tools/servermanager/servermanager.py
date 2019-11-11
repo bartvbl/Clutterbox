@@ -71,7 +71,8 @@ def launchInstance(gpuID):
 
 	DAEMONONLY_activeseeds[gpuIndex] = seedIndex
 
-	cmd = subprocess.run(['nvidia-docker run -ti -d -v "/home/bartiver/SHREC17:/home/bartiver/SHREC17" --rm --device /dev/nvidia3:/dev/nvidia0 bartiver_qsiverification:latest ' + str(gpuID) + " " + str(seedIndex) + " " + str(seedIndex+1) + ' "' + seedfile + '" ' + '"--source-directory=/home/bartiver/SHREC17/ --object-counts=5 --descriptors=si --box-size=1 --spin-image-support-angle-degrees=180 --spin-image-width=0.3 --dump-raw-search-results --override-total-object-count=10"'], shell=True, stdout=subprocess.PIPE)
+	#cmd = subprocess.run(['nvidia-docker run -ti -d -v "/home/bartiver/SHREC17:/home/bartiver/SHREC17" --rm --device /dev/nvidia3:/dev/nvidia0 bartiver_qsiverification:latest "../bin/qsiverification --force-gpu=' + str(gpuID) + ' --force-seed=' + allseeds[seedIndex] + ' --source-directory=/home/bartiver/SHREC17/ --object-counts=5 --descriptors=qsi --box-size=1 --spin-image-support-angle-degrees=180 --spin-image-width=0.3 --dump-raw-search-results --override-total-object-count=10"'], shell=True, stdout=subprocess.PIPE)
+	cmd = subprocess.run(['nvidia-docker run -ti -d -v "/home/bartiver/SHREC17:/home/bartiver/SHREC17" -v "/home/bartiver/combinedoutput/output_qsifix_v4_withearlyexit/output/:/home/bartiver/combinedoutput/output_qsifix_v4_withearlyexit/output/" --rm --device /dev/nvidia3:/dev/nvidia0 bartiver_qsiverification:latest "../bin/clutterEstimator --force-gpu=' + str(gpuID) + ' --object-dir=/home/bartiver/SHREC17/ --result-dump-dir=/home/bartiver/combinedoutput/output_qsifix_v4_withearlyexit/output/ --output-dir="../output/" --compute-single-index=' + str(seedIndex) + '"'], shell=True, stdout=subprocess.PIPE)
 	subprocess.run(['docker rename ' + cmd.stdout.decode('ascii').strip() + ' bartiver_qsiverification_gpu' + ('0' if gpuID < 10 else '') + str(gpuID)], shell=True)
 
 
@@ -130,7 +131,7 @@ def gpuDaemon():
 	while True:
 
 		SHARED_barrier.acquire()
-		SHARED_barrier.wait(10)
+		SHARED_barrier.wait(1)
 		job = popDaemonJob()
 		try:
 
@@ -139,7 +140,7 @@ def gpuDaemon():
 					return
 				elif job['command'] == 'add':
 					gpuID = job['id']
-					if not gpuID in DAEMONONLY_gpuIDs:
+					if not gpuID in DAEMONONLY_gpuIDs: 
 						SHARED_activegpus.append(True)
 						DAEMONONLY_gpuIDs.append(gpuID)
 						DAEMONONLY_activeseeds.append(-1)
