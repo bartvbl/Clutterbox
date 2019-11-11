@@ -361,7 +361,7 @@ void dumpSpinImages(std::string filename, SpinImage::array<spinImagePixelType> d
     delete[] hostDescriptors.content;
 }
 
-void dumpQuasiSpinImages(std::string filename, SpinImage::array<radialIntersectionCountImagePixelType> device_descriptors) {
+void dumpRadialIntersectionCountImages(std::string filename, SpinImage::array<radialIntersectionCountImagePixelType> device_descriptors) {
     size_t arrayLength = std::min(device_descriptors.length, (size_t)2500);
     SpinImage::array<radialIntersectionCountImagePixelType > hostDescriptors = SpinImage::copy::RICIDescriptorsToHost(device_descriptors, std::min(device_descriptors.length, (size_t)2500));
     hostDescriptors.length = arrayLength;
@@ -390,7 +390,7 @@ void runClutterBoxExperiment(
     for(const auto& descriptor : descriptorList) {
         if(descriptor == "rici") {
             riciDescriptorActive = true;
-            std::cout << (siDescriptorActive ? ", " : "") << "Quasi Spin Image";
+            std::cout << (siDescriptorActive ? ", " : "") << "Radial Intersection Count Image";
         } else if(descriptor == "si") {
             siDescriptorActive = true;
             std::cout << (riciDescriptorActive ? ", " : "") << "Spin Image";
@@ -405,7 +405,7 @@ void runClutterBoxExperiment(
 	// 2 Make a sample set of n sample objects
 	// 3 Load the models in the sample set
 	// 4 Scale all models to fit in a 1x1x1 sphere
-	// 5 Compute (quasi) spin images for all models in the sample set
+	// 5 Compute radial intersection count and spin images for all models in the sample set
 	// 6 Create a box of SxSxS units
 	// 7 for all combinations (non-reused) models:
 	//    7.1 Place each mesh in the box, retrying if it collides with another mesh
@@ -576,7 +576,7 @@ void runClutterBoxExperiment(
         // Marking the current object count as processed
         currentObjectListIndex++;
 
-        // Generating quasi spin images
+        // Generating radial intersection count images
         if(riciDescriptorActive) {
             std::cout << "\tGenerating RICI images.. (" << imageCount << " images)" << std::endl;
             SpinImage::debug::RICIRunInfo riciSampleRunInfo;
@@ -591,7 +591,7 @@ void runClutterBoxExperiment(
                       << ", redistribution " << riciSampleRunInfo.redistributionTimeSeconds
                       << ", generation " << riciSampleRunInfo.generationTimeSeconds << ")" << std::endl;
 
-            std::cout << "\tSearching in quasi spin images.." << std::endl;
+            std::cout << "\tSearching in radial intersection count images.." << std::endl;
             SpinImage::debug::RICISearchRunInfo riciSearchRun;
             SpinImage::array<unsigned int> RICIsearchResults = SpinImage::gpu::computeRadialIntersectionCountImageSearchResultRanks(
                     device_referenceRICIImages,

@@ -1,6 +1,6 @@
 # Clutterbox Experiment Implementation Source Code
 
-This source code repository accompanies the paper 'Quasi Spin Image: a Clutter Resistant 3D Shape Descriptor', and contains the implementation of the proposed clutterbox experiment described in it. 
+This source code repository accompanies the paper 'Radial Intersection Count Image: a Clutter Resistant 3D Shape Descriptor', and contains the implementation of the proposed clutterbox experiment described in it.
 
 ## Compiling
 
