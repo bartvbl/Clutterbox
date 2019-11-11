@@ -61,11 +61,11 @@ enableResultSetSizeLimit = True
 
 # --- start of code ---
 
-# Last known fault in code: unsigned integer subtraction in QSI comparison function
+# Last known fault in code: unsigned integer subtraction in RICI comparison function
 # Date threshold corresponds to this commit
 def isQsiResultValid(fileCreationDateTime, resultJson):
-    qsiResultsValidAfter = datetime.datetime(year=2019, month=10, day=7, hour=15, minute=14, second=0, microsecond=0)
-    return fileCreationDateTime > qsiResultsValidAfter
+    riciResultsValidAfter = datetime.datetime(year=2019, month=10, day=7, hour=15, minute=14, second=0, microsecond=0)
+    return fileCreationDateTime > riciResultsValidAfter
 
 
 # Last known fault in code: override object count did not match
@@ -82,9 +82,9 @@ def isSiResultValid(fileCreationDateTime, resultJson):
 # -- global initialisation --
 
 # Maps seeds to a list of (dataset, value) tuples
-seedmap_top_result_qsi = {}
+seedmap_top_result_rici = {}
 seedmap_top_result_si = {}
-seedmap_top10_results_qsi = {}
+seedmap_top10_results_rici = {}
 seedmap_top10_results_si = {}
 
 
@@ -123,16 +123,16 @@ def loadOutputFileDirectory(path):
 
     results = {
         'path': path,
-        'results': {'QSI': {}, 'SI': {}},
+        'results': {'RICI': {}, 'SI': {}},
         'settings': {}
     }
 
     jsonCache = {}
 
-    ignoredListQSI = []
+    ignoredListRICI = []
     ignoredListSI = []
 
-    allQSIResultsInvalid = False
+    allRICIResultsInvalid = False
     allSIResultsInvalid = False
     for fileindex, file in enumerate(originalFiles):
         print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r')
@@ -150,8 +150,8 @@ def loadOutputFileDirectory(path):
             filename_creation_time_part = file.split('_')[0]
             creation_time = datetime.datetime.strptime(filename_creation_time_part, "%Y-%m-%d %H-%M-%S")
             if not isQsiResultValid(creation_time, fileContents):
-                ignoredListQSI.append(file)
-                allQSIResultsInvalid = True
+                ignoredListRICI.append(file)
+                allRICIResultsInvalid = True
             if not isSiResultValid(creation_time, fileContents):
                 ignoredListSI.append(file)
                 allSIResultsInvalid = True
@@ -174,20 +174,20 @@ def loadOutputFileDirectory(path):
 
         # Check for other incorrect settings. Ignore files if detected
         if 0 in fileContents['imageCounts']:
-            if file not in ignoredListQSI:
-                ignoredListQSI.append(file)
+            if file not in ignoredListRICI:
+                ignoredListRICI.append(file)
             if file not in ignoredListSI:
                 ignoredListSI.append(file)
             # print('ignored 0',file)
         if fileContents['spinImageWidthPixels'] == 32:
-            if file not in ignoredListQSI:
-                ignoredListQSI.append(file)
+            if file not in ignoredListRICI:
+                ignoredListRICI.append(file)
             if file not in ignoredListSI:
                 ignoredListSI.append(file)
 
         # Beauty checks
-        if file not in ignoredListQSI and allQSIResultsInvalid:
-            ignoredListQSI.append(file)
+        if file not in ignoredListRICI and allRICIResultsInvalid:
+            ignoredListRICI.append(file)
         if file not in ignoredListSI and allSIResultsInvalid:
             ignoredListSI.append(file)
 
@@ -197,13 +197,13 @@ def loadOutputFileDirectory(path):
             'descriptors']) or 'SIhistograms' in fileContents
 
         # Sanity checks are done. We can now add any remaining valid entries to the result lists
-        if not file in ignoredListQSI and not allQSIResultsInvalid and containsQSIResults:
+        if not file in ignoredListRICI and not allRICIResultsInvalid and containsRICIResults:
             results['results']['QSI'][str(fileContents['seed'])] = fileContents
         if not file in ignoredListSI and not allSIResultsInvalid and containsSIResults:
             results['results']['SI'][str(fileContents['seed'])] = fileContents
 
     print()
-    #print('%i/%i QSI files had discrepancies and had to be ignored.' % (len(ignoredListQSI), len(originalFiles)))
+    #print('%i/%i RICI files had discrepancies and had to be ignored.' % (len(ignoredListRICI), len(originalFiles)))
     #print('%i/%i SI files had discrepancies and had to be ignored.' % (len(ignoredListSI), len(originalFiles)))
 
     results['settings'] = previousExperimentSettings
@@ -222,7 +222,7 @@ def objects(count):
 
 
 print('Loading raw data files..')
-loadedRawResults = {'QSI': {}, 'SI': {}}
+loadedRawResults = {'RICI': {}, 'SI': {}}
 for algorithm in rawInputDirectories:
     for path in rawInputDirectories[algorithm]:
         print('Loading raw directory:', path)
@@ -301,7 +301,7 @@ def split(directory):
 
     for itemCountIndex, itemCount in enumerate(result['settings']['sampleObjectCounts']):
         out = {
-            'results': {'QSI': {}, 'SI': {}},
+            'results': {'RICI': {}, 'SI': {}},
             'settings': {}}
         out['settings'] = result['settings'].copy()
         out['settings']['sampleObjectCounts'] = [itemCount]
@@ -339,7 +339,7 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
         print('Directory 1:', directory1_contents['settings'])
         print('Directory 2:', directory2_contents['settings'])
 
-    combinedResults = {'results': {'QSI': {}, 'SI': {}}, 'settings': directory1_contents['settings']}
+    combinedResults = {'results': {'RICI': {}, 'SI': {}}, 'settings': directory1_contents['settings']}
 
     # Initialising with the original results
     combinedResults['results']['QSI'] = directory1_contents['results']['QSI']
@@ -503,7 +503,7 @@ print()
 
 
 # Create heatmap histograms
-hist_qsi = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
+hist_rici = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
 hist_si = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
 
 print('Computing histograms..')
@@ -515,14 +515,14 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
     qsiRanks = loadedRawResults['QSI'][rawSeed]
     siRanks = loadedRawResults['SI'][rawSeed]
 
-    if not(len(clutterValues) == len(qsiRanks) == len(siRanks)):
-        print('WARNING: batch size mismatch!', [len(clutterValues), len(qsiRanks), len(siRanks)])
+    if not(len(clutterValues) == len(riciRanks) == len(siRanks)):
+        print('WARNING: batch size mismatch!', [len(clutterValues), len(riciRanks), len(siRanks)])
 
     histogramEntryCount += len(clutterValues)
 
     for i in range(0, len(clutterValues)):
         clutterValue = clutterValues[i]
-        index_qsi = qsiRanks[i]
+        index_rici = riciRanks[i]
         index_si = siRanks[i]
 
         # Apparently some NaN in there
@@ -533,9 +533,9 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
         if xBin >= heatmapSize:
             continue
 
-        yBin_qsi = index_qsi
-        if yBin_qsi < heatmapSize:
-            hist_qsi[heatmapSize - 1 - yBin_qsi, xBin] += 1
+        yBin_rici = index_rici
+        if yBin_rici < heatmapSize:
+            hist_rici[heatmapSize - 1 - yBin_rici, xBin] += 1
 
         yBin_si = index_si
         if yBin_si < heatmapSize:
@@ -545,7 +545,7 @@ print('Histogram computed over', histogramEntryCount, 'values')
 
 
 
-hist_qsi = np.log10(np.maximum(hist_qsi,0.1))
+hist_rici = np.log10(np.maximum(hist_rici,0.1))
 hist_si = np.log10(np.maximum(hist_si,0.1))
 
 extent = [0, heatmapSize, 0, heatmapSize]
@@ -554,19 +554,19 @@ extent = [0, heatmapSize, 0, heatmapSize]
 plt.clf()
 
 colorbar_ticks = np.arange(0, 8, 1)
-total_minimum_value = min(np.amin(hist_qsi), np.amin(hist_si))
-total_maximum_value = max(np.amax(hist_qsi), np.amax(hist_si))
+total_minimum_value = min(np.amin(hist_rici), np.amin(hist_si))
+total_maximum_value = max(np.amax(hist_rici), np.amax(hist_si))
 print('range:', total_minimum_value, total_maximum_value)
 normalisation = colors.Normalize(vmin=total_minimum_value,vmax=total_maximum_value)
 
 horizontal_ticks_real_coords = np.arange(0,256,25.599*2.0)
 horizontal_ticks_labels = [("%.1f" % x) for x in np.arange(0,1.1,0.2)]
 
-qsiplt = plt.figure(1)
+riciplt = plt.figure(1)
 plt.title('')
 plt.ylabel('rank')
 plt.xlabel('clutter percentage')
-qsi_im = plt.imshow(hist_qsi, extent=extent, cmap='nipy_spectral', norm=normalisation)
+rici_im = plt.imshow(hist_rici, extent=extent, cmap='nipy_spectral', norm=normalisation)
 plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
 
 siplt = plt.figure(2)
@@ -579,7 +579,7 @@ si_cbar = plt.colorbar(si_im, ticks=colorbar_ticks)
 si_cbar.ax.set_yticklabels(["{:.0E}".format(x) for x in np.power(10, colorbar_ticks)])
 si_cbar.set_label('Sample count', rotation=90)
 
-qsiplt.show()
+riciplt.show()
 siplt.show()
 
 input()
@@ -601,7 +601,7 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 for keyIndex, key in enumerate(allColumns):
     experimentSheet.write(0, keyIndex + 1, str(key))
 experimentSheet.write(0, len(allColumns) + 1, 'Cluster')
-experimentSheet.write(0, len(allColumns) + 2, 'QSI Count')
+experimentSheet.write(0, len(allColumns) + 2, 'RICI Count')
 experimentSheet.write(0, len(allColumns) + 3, 'SI Count')
 
 # Overview table contents
@@ -616,17 +616,17 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
             experimentSheet.write(directoryIndex + 1, keyIndex + 1, ' ')
 
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 1, cluster)
-    experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len([x for x in result['results']['QSI'] if x in seedList]))
+    experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len([x for x in result['results']['RICI'] if x in seedList]))
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 3, len([x for x in result['results']['SI'] if x in seedList]))
 
 # Sheets
-top0sheetQSI = book.add_sheet("Rank 0 QSI results")
+top0sheetRICI = book.add_sheet("Rank 0 RICI results")
 top0sheetSI = book.add_sheet("Rank 0 SI results")
-top10sheetQSI = book.add_sheet("Top 10 QSI results")
+top10sheetRICI = book.add_sheet("Top 10 RICI results")
 top10sheetSI = book.add_sheet("Top 10 SI results")
-qsiGenerationSpeedSheet = book.add_sheet("QSI Generation Times")
+riciGenerationSpeedSheet = book.add_sheet("RICI Generation Times")
 siGenerationSpeedSheet = book.add_sheet("SI Generation Times")
-qsiComparisonSpeedSheet = book.add_sheet("QSI Comparison Times")
+riciComparisonSpeedSheet = book.add_sheet("RICI Comparison Times")
 siComparisonSpeedSheet = book.add_sheet("SI Comparison Times")
 vertexCountSheet = book.add_sheet("Reference Image Count")
 totalVertexCountSheet = book.add_sheet("Total Image Count")
@@ -639,26 +639,26 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 
     # Writing seed column
     if directoryIndex == 0:
-        top0sheetQSI.write(0, 0, 'seed')
+        top0sheetRICI.write(0, 0, 'seed')
         top0sheetSI.write(0, 0, 'seed')
-        top10sheetQSI.write(0, 0, 'seed')
+        top10sheetRICI.write(0, 0, 'seed')
         top10sheetSI.write(0, 0, 'seed')
-        qsiGenerationSpeedSheet.write(0, 0, 'seed')
+        riciGenerationSpeedSheet.write(0, 0, 'seed')
         siGenerationSpeedSheet.write(0, 0, 'seed')
-        qsiComparisonSpeedSheet.write(0, 0, 'seed')
+        riciComparisonSpeedSheet.write(0, 0, 'seed')
         siComparisonSpeedSheet.write(0, 0, 'seed')
         vertexCountSheet.write(0, 0, 'seed')
         totalVertexCountSheet.write(0, 0, 'seed')
         totalTriangleCountSheet.write(0, 0, 'seed')
 
         for seedIndex, seed in enumerate(seedList):
-            top0sheetQSI.write(seedIndex + 1, 0, seed)
+            top0sheetRICI.write(seedIndex + 1, 0, seed)
             top0sheetSI.write(seedIndex + 1, 0, seed)
-            top10sheetQSI.write(seedIndex + 1, 0, seed)
+            top10sheetRICI.write(seedIndex + 1, 0, seed)
             top10sheetSI.write(seedIndex + 1, 0, seed)
-            qsiGenerationSpeedSheet.write(seedIndex + 1, 0, seed)
+            riciGenerationSpeedSheet.write(seedIndex + 1, 0, seed)
             siGenerationSpeedSheet.write(seedIndex + 1, 0, seed)
-            qsiComparisonSpeedSheet.write(seedIndex + 1, 0, seed)
+            riciComparisonSpeedSheet.write(seedIndex + 1, 0, seed)
             siComparisonSpeedSheet.write(seedIndex + 1, 0, seed)
             vertexCountSheet.write(seedIndex + 1, 0, seed)
             totalVertexCountSheet.write(seedIndex + 1, 0, seed)
@@ -671,14 +671,14 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
     for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
         columnHeader = directoryName + ' (' + str(sampleObjectCount) + ' ' + objects(
             len(resultSet['settings']['sampleObjectCounts'])) + ')'
-        top0sheetQSI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        top0sheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
         top0sheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
-        top10sheetQSI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        top10sheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
         top10sheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
 
-        qsiGenerationSpeedSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
+        riciGenerationSpeedSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
         siGenerationSpeedSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
-        qsiComparisonSpeedSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
+        riciComparisonSpeedSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
         siComparisonSpeedSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
 
         vertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
@@ -693,22 +693,22 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
                 totalImageCount = entry['imageCounts'][0]
                 experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
                 percentageAtPlace0 = float(entry['QSIhistograms'][str(sampleCountIndex)]['0']) / float(totalImageCount)
-                top0sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
+                top0sheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
 
                 # Top 10 performance
                 totalImageCountInTop10 = sum(
                     [entry['QSIhistograms'][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
                      str(x) in entry['QSIhistograms'][str(sampleCountIndex)]])
                 percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
-                top10sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
+                top10sheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
 
                 # generation execution time
                 generationTime = entry['runtimes']['QSISampleGeneration']['total'][sampleCountIndex]
-                qsiGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
+                riciGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
 
                 # search execution time
                 comparisonTime = entry['runtimes']['QSISearch']['total'][sampleCountIndex]
-                qsiComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
+                riciComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
 
                 # Vertex count sanity check
                 vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
@@ -718,10 +718,10 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
                                               sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
         else:
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
-                top0sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                top10sheetQSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                qsiGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                qsiComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                top0sheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                top10sheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                riciGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                riciComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
 
         if seed in resultSet['results']['SI']:
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
@@ -765,10 +765,10 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 
 # beauty addition.. Cuts off final column
 for seedIndex, seed in enumerate(seedList + ['dummy entry for final row']):
-    top0sheetQSI.write(seedIndex, currentColumn, ' ')
-    top10sheetQSI.write(seedIndex, currentColumn, ' ')
-    qsiGenerationSpeedSheet.write(seedIndex, currentColumn, ' ')
-    qsiComparisonSpeedSheet.write(seedIndex, currentColumn, ' ')
+    top0sheetRICI.write(seedIndex, currentColumn, ' ')
+    top10sheetRICI.write(seedIndex, currentColumn, ' ')
+    riciGenerationSpeedSheet.write(seedIndex, currentColumn, ' ')
+    riciComparisonSpeedSheet.write(seedIndex, currentColumn, ' ')
 
     top0sheetSI.write(seedIndex, currentColumn, ' ')
     top10sheetSI.write(seedIndex, currentColumn, ' ')

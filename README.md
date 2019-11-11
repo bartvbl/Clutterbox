@@ -1,6 +1,6 @@
 # Clutterbox Experiment Implementation Source Code
 
-This source code repository accompanies the paper 'Quasi Spin Image: a Clutter Resistant 3D Shape Descriptor', and contains the implementation of the proposed clutterbox experiment described in it. 
+This source code repository accompanies the paper 'Radial Intersection Count Image: a Clutter Resistant 3D Shape Descriptor', and contains the implementation of the proposed clutterbox experiment described in it.
 
 ## Compiling
 
@@ -27,7 +27,7 @@ make -j 4
 
 The project generates several executables:
 
-- `qsiverrification`: Main executable for running the Clutterbox experiment
+- `riciverrification`: Main executable for running the Clutterbox experiment
 - `projectionBenchmark`: The paper discusses a microbenchmark for comparing the PCL method for projecting points into cylindrical coordinates relative to our proposed method. This executable performs this benchmark.
 - `clutterEstimator`: Tool used to generate the heatmaps comparing search result ranks to clutter levels in the area around a given point. This tool was used to estimate the clutter level around each point in a scene.
 - `libSpinImage/imagerenderer`: Tool for using our QSI and SI implementations to render images of a given input object. Outputs PNG images.

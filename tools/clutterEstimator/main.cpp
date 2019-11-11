@@ -7,11 +7,11 @@
 #include <cuda_runtime_api.h>
 
 #include <spinImage/utilities/OBJLoader.h>
-#include <spinImage/gpu/types/DeviceMesh.h>
+#include <spinImage/gpu/types/Mesh.h>
 #include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/gpu/types/DeviceOrientedPoint.h>
 #include <experiments/clutterBox/clutterBoxUtilities.h>
-#include <spinImage/gpu/types/GPUPointCloud.h>
+#include <spinImage/gpu/types/PointCloud.h>
 #include <spinImage/utilities/meshSampler.cuh>
 #include <utilities/stringUtils.h>
 
@@ -21,7 +21,7 @@ using json = nlohmann::json;
 #include "experiments/clutterBox/clutterBoxKernels.cuh"
 #include "utilities/modelScaler.h"
 #include "clutterKernel.cuh"
-#include "../../../libShapeSearch/lib/nvidia-samples-common/nvidia/helper_cuda.h"
+#include "nvidia/helper_cuda.h"
 
 void stringSplit(std::vector<std::string>* parts, const std::string &s, char delim) {
 
@@ -115,7 +115,7 @@ int main(int argc, const char** argv) {
         }
         float boxSize = float(resultFileContents["boxSize"]);
 
-        std::vector<HostMesh> objects;
+        std::vector<SpinImage::cpu::Mesh> objects;
         objects.resize(sampleObjectCount);
 
         // Normally objects are chosen randomly, and put into a random order. Here, we instead just
@@ -130,17 +130,17 @@ int main(int argc, const char** argv) {
 
         // 5 Scale all models to fit in a 1x1x1 sphere
         std::cout << "\tScaling meshes.." << std::endl;
-        std::vector<HostMesh> scaledMeshes(sampleObjectCount);
+        std::vector<SpinImage::cpu::Mesh> scaledMeshes(sampleObjectCount);
         for (unsigned int i = 0; i < sampleObjectCount; i++) {
             scaledMeshes.at(i) = fitMeshInsideSphereOfRadius(objects.at(i), 1);
-            SpinImage::cpu::freeHostMesh(objects.at(i));
+            SpinImage::cpu::freeMesh(objects.at(i));
         }
 
         // We need to reduce the scene to the number of objects we want to test with
         int numberOfObjectsInExperiment = *std::max_element(resultFileContents["sampleObjectCounts"].begin(), resultFileContents["sampleObjectCounts"].end());
         // Avoid a memory leak
         for(int i = numberOfObjectsInExperiment; i < scaledMeshes.size(); i++) {
-            SpinImage::cpu::freeHostMesh(scaledMeshes.at(i));
+            SpinImage::cpu::freeMesh(scaledMeshes.at(i));
         }
         std::cout << "Constructing a scene with " << numberOfObjectsInExperiment << " objects.." << std::endl;
         scaledMeshes.resize(numberOfObjectsInExperiment);
@@ -148,19 +148,19 @@ int main(int argc, const char** argv) {
 
         // 6 Copy meshes to GPU
         std::cout << "\tCopying meshes to device.." << std::endl;
-        std::vector<DeviceMesh> scaledMeshesOnGPU(sampleObjectCount);
+        std::vector<SpinImage::gpu::Mesh> scaledMeshesOnGPU(sampleObjectCount);
         for (unsigned int i = 0; i < sampleObjectCount; i++) {
             scaledMeshesOnGPU.at(i) = SpinImage::copy::hostMeshToDevice(scaledMeshes.at(i));
         }
 
 
         // 10 Combine meshes into one larger scene
-        DeviceMesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
+        SpinImage::gpu::Mesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
 
         // 11 Compute unique vertex mapping
         std::vector<size_t> uniqueVertexCounts;
         size_t totalUniqueVertexCount;
-        array<signed long long> device_indexMapping = computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts, totalUniqueVertexCount);
+        SpinImage::array<signed long long> device_indexMapping = computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts, totalUniqueVertexCount);
 
         // 12 Randomly transform objects
         std::cout << "\tRandomly transforming input objects.." << std::endl;
@@ -187,7 +187,7 @@ int main(int argc, const char** argv) {
         // 13 Compute corresponding transformed vertex buffer
         //    A mapping is used here because the previously applied transformation can cause non-unique vertices to become
         //    equivalent. It is vital we can rely on a 1:1 mapping existing between vertices.
-        array<DeviceOrientedPoint> device_uniqueSpinOrigins = applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
+        SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_uniqueSpinOrigins = applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
         checkCudaErrors(cudaFree(device_indexMapping.content));
 
         // Should be as large as possible, but can be selected arbitrarily
@@ -200,7 +200,7 @@ int main(int argc, const char** argv) {
         std::random_device rd;
         std::minstd_rand0 generator{rd()};
 
-        SpinImage::GPUPointCloud sampledScene = SpinImage::utilities::sampleMesh(boxScene, sampleCount, generator(), &sampleBuffers);
+        SpinImage::gpu::PointCloud sampledScene = SpinImage::utilities::sampleMesh(boxScene, sampleCount, generator(), &sampleBuffers);
 
         std::cout << "\tComputing reference object sample count.." << std::endl;
         size_t referenceObjectSampleCount = computeReferenceSampleCount(scaledMeshesOnGPU.at(0), sampleCount, sampleBuffers.cumulativeAreaArray);
@@ -209,7 +209,7 @@ int main(int argc, const char** argv) {
         std::cout << "\tComputing clutter values.." << std::endl;
         float spinImageWidth = resultFileContents["spinImageWidth"];
 
-        array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth, referenceObjectSampleCount, resultFileContents["uniqueVertexCounts"][0]);
+        SpinImage::array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth, referenceObjectSampleCount, resultFileContents["uniqueVertexCounts"][0]);
 
         json outJson;
 
@@ -233,10 +233,10 @@ int main(int argc, const char** argv) {
         std::cout << "Cleaning up.." << std::endl;
         sampledScene.free();
         cudaFree(device_uniqueSpinOrigins.content);
-        SpinImage::gpu::freeDeviceMesh(boxScene);
+        SpinImage::gpu::freeMesh(boxScene);
 
-        for(DeviceMesh deviceMesh : scaledMeshesOnGPU) {
-            SpinImage::gpu::freeDeviceMesh(deviceMesh);
+        for(SpinImage::gpu::Mesh deviceMesh : scaledMeshesOnGPU) {
+            SpinImage::gpu::freeMesh(deviceMesh);
         }
 
         std::cout << "Done." << std::endl;

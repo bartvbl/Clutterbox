@@ -1,6 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <spinImage/gpu/types/DeviceMesh.h>
+#include <spinImage/gpu/types/Mesh.h>
 
-DeviceMesh combineMeshesOnGPU(std::vector<DeviceMesh> meshes);
+SpinImage::gpu::Mesh combineMeshesOnGPU(std::vector<SpinImage::gpu::Mesh> meshes);

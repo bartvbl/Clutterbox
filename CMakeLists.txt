@@ -6,7 +6,7 @@ cmake_minimum_required (VERSION 3.0)
 set(CUDAHOSTCXX /usr/bin/g++-6)
 set(CMAKE_CUDA_HOST_COMPILER /usr/bin/g++-6)
 
-project (qsiverification CXX CUDA)
+project (riciverification CXX CUDA)
 
 OPTION (USE_OpenMP "Use OpenMP" ON)
 
@@ -93,7 +93,9 @@ file (GLOB         PROJECT_CONFIGS CMakeLists.txt
 file (GLOB_RECURSE CLUTTER_ESTIMATOR_SOURCES    tools/clutterEstimator/*.cpp
         tools/clutterEstimator/*.cu
         tools/clutterEstimator/*.cuh)
-file (GLOB_RECURSE CLUTTER_EXPERIMENT_SOURCES   src/experiments/*.cpp
+file (GLOB_RECURSE CLUTTER_EXPERIMENT_SOURCES
+        src/experimentUtilities/*.cpp
+        src/experiments/*.cpp
         src/experiments/*.cu
         src/utilities/*.cpp)
 

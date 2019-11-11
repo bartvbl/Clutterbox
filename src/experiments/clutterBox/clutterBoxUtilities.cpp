@@ -2,13 +2,13 @@
 #include <cuda_runtime_api.h>
 #include "clutterBoxUtilities.h"
 
-DeviceMesh combineMeshesOnGPU(std::vector<DeviceMesh> meshes) {
+SpinImage::gpu::Mesh combineMeshesOnGPU(std::vector<SpinImage::gpu::Mesh> meshes) {
     unsigned int totalVertexCount = 0;
     for(unsigned int i = 0; i < meshes.size(); i++) {
         totalVertexCount += meshes.at(i).vertexCount;
     }
 
-    DeviceMesh combinedMesh;
+    SpinImage::gpu::Mesh combinedMesh;
 
     cudaMalloc((void**) &combinedMesh.normals_x, totalVertexCount * sizeof(float));
     cudaMalloc((void**) &combinedMesh.normals_y, totalVertexCount * sizeof(float));

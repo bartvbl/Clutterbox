@@ -44,25 +44,25 @@ with open(outfile, 'w') as outputFile:
         outputFile.write('Distance from Object ' + str(i) + ' to Object 0, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
-        outputFile.write('QSI with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
+        outputFile.write('RICI with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
         outputFile.write('SI with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
-        outputFile.write('QSI Top 10 with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
+        outputFile.write('RICI Top 10 with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
         outputFile.write('SI Top 10 with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
-        outputFile.write('QSI Reference Generation Time with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
+        outputFile.write('RICI Reference Generation Time with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
         outputFile.write('SI Reference Generation Time with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
-        outputFile.write('QSI Search Time with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
+        outputFile.write('RICI Search Time with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
     outputFile.write(', ')
     for count in anyResult['sampleObjectCounts']:
         outputFile.write('SI Search Time with ' + str(count) + ' ' + objects(count) + ' in Scene, ')
@@ -80,12 +80,12 @@ with open(outfile, 'w') as outputFile:
         experimentIterationCount = len(result['sampleObjectCounts'])
 
         distances = [0] * usedSampleObjectCount
-        qsiPercentageAtPlace0 = [0] * experimentIterationCount
+        riciPercentageAtPlace0 = [0] * experimentIterationCount
         siPercentageAtPlace0 = [0] * experimentIterationCount
-        qsiPercentageInTop10 = [0] * experimentIterationCount
+        riciPercentageInTop10 = [0] * experimentIterationCount
         siPercentageInTop10 = [0] * experimentIterationCount
 
-        angle_qsiPercentageAtPlace0 = [0] * experimentIterationCount
+        angle_riciPercentageAtPlace0 = [0] * experimentIterationCount
         angle_siPercentageAtPlace0 = [0] * experimentIterationCount
 
         for i in range(0, usedSampleObjectCount):
@@ -105,7 +105,7 @@ with open(outfile, 'w') as outputFile:
             if 'SIhistograms' in result and '0' in result['SIhistograms'][index]:
                 siPercentageAtPlace0[i] = float(result['SIhistograms'][index]['0']) / float(totalImageCount)
 
-            QSITop10Sum = 0
+            RICITop10Sum = 0
             SITop10Sum = 0
             for j in range(0, 10):
                 if 'QSIhistograms' in result and str(j) in result['QSIhistograms'][index]:
@@ -113,12 +113,12 @@ with open(outfile, 'w') as outputFile:
                 if 'SIhistograms' in result and str(j) in result['SIhistograms'][index]:
                     SITop10Sum += result['SIhistograms'][index][str(j)]
 
-            qsiPercentageInTop10[i] = float(QSITop10Sum) / float(totalImageCount)
+            riciPercentageInTop10[i] = float(RICITop10Sum) / float(totalImageCount)
             siPercentageInTop10[i] = float(SITop10Sum) / float(totalImageCount)
 
-        qsiSampleGenerationTimes = None
+        riciSampleGenerationTimes = None
         siSampleGenerationTimes = None
-        qsiSearchTimes = None
+        riciSearchTimes = None
         siSearchTimes = None
 
         if not 'SIhistograms' in result:
@@ -131,10 +131,10 @@ with open(outfile, 'w') as outputFile:
             siSearchTimes = result['runtimes']['SISearch']['total']
 
         if not 'QSIhistograms' in result:
-            qsiPercentageAtPlace0 = [''] * experimentIterationCount
-            qsiPercentageInTop10 = [''] * experimentIterationCount
-            qsiSampleGenerationTimes = [''] * experimentIterationCount
-            qsiSearchTimes = [''] * experimentIterationCount
+            riciPercentageAtPlace0 = [''] * experimentIterationCount
+            riciPercentageInTop10 = [''] * experimentIterationCount
+            riciSampleGenerationTimes = [''] * experimentIterationCount
+            riciSearchTimes = [''] * experimentIterationCount
         else:
             qsiSampleGenerationTimes = result['runtimes']['QSISampleGeneration']['total']
             qsiSearchTimes = result['runtimes']['QSISearch']['total']
@@ -145,13 +145,13 @@ with open(outfile, 'w') as outputFile:
         outputFile.write(', '.join([str(f) for f in result['vertexCounts']]) + ', , ')
         outputFile.write(', '.join([str(f) for f in result['imageCounts']]) + ', , ')
         outputFile.write(', '.join([str(f) for f in distances]) + ', , ')
-        outputFile.write(', '.join([str(f) for f in qsiPercentageAtPlace0]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in riciPercentageAtPlace0]) + ', , ')
         outputFile.write(', '.join([str(f) for f in siPercentageAtPlace0]) + ', , ')
-        outputFile.write(', '.join([str(f) for f in qsiPercentageInTop10]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in riciPercentageInTop10]) + ', , ')
         outputFile.write(', '.join([str(f) for f in siPercentageInTop10]) + ', , ')
-        outputFile.write(', '.join([str(f) for f in qsiSampleGenerationTimes]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in riciSampleGenerationTimes]) + ', , ')
         outputFile.write(', '.join([str(f) for f in siSampleGenerationTimes]) + ', , ')
-        outputFile.write(', '.join([str(f) for f in qsiSearchTimes]) + ', , ')
+        outputFile.write(', '.join([str(f) for f in riciSearchTimes]) + ', , ')
         outputFile.write(', '.join([str(f) for f in siSearchTimes]) + ', , ')
         outputFile.write('\n')
 print()

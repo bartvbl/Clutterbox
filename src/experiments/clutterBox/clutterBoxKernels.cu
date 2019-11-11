@@ -7,8 +7,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 
-#include "nvidia/helper_cuda.h"
-#include "../../../../libShapeSearch/lib/nvidia-samples-common/nvidia/helper_cuda.h"
 #include <cuda_runtime.h>
 #include <spinImage/gpu/types/DeviceOrientedPoint.h>
 #include <nvidia/helper_cuda.h>
@@ -18,9 +16,7 @@ __host__ __device__ __inline__ size_t roundSizeToNearestCacheLine(size_t sizeInB
 }
 
 
-__global__ void detectDuplicates(DeviceMesh mesh, bool* isDuplicate, DeviceMesh* device_meshArray, int meshCount) {
-
-
+__global__ void detectDuplicates(SpinImage::gpu::Mesh mesh, bool* isDuplicate, SpinImage::gpu::Mesh* device_meshArray, int meshCount) {
     size_t vertexIndex = blockIdx.x * blockDim.x + threadIdx.x;
     if(vertexIndex >= mesh.vertexCount) {
         return;
@@ -73,7 +69,7 @@ __global__ void detectDuplicates(DeviceMesh mesh, bool* isDuplicate, DeviceMesh*
     isDuplicate[vertexIndex] = false;
 }
 
-__global__ void computeTargetIndices(array<signed long long> targetIndices, bool* duplicateVertices, size_t vertexCount) {
+__global__ void computeTargetIndices(SpinImage::array<signed long long> targetIndices, bool* duplicateVertices, size_t vertexCount) {
     size_t vertexIndex = blockIdx.x * blockDim.x + threadIdx.x;
     if(vertexIndex >= vertexCount) {
         return;
@@ -96,7 +92,7 @@ __global__ void computeTargetIndices(array<signed long long> targetIndices, bool
     targetIndices.content[vertexIndex] = targetIndex;
 }
 
-array<signed long long> computeUniqueIndexMapping(DeviceMesh boxScene, std::vector<DeviceMesh> deviceMeshes, std::vector<size_t> *uniqueVertexCounts, size_t &totalUniqueVertexCount) {
+SpinImage::array<signed long long> computeUniqueIndexMapping(SpinImage::gpu::Mesh boxScene, std::vector<SpinImage::gpu::Mesh> deviceMeshes, std::vector<size_t> *uniqueVertexCounts, size_t &totalUniqueVertexCount) {
     size_t sceneVertexCount = boxScene.vertexCount;
     DeviceMesh* device_meshArray;
     cudaMalloc(&device_meshArray, sizeof(DeviceMesh) * deviceMeshes.size());
@@ -129,7 +125,7 @@ array<signed long long> computeUniqueIndexMapping(DeviceMesh boxScene, std::vect
 
     delete[] temp_duplicateVertices;
 
-    array<signed long long> device_uniqueIndexMapping;
+    SpinImage::array<signed long long> device_uniqueIndexMapping;
     device_uniqueIndexMapping.length = boxScene.vertexCount;
     checkCudaErrors(cudaMalloc(&device_uniqueIndexMapping.content, boxScene.vertexCount * sizeof(signed long long)));
     computeTargetIndices<<<(boxScene.vertexCount / 256) + 1, 256>>>(device_uniqueIndexMapping, device_duplicateVertices, boxScene.vertexCount);
@@ -139,7 +135,7 @@ array<signed long long> computeUniqueIndexMapping(DeviceMesh boxScene, std::vect
     return device_uniqueIndexMapping;
 }
 
-__global__ void mapVertices(DeviceMesh boxScene, array<DeviceOrientedPoint> origins, array<signed long long> mapping) {
+__global__ void mapVertices(SpinImage::gpu::Mesh boxScene, SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> origins, SpinImage::array<signed long long> mapping) {
     size_t vertexIndex = blockIdx.x * blockDim.x + threadIdx.x;
     if(vertexIndex >= boxScene.vertexCount) {
         return;
@@ -157,7 +153,7 @@ __global__ void mapVertices(DeviceMesh boxScene, array<DeviceOrientedPoint> orig
                 boxScene.normals_y[vertexIndex],
                 boxScene.normals_z[vertexIndex]);
 
-        DeviceOrientedPoint origin;
+        SpinImage::gpu::DeviceOrientedPoint origin;
         origin.vertex = vertex;
         origin.normal = normal;
 
@@ -165,12 +161,12 @@ __global__ void mapVertices(DeviceMesh boxScene, array<DeviceOrientedPoint> orig
     }
 }
 
-array<DeviceOrientedPoint> applyUniqueMapping(DeviceMesh boxScene, array<signed long long> device_mapping, size_t totalUniqueVertexCount) {
+SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> applyUniqueMapping(SpinImage::gpu::Mesh boxScene, SpinImage::array<signed long long> device_mapping, size_t totalUniqueVertexCount) {
     assert(boxScene.vertexCount == device_mapping.length);
 
-    array<DeviceOrientedPoint> device_origins;
+    SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_origins;
     device_origins.length = totalUniqueVertexCount;
-    checkCudaErrors(cudaMalloc(&device_origins.content, totalUniqueVertexCount * sizeof(DeviceOrientedPoint)));
+    checkCudaErrors(cudaMalloc(&device_origins.content, totalUniqueVertexCount * sizeof(SpinImage::gpu::DeviceOrientedPoint)));
 
     mapVertices<<<(boxScene.vertexCount / 256) + 1, 256>>>(boxScene, device_origins, device_mapping);
     checkCudaErrors(cudaDeviceSynchronize());
@@ -178,18 +174,18 @@ array<DeviceOrientedPoint> applyUniqueMapping(DeviceMesh boxScene, array<signed 
     return device_origins;
 }
 
-array<DeviceOrientedPoint> computeUniqueSpinOrigins(DeviceMesh &mesh) {
-    std::vector<DeviceMesh> deviceMeshes;
+SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> computeUniqueSpinOrigins(SpinImage::gpu::Mesh &mesh) {
+    std::vector<SpinImage::gpu::Mesh> deviceMeshes;
     deviceMeshes.push_back(mesh);
     std::vector<size_t> vertexCounts;
     size_t totalUniqueVertexCount;
-    array<signed long long> device_mapping = computeUniqueIndexMapping(mesh, deviceMeshes, &vertexCounts, totalUniqueVertexCount);
-    array<DeviceOrientedPoint> device_origins = applyUniqueMapping(mesh, device_mapping, totalUniqueVertexCount);
+    SpinImage::array<signed long long> device_mapping = computeUniqueIndexMapping(mesh, deviceMeshes, &vertexCounts, totalUniqueVertexCount);
+    SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_origins = applyUniqueMapping(mesh, device_mapping, totalUniqueVertexCount);
     checkCudaErrors(cudaFree(device_mapping.content));
     return device_origins;
 }
 
-__global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMatrices, size_t* endIndices, DeviceMesh scene) {
+__global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMatrices, size_t* endIndices, SpinImage::gpu::Mesh scene) {
     size_t threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(threadIndex >= scene.vertexCount) {
@@ -227,7 +223,7 @@ __global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMat
 
 }
 
-void randomlyTransformMeshes(DeviceMesh scene, std::vector<DeviceMesh> device_meshList, std::vector<Transformation> transformations) {
+void randomlyTransformMeshes(SpinImage::gpu::Mesh scene, std::vector<SpinImage::gpu::Mesh> device_meshList, std::vector<Transformation> transformations) {
     std::vector<size_t> meshEndIndices(device_meshList.size());
     size_t currentEndIndex = 0;
 
@@ -288,7 +284,7 @@ void randomlyTransformMeshes(DeviceMesh scene, std::vector<DeviceMesh> device_me
     cudaFree(device_endIndices);
 }
 
-void randomlyTransformMeshes(DeviceMesh scene, float maxDistance, std::vector<DeviceMesh> device_meshList, std::minstd_rand0 &randomGenerator) {
+void randomlyTransformMeshes(SpinImage::gpu::Mesh scene, float maxDistance, std::vector<SpinImage::gpu::Mesh> device_meshList, std::minstd_rand0 &randomGenerator) {
     std::uniform_real_distribution<float> distribution(0, 1);
 
     std::vector<Transformation> transformations;
