@@ -164,7 +164,7 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
 
     json outJson;
 
-    outJson["version"] = "v9";
+    outJson["version"] = "v10";
     outJson["seed"] = seed;
     outJson["descriptors"] = descriptorList;
     outJson["sampleSetSize"] = sampleObjectCount;
@@ -280,7 +280,7 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
             std::sort(keys.begin(), keys.end());
 
             for(auto &key : keys) {
-                outJson["RICIhistograms"][std::to_string(i)][std::to_string(key)] = riciMap[key];
+                outJson["RICIhistograms"][std::to_string(objectCountList.at(i)) + " objects"][std::to_string(key)] = riciMap[key];
             }
         }
     }
@@ -296,7 +296,7 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
             std::sort(keys.begin(), keys.end());
 
             for(auto &key : keys) {
-                outJson["QUICCIhistograms"][std::to_string(i)][std::to_string(key)] = quicciMap[key];
+                outJson["QUICCIhistograms"][std::to_string(objectCountList.at(i)) + " objects"][std::to_string(key)] = quicciMap[key];
             }
         }
     }
@@ -312,7 +312,7 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
             std::sort(keys.begin(), keys.end());
 
             for(auto &key : keys) {
-                outJson["SIhistograms"][std::to_string(i)][std::to_string(key)] = siMap[key];
+                outJson["SIhistograms"][std::to_string(objectCountList.at(i)) + " objects"][std::to_string(key)] = siMap[key];
             }
         }
     }
