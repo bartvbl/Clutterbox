@@ -179,6 +179,8 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
     outJson["spinImageSampleCounts"] = spinImageSampleCounts;
     outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
     outJson["inputFiles"] = chosenFiles;
+    outJson["riciEarlyExitEnabled"] = ENABLE_RICI_COMPARISON_EARLY_EXIT;
+    outJson["riciSharedMemoryImageEnabled"] = ENABLE_SHARED_MEMORY_IMAGE;
     outJson["vertexCounts"] = {};
     for (auto &sampleMesh : sampleMeshes) {
         outJson["vertexCounts"].push_back(sampleMesh.vertexCount);
