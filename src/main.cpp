@@ -38,7 +38,7 @@ int main(int argc, const char **argv)
 	const auto& outputDirectory = parser.add<std::string>("output-directory", "Specify the location where output files should be dumped", '\0', arrrgh::Optional, "../output/");
     const auto& objectCounts = parser.add<std::string>("object-counts", "Specify the number of objects the experiment should be performed with, as a comma separated list WITHOUT spaces (e.g. --object-counts=1,2,5)", '\0', arrrgh::Optional, "NONE");
     const auto& overrideObjectCount = parser.add<int>("override-total-object-count", "If you want a specified number of objects to be used for the experiment (for ensuring consistency between seeds)", '\0', arrrgh::Optional, -1);
-    const auto& descriptors = parser.add<std::string>("descriptors", "Specify the descriptors that should be used in the experiment, with as valid options \"rici\", \"si\", and \"all\", as a comma separated list WITHOUT spaces (e.g. --object-counts=rici,si). Use value \"all\" for using all supported descriptors", '\0', arrrgh::Optional, "all");
+    const auto& descriptors = parser.add<std::string>("descriptors", "Specify the descriptors that should be used in the experiment, with as valid options \"rici\", \"si\", \"quicci\", and \"all\", as a comma separated list WITHOUT spaces (e.g. --object-counts=rici,si). Use value \"all\" for using all supported descriptors", '\0', arrrgh::Optional, "all");
 
 	try
 	{
@@ -98,15 +98,23 @@ int main(int argc, const char **argv)
     std::vector<std::string> descriptorList;
     bool containsAll = false;
     for (const auto &descriptorPart : descriptorListParts) {
-        descriptorList.push_back(descriptorPart);
         if(descriptorPart == "all") {
             containsAll = true;
-        } else if(descriptorPart != "rici" && descriptorPart != "si") {
+        } else if(descriptorPart != "rici" && descriptorPart != "si" && descriptorPart != "quicci") {
             std::cout << "Error: Unknown descriptor name detected: \"" + descriptorPart + "\". Ignoring." << std::endl;
+        } else {
+            descriptorList.push_back(descriptorPart);
         }
     }
     if(containsAll /*|| descriptorList.size() == 0 feature, not a bug*/) {
-        descriptorList = {"rici", "si"};
+        descriptorList = {"rici", "si", "quicci"};
+    }
+
+    if(std::find(descriptorList.begin(), descriptorList.end(), "quicci") != descriptorList.end() &&
+       std::find(descriptorList.begin(), descriptorList.end(), "rici") == descriptorList.end()) {
+        std::cout << "WARNING: RICI descriptor was not found in list of descriptors, even though QUICCI descriptor was enabled." << std::endl;
+        std::cout << "Both must be enabled for QUICCI to work, and therefore RICI is automatically added to the descriptor list." << std::endl;
+        descriptorList.emplace_back("rici");
     }
 
     std::sort(objectCountList.begin(), objectCountList.end());
