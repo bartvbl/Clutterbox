@@ -546,7 +546,7 @@ void runClutterBoxExperiment(
     // 9 Compute spin image for reference model
     SpinImage::array<radialIntersectionCountImagePixelType> device_referenceRICIImages;
     SpinImage::array<spinImagePixelType> device_referenceSpinImages;
-    SpinImage::array<unsigned int> device_referenceQuiccImages;
+    SpinImage::gpu::QUICCIImages device_referenceQuiccImages;
 
     if(riciDescriptorActive) {
         std::cout << "\tGenerating reference RICI images.. (" << referenceImageCount << " images)" << std::endl;
@@ -692,7 +692,7 @@ void runClutterBoxExperiment(
             if(quicciDescriptorActive) {
                 std::cout << "\tGenerating QUICCI images.. (" << imageCount << " images)" << std::endl;
                 SpinImage::debug::QUICCIRunInfo quicciSampleRunInfo;
-                SpinImage::array<unsigned int> device_sampleQUICCImages = SpinImage::gpu::generateQUICCImages(
+                SpinImage::gpu::QUICCIImages device_sampleQUICCImages = SpinImage::gpu::generateQUICCImages(
                         device_sampleRICIImages,
                         &quicciSampleRunInfo);
                 QUICCIRuns.push_back(quicciSampleRunInfo);
@@ -712,7 +712,8 @@ void runClutterBoxExperiment(
                 std::cout << "\t\tTimings: (total " << quicciSearchRun.totalExecutionTimeSeconds
                           << ", searching " << quicciSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
                 Histogram QUICCIHistogram = computeSearchResultHistogram(referenceMeshImageCount, QUICCIsearchResults);
-                cudaFree(device_sampleQUICCImages.content);
+                cudaFree(device_sampleQUICCImages.horizontallyDecreasingImages);
+                cudaFree(device_sampleQUICCImages.horizontallyIncreasingImages);
                 if(!dumpRawSearchResults) {
                     delete[] QUICCIsearchResults.content;
                 }
@@ -777,7 +778,8 @@ void runClutterBoxExperiment(
     SpinImage::gpu::freeMesh(boxScene);
     cudaFree(device_referenceRICIImages.content);
     cudaFree(device_referenceSpinImages.content);
-    cudaFree(device_referenceQuiccImages.content);
+    cudaFree(device_referenceQuiccImages.horizontallyIncreasingImages);
+    cudaFree(device_referenceQuiccImages.horizontallyDecreasingImages);
     cudaFree(device_uniqueSpinOrigins.content);
 
     std::string timestring = getCurrentDateTimeString();
