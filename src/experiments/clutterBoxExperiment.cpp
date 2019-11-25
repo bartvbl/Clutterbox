@@ -7,7 +7,7 @@
 #include <algorithm>
 
 #include <utilities/stringUtils.h>
-#include <utilities/modelScaler.h>
+#include <spinImage/utilities/modelScaler.h>
 #include <utilities/Histogram.h>
 
 #include <spinImage/cpu/types/Mesh.h>
@@ -24,6 +24,7 @@
 #include <spinImage/utilities/dumpers/spinImageDumper.h>
 #include <spinImage/utilities/dumpers/searchResultDumper.h>
 #include <spinImage/utilities/duplicateRemoval.cuh>
+#include <spinImage/utilities/modelScaler.h>
 
 #include <experiments/clutterBox/clutterBoxUtilities.h>
 #include <fstream>
@@ -520,7 +521,7 @@ void runClutterBoxExperiment(
     std::cout << "\tScaling meshes.." << std::endl;
     std::vector<SpinImage::cpu::Mesh> scaledMeshes(sampleObjectCount);
     for (unsigned int i = 0; i < sampleObjectCount; i++) {
-        scaledMeshes.at(i) = fitMeshInsideSphereOfRadius(sampleMeshes.at(i), 1);
+        scaledMeshes.at(i) = SpinImage::utilities::fitMeshInsideSphereOfRadius(sampleMeshes.at(i), 1);
         SpinImage::cpu::freeMesh(sampleMeshes.at(i));
     }
 

@@ -14,13 +14,14 @@
 #include <spinImage/gpu/types/PointCloud.h>
 #include <spinImage/utilities/meshSampler.cuh>
 #include <spinImage/utilities/duplicateRemoval.cuh>
+#include <spinImage/utilities/modelScaler.h>
 #include <utilities/stringUtils.h>
 
 using json = nlohmann::json;
 
 #include "experimentUtilities/listDir.h"
 #include "experiments/clutterBox/clutterBoxKernels.cuh"
-#include "utilities/modelScaler.h"
+#include "spinImage/utilities/modelScaler.h"
 #include "clutterKernel.cuh"
 #include "nvidia/helper_cuda.h"
 
@@ -133,7 +134,7 @@ int main(int argc, const char** argv) {
         std::cout << "\tScaling meshes.." << std::endl;
         std::vector<SpinImage::cpu::Mesh> scaledMeshes(sampleObjectCount);
         for (unsigned int i = 0; i < sampleObjectCount; i++) {
-            scaledMeshes.at(i) = fitMeshInsideSphereOfRadius(objects.at(i), 1);
+            scaledMeshes.at(i) = SpinImage::utilities::fitMeshInsideSphereOfRadius(objects.at(i), 1);
             SpinImage::cpu::freeMesh(objects.at(i));
         }
 
