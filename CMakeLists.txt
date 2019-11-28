@@ -30,7 +30,7 @@ find_package(PCL 1.8.1 REQUIRED COMPONENTS common io)
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -frounding-math") #  -g -pg -pg -no-pie
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -march=native -frounding-math") #  -g -pg -pg -no-pie
 endif()
 
 # OpenMP
