@@ -61,6 +61,10 @@ int main(int argc, const char **argv)
 	// This is naturally the device with most memory available, becausewhywouldntit.
 	
 	cudaDeviceProp device_information = setCurrentCUDADevice(listGPUs.value(), forceGPU.value());
+	GPUMetaData gpuMetaData;
+	gpuMetaData.name = std::string(device_information.name);
+	gpuMetaData.clockRate = device_information.clockRate;
+	gpuMetaData.memorySizeMB = device_information.totalGlobalMem / (1024 * 1024);
 
 	if(listGPUs.value()) {
 		return 0;
@@ -119,7 +123,7 @@ int main(int argc, const char **argv)
 
     std::sort(objectCountList.begin(), objectCountList.end());
 
-	runClutterBoxExperiment(objectDirectory.value(), descriptorList, objectCountList, overrideObjectCount.value(), boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), randomSeed);
+	runClutterBoxExperiment(objectDirectory.value(), descriptorList, objectCountList, overrideObjectCount.value(), boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), gpuMetaData, randomSeed);
 
     return 0;
 }

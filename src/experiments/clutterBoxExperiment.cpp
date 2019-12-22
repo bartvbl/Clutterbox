@@ -94,7 +94,8 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
                      std::vector<SpinImage::debug::RICISearchRunInfo> RICISearchRuns,
                      std::vector<SpinImage::debug::QUICCISearchRunInfo> QUICCISearchRuns,
                      std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns, float spinImageSupportAngleDegrees,
-                     std::vector<size_t> uniqueVertexCounts, std::vector<size_t> spinImageSampleCounts) {
+                     std::vector<size_t> uniqueVertexCounts, std::vector<size_t> spinImageSampleCounts,
+                     GPUMetaData gpuMetaData) {
     std::cout << std::endl << "Dumping results file.." << std::endl;
 
     std::default_random_engine generator{seed};
@@ -183,6 +184,10 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
     outJson["inputFiles"] = chosenFiles;
     outJson["riciEarlyExitEnabled"] = ENABLE_RICI_COMPARISON_EARLY_EXIT;
     outJson["riciSharedMemoryImageEnabled"] = ENABLE_SHARED_MEMORY_IMAGE;
+    outJson["gpuInfo"] = {};
+    outJson["gpuInfo"]["name"] = gpuMetaData.name;
+    outJson["gpuInfo"]["clockrate"] = gpuMetaData.clockRate;
+    outJson["gpuInfo"]["memoryCapacity"] = gpuMetaData.memorySizeMB;
     outJson["vertexCounts"] = {};
     for (auto &sampleMesh : sampleMeshes) {
         outJson["vertexCounts"].push_back(sampleMesh.vertexCount);
@@ -434,6 +439,7 @@ void runClutterBoxExperiment(
         float spinImageSupportAngleDegrees,
         bool dumpRawSearchResults,
         std::string outputDirectory,
+        GPUMetaData gpuMetaData,
         size_t overrideSeed) {
 
     // Determine which algorithms to enable
@@ -807,7 +813,8 @@ void runClutterBoxExperiment(
             SISearchRuns,
             spinImageSupportAngleDegrees,
             uniqueVertexCounts,
-            spinImageSampleCounts);
+            spinImageSampleCounts,
+            gpuMetaData);
 
     if(dumpRawSearchResults) {
         dumpRawSearchResultFile(
