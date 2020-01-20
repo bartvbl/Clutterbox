@@ -87,6 +87,7 @@ void dumpResultsFile(
         size_t seed,
         std::vector<Histogram> RICIHistograms,
         std::vector<Histogram> SIHistograms,
+        std::vector<Histogram> SCHistograms,
         const std::string &sourceFileDirectory,
         std::vector<int> objectCountList,
         int overrideObjectCount,
@@ -95,8 +96,10 @@ void dumpResultsFile(
         size_t assertionRandomToken,
         std::vector<SpinImage::debug::RICIRunInfo> RICIRuns,
         std::vector<SpinImage::debug::SIRunInfo> SIRuns,
+        std::vector<SpinImage::debug::SCRunInfo> SCRuns,
         std::vector<SpinImage::debug::RICISearchRunInfo> RICISearchRuns,
         std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns,
+        std::vector<SpinImage::debuf::SCSearchRunInfo> SCSearchRuns,
         float spinImageSupportAngleDegrees,
         std::vector<size_t> uniqueVertexCounts,
         std::vector<size_t> spinImageSampleCounts) {
@@ -157,18 +160,21 @@ void dumpResultsFile(
 
     bool riciDescriptorActive = false;
     bool siDescriptorActive = false;
+    bool scDescriptorActive = false;
 
     for(const auto& descriptor : descriptorList) {
         if(descriptor == "rici") {
             riciDescriptorActive = true;
         } else if(descriptor == "si") {
             siDescriptorActive = true;
+        } else if(descriptor == "3dsc") {
+            scDescriptorActive = true;
         }
     }
 
     json outJson;
 
-    outJson["version"] = "v8";
+    outJson["version"] = "v9";
     outJson["seed"] = seed;
     outJson["descriptors"] = descriptorList;
     outJson["sampleSetSize"] = sampleObjectCount;
@@ -232,6 +238,24 @@ void dumpResultsFile(
         }
     }
 
+    if(scDescriptorActive) {
+        outJson["runtimes"]["3DSCReferenceGeneration"]["total"] = SCRuns.at(0).totalExecutionTimeSeconds;
+        outJson["runtimes"]["3DSCReferenceGeneration"]["initialisation"] = SCRuns.at(0).initialisationTimeSeconds;
+        outJson["runtimes"]["3DSCReferenceGeneration"]["sampling"] = SCRuns.at(0).meshSamplingTimeSeconds;
+        outJson["runtimes"]["3DSCReferenceGeneration"]["generation"] = SCRuns.at(0).generationTimeSeconds;
+
+        outJson["runtimes"]["3DSCSampleGeneration"]["total"] = {};
+        outJson["runtimes"]["3DSCSampleGeneration"]["initialisation"] = {};
+        outJson["runtimes"]["3DSCSampleGeneration"]["sampling"] = {};
+        outJson["runtimes"]["3DSCSampleGeneration"]["generation"] = {};
+        for(unsigned int i = 1; i < SCRuns.size(); i++) {
+            outJson["runtimes"]["3DSCSampleGeneration"]["total"].push_back(SCRuns.at(i).totalExecutionTimeSeconds);
+            outJson["runtimes"]["3DSCSampleGeneration"]["initialisation"].push_back(SCRuns.at(i).initialisationTimeSeconds);
+            outJson["runtimes"]["3DSCSampleGeneration"]["sampling"].push_back(SCRuns.at(i).meshSamplingTimeSeconds);
+            outJson["runtimes"]["3DSCSampleGeneration"]["generation"].push_back(SCRuns.at(i).generationTimeSeconds);
+        }
+    }
+
     if(riciDescriptorActive) {
         outJson["runtimes"]["RICISearch"]["total"] = {};
         outJson["runtimes"]["RICISearch"]["search"] = {};
@@ -249,6 +273,17 @@ void dumpResultsFile(
             outJson["runtimes"]["SISearch"]["total"].push_back(SISearchRun.totalExecutionTimeSeconds);
             outJson["runtimes"]["SISearch"]["averaging"].push_back(SISearchRun.averagingExecutionTimeSeconds);
             outJson["runtimes"]["SISearch"]["search"].push_back(SISearchRun.searchExecutionTimeSeconds);
+        }
+    }
+
+    if(scDescriptorActive) {
+        outJson["runtimes"]["3DSCSearch"]["total"] = {};
+        outJson["runtimes"]["3DSCSearch"]["averaging"] = {};
+        outJson["runtimes"]["3DSCSearch"]["search"] = {};
+        for (auto &SISearchRun : SISearchRuns) {
+            outJson["runtimes"]["3DSCSearch"]["total"].push_back(SISearchRun.totalExecutionTimeSeconds);
+            outJson["runtimes"]["3DSCSearch"]["averaging"].push_back(SISearchRun.averagingExecutionTimeSeconds);
+            outJson["runtimes"]["3DSCSearch"]["search"].push_back(SISearchRun.searchExecutionTimeSeconds);
         }
     }
 
@@ -284,6 +319,22 @@ void dumpResultsFile(
         }
     }
 
+    if(scDescriptorActive) {
+        outJson["3DSChistograms"] = {};
+        for(unsigned int i = 0; i < objectCountList.size(); i++) {
+            std::map<unsigned int, size_t> scMap = SCHistograms.at(i).getMap();
+            std::vector<unsigned int> keys;
+            for (auto &content : scMap) {
+                keys.push_back(content.first);
+            }
+            std::sort(keys.begin(), keys.end());
+
+            for(auto &key : keys) {
+                outJson["3DSChistograms"][std::to_string(i)][std::to_string(key)] = scMap[key];
+            }
+        }
+    }
+
     std::ofstream outFile(outputFile);
     outFile << outJson.dump(4);
     outFile.close();
@@ -298,21 +349,25 @@ void dumpRawSearchResultFile(
         std::vector<std::string> descriptorList,
         std::vector<int> objectCountList,
         std::vector<SpinImage::array<unsigned int>> rawRICISearchResults,
-        std::vector<SpinImage::array<unsigned int>> rawSISearchResults) {
+        std::vector<SpinImage::array<unsigned int>> rawSISearchResults,
+        std::vector<SpinImage::array<unsigned int>> rawSCSearchResults) {
 
     json outJson;
 
-    outJson["version"] = "rawfile_v2";
+    outJson["version"] = "rawfile_v3";
     outJson["sampleObjectCounts"] = objectCountList;
 
     bool riciDescriptorActive = false;
     bool siDescriptorActive = false;
+    bool scDescriptorActive = false;
 
     for(const auto& descriptor : descriptorList) {
         if(descriptor == "rici") {
             riciDescriptorActive = true;
         } else if(descriptor == "si") {
             siDescriptorActive = true;
+        } else if(descriptor == "3dsc") {
+            scDescriptorActive = true;
         }
     }
 
@@ -328,14 +383,26 @@ void dumpRawSearchResultFile(
         }
     }
 
+    // SI block
     if(siDescriptorActive) {
-        // SI block
         outJson["SI"] = {};
         for(int i = 0; i < rawSISearchResults.size(); i++) {
             std::string indexString = std::to_string(objectCountList.at(i));
             outJson["SI"][indexString] = {};
             for(int j = 0; j < rawSISearchResults.at(i).length; j++) {
                 outJson["SI"][indexString].push_back(rawSISearchResults.at(i).content[j]);
+            }
+        }
+    }
+
+    // 3DSC block
+    if(scDescriptorActive) {
+        outJson["3DSC"] = {};
+        for(int i = 0; i < rawSCSearchResults.size(); i++) {
+            std::string indexString = std::to_string(objectCountList.at(i));
+            outJson["3DSC"][indexString] = {};
+            for(int j = 0; j < rawSCSearchResults.at(i).length; j++) {
+                outJson["3DSC"][indexString].push_back(rawSCSearchResults.at(i).content[j]);
             }
         }
     }
@@ -429,7 +496,7 @@ void runClutterBoxExperiment(
 
     std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns;
     std::vector<SpinImage::debug::RICISearchRunInfo> RICISearchRuns;
-    std::vector<SpinImage::debug::ShapeContextSearchRunInfo> ShapeContextSearchRuns;
+    std::vector<SpinImage::debug::SCSearchRunInfo> ShapeContextSearchRuns;
 
     // The number of sample objects that need to be loaded depends on the largest number of objects required in the list
     int sampleObjectCount = *std::max_element(objectCountList.begin(), objectCountList.end());
@@ -747,18 +814,15 @@ void runClutterBoxExperiment(
             outputDirectory + timestring + "_" + std::to_string(randomSeed) + ".json",
             descriptorList,
             randomSeed,
-            RICIHistograms,
-            spinImageHistograms,
+            RICIHistograms, spinImageHistograms, shapeContextHistograms,
             objectDirectory,
             objectCountList,
             overrideObjectCount,
             boxSize,
             spinImageWidth,
             generator(),
-            RICIRuns,
-            SIRuns,
-            RICISearchRuns,
-            SISearchRuns,
+            RICIRuns, SIRuns, ShapeContextRuns,
+            RICISearchRuns, SISearchRuns, ShapeContextSearchRuns,
             spinImageSupportAngleDegrees,
             uniqueVertexCounts,
             spinImageSampleCounts);
@@ -769,7 +833,8 @@ void runClutterBoxExperiment(
                 descriptorList,
                 objectCountList,
                 rawRICISearchResults,
-                rawSISearchResults);
+                rawSISearchResults,
+                raw3DSCSearchResults);
 
         // Cleanup
         // If one of the descriptors is not enabled, this will iterate over an empty vector.
