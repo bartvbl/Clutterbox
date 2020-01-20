@@ -99,7 +99,7 @@ void dumpResultsFile(
         std::vector<SpinImage::debug::SCRunInfo> SCRuns,
         std::vector<SpinImage::debug::RICISearchRunInfo> RICISearchRuns,
         std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns,
-        std::vector<SpinImage::debuf::SCSearchRunInfo> SCSearchRuns,
+        std::vector<SpinImage::debug::SCSearchRunInfo> SCSearchRuns,
         float spinImageSupportAngleDegrees,
         std::vector<size_t> uniqueVertexCounts,
         std::vector<size_t> spinImageSampleCounts) {
