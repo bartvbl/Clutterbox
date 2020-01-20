@@ -16,6 +16,8 @@
 #include <spinImage/gpu/radialIntersectionCountImageSearcher.cuh>
 #include <spinImage/gpu/spinImageGenerator.cuh>
 #include <spinImage/gpu/spinImageSearcher.cuh>
+#include <spinImage/gpu/3dShapeContextGenerator.cuh>
+#include <spinImage/gpu/3dShapeContextSearcher.cuh>
 #include <spinImage/utilities/OBJLoader.h>
 #include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/utilities/copy/deviceDescriptorsToHost.h>
@@ -384,16 +386,20 @@ void runClutterBoxExperiment(
     // Determine which algorithms to enable
     bool riciDescriptorActive = false;
     bool siDescriptorActive = false;
+    bool shapeContextDescriptorActive = false;
 
     std::cout << "Running clutterbox experiment for the following descriptors: ";
 
     for(const auto& descriptor : descriptorList) {
         if(descriptor == "rici") {
             riciDescriptorActive = true;
-            std::cout << (siDescriptorActive ? ", " : "") << "Radial Intersection Count Image";
+            std::cout << (siDescriptorActive || shapeContextDescriptorActive ? ", " : "") << "Radial Intersection Count Image";
         } else if(descriptor == "si") {
             siDescriptorActive = true;
-            std::cout << (riciDescriptorActive ? ", " : "") << "Spin Image";
+            std::cout << (riciDescriptorActive || shapeContextDescriptorActive ? ", " : "") << "Spin Image";
+        } else if(descriptor == "3dsc") {
+            shapeContextDescriptorActive = true;
+            std::cout << (riciDescriptorActive || siDescriptorActive ? ", " : "") << "3D Shape Context";
         }
     }
     std::cout << std::endl;
@@ -415,10 +421,15 @@ void runClutterBoxExperiment(
 
     std::vector<Histogram> RICIHistograms;
     std::vector<Histogram> spinImageHistograms;
+    std::vector<Histogram> shapeContextHistograms;
+
     std::vector<SpinImage::debug::RICIRunInfo> RICIRuns;
     std::vector<SpinImage::debug::SIRunInfo> SIRuns;
+    std::vector<SpinImage::debug::SCRunInfo> ShapeContextRuns;
+
     std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns;
     std::vector<SpinImage::debug::RICISearchRunInfo> RICISearchRuns;
+    std::vector<SpinImage::debug::ShapeContextSearchRunInfo> ShapeContextSearchRuns;
 
     // The number of sample objects that need to be loaded depends on the largest number of objects required in the list
     int sampleObjectCount = *std::max_element(objectCountList.begin(), objectCountList.end());
@@ -484,6 +495,7 @@ void runClutterBoxExperiment(
     // 9 Compute spin image for reference model
     SpinImage::array<radialIntersectionCountImagePixelType> device_referenceRICIImages;
     SpinImage::array<spinImagePixelType> device_referenceSpinImages;
+    SpinImage::array<shapeContextBinType> device_referenceShapeContextDescriptors;
 
     if(riciDescriptorActive) {
         std::cout << "\tGenerating reference RICI images.. (" << referenceImageCount << " images)" << std::endl;
@@ -515,6 +527,25 @@ void runClutterBoxExperiment(
     } else {
         // This keeps the random number generator in a constant state
         // Generating spin images causes a single random number to be generated.
+        generator();
+    }
+
+    if(shapeContextDescriptorActive) {
+        std::cout << "\tGenerating reference 3D shape context descriptors.." << std::endl;
+        SpinImage::debug::SCRunInfo scReferenceRunInfo;
+        device_referenceShapeContextDescriptors = SpinImage::gpu::generate3DSCDescriptors(
+                scaledMeshesOnGPU.at(0),
+                spinOrigins_reference,
+                spinImageWidth,
+                spinImageSampleCount,
+                generator(),
+                &scReferenceRunInfo);
+
+        ShapeContextRuns.push_back(scReferenceRunInfo);
+        std::cout << "\t\tExecution time: " << scReferenceRunInfo.generationTimeSeconds << std::endl;
+    } else {
+        // This keeps the random number generator in a constant state
+        // Generating 3DSC descriptors causes a single random number to be generated.
         generator();
     }
 
@@ -552,6 +583,7 @@ void runClutterBoxExperiment(
 
     std::vector<SpinImage::array<unsigned int>> rawRICISearchResults;
     std::vector<SpinImage::array<unsigned int>> rawSISearchResults;
+    std::vector<SpinImage::array<unsigned int>> raw3DSCSearchResults;
     std::vector<size_t> spinImageSampleCounts;
 
     int currentObjectListIndex = 0;
@@ -613,12 +645,16 @@ void runClutterBoxExperiment(
             RICIHistograms.push_back(RICIHistogram);
         }
 
+        // Computing common settings for SI and 3DSC
+        size_t meshSamplingSeed = generator();
+        if(siDescriptorActive || shapeContextDescriptorActive) {
+            spinImageSampleCount = computeSpinImageSampleCount(imageCount);
+            spinImageSampleCounts.push_back(spinImageSampleCount);
+        }
 
 
         // Generating spin images
         if(siDescriptorActive) {
-            spinImageSampleCount = computeSpinImageSampleCount(imageCount);
-            spinImageSampleCounts.push_back(spinImageSampleCount);
             std::cout << "\tGenerating spin images.. (" << imageCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
             SpinImage::debug::SIRunInfo siSampleRunInfo;
             SpinImage::array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(
@@ -627,7 +663,7 @@ void runClutterBoxExperiment(
                     spinImageWidth,
                     spinImageSampleCount,
                     spinImageSupportAngleDegrees,
-                    generator(),
+                    meshSamplingSeed,
                     &siSampleRunInfo);
             SIRuns.push_back(siSampleRunInfo);
             std::cout << "\t\tTimings: (total " << siSampleRunInfo.totalExecutionTimeSeconds
@@ -656,9 +692,47 @@ void runClutterBoxExperiment(
 
             // Storing results
             spinImageHistograms.push_back(SIHistogram);
-        } else {
-            // Keeping the random number generator in sync
-            generator();
+        }
+
+
+
+        if(shapeContextDescriptorActive) {
+            std::cout << "\tGenerating 3D shape context descriptors.. (" << imageCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
+            SpinImage::debug::SCRunInfo scSampleRunInfo;
+            SpinImage::array<shapeContextBinType> device_sample3DSCDescriptors = SpinImage::gpu::generate3DSCDescriptors(
+                    boxScene,
+                    device_uniqueSpinOrigins,
+                    spinImageWidth,
+                    spinImageSampleCount,
+                    meshSamplingSeed,
+                    &scSampleRunInfo);
+            ShapeContextRuns.push_back(scSampleRunInfo);
+            std::cout << "\t\tTimings: (total " << scSampleRunInfo.totalExecutionTimeSeconds
+                      << ", initialisation " << scSampleRunInfo.initialisationTimeSeconds
+                      << ", sampling " << scSampleRunInfo.meshSamplingTimeSeconds
+                      << ", generation " << scSampleRunInfo.generationTimeSeconds << ")" << std::endl;
+
+            std::cout << "\tSearching in 3D Shape Context descriptors.." << std::endl;
+            SpinImage::debug::SCSearchRunInfo scSearchRun;
+            SpinImage::array<unsigned int> ShapeContextSearchResults = SpinImage::gpu::compute3DSCSearchResultRanks(
+                    device_referenceSpinImages,
+                    referenceMeshImageCount,
+                    device_sample3DSCDescriptors,
+                    imageCount,
+                    &scSearchRun);
+            ShapeContextSearchRuns.push_back(scSearchRun);
+            raw3DSCSearchResults.push_back(ShapeContextSearchResults);
+            std::cout << "\t\tTimings: (total " << scSearchRun.totalExecutionTimeSeconds
+                      << ", averaging " << scSearchRun.averagingExecutionTimeSeconds
+                      << ", searching " << scSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
+            Histogram SCHistogram = computeSearchResultHistogram(referenceMeshImageCount, ShapeContextSearchResults);
+            cudaFree(device_sample3DSCDescriptors.content);
+            if(!dumpRawSearchResults) {
+                delete[] ShapeContextSearchResults.content;
+            }
+
+            // Storing results
+            shapeContextHistograms.push_back(SCHistogram);
         }
     }
 
@@ -703,6 +777,9 @@ void runClutterBoxExperiment(
             delete[] results.content;
         }
         for(auto results : rawSISearchResults) {
+            delete[] results.content;
+        }
+        for(auto results : raw3DSCSearchResults) {
             delete[] results.content;
         }
     }
