@@ -242,16 +242,19 @@ void dumpResultsFile(
         outJson["runtimes"]["3DSCReferenceGeneration"]["total"] = SCRuns.at(0).totalExecutionTimeSeconds;
         outJson["runtimes"]["3DSCReferenceGeneration"]["initialisation"] = SCRuns.at(0).initialisationTimeSeconds;
         outJson["runtimes"]["3DSCReferenceGeneration"]["sampling"] = SCRuns.at(0).meshSamplingTimeSeconds;
+        outJson["runtimes"]["3DSCReferenceGeneration"]["pointCounting"] = SCRuns.at(0).pointCountingTimeSeconds;
         outJson["runtimes"]["3DSCReferenceGeneration"]["generation"] = SCRuns.at(0).generationTimeSeconds;
 
         outJson["runtimes"]["3DSCSampleGeneration"]["total"] = {};
         outJson["runtimes"]["3DSCSampleGeneration"]["initialisation"] = {};
         outJson["runtimes"]["3DSCSampleGeneration"]["sampling"] = {};
+        outJson["runtimes"]["3DSCSampleGeneration"]["pointCounting"] = {};
         outJson["runtimes"]["3DSCSampleGeneration"]["generation"] = {};
         for(unsigned int i = 1; i < SCRuns.size(); i++) {
             outJson["runtimes"]["3DSCSampleGeneration"]["total"].push_back(SCRuns.at(i).totalExecutionTimeSeconds);
             outJson["runtimes"]["3DSCSampleGeneration"]["initialisation"].push_back(SCRuns.at(i).initialisationTimeSeconds);
             outJson["runtimes"]["3DSCSampleGeneration"]["sampling"].push_back(SCRuns.at(i).meshSamplingTimeSeconds);
+            outJson["runtimes"]["3DSCSampleGeneration"]["pointCounting"].push_back(SCRuns.at(i).pointCountingTimeSeconds);
             outJson["runtimes"]["3DSCSampleGeneration"]["generation"].push_back(SCRuns.at(i).generationTimeSeconds);
         }
     }
