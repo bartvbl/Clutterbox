@@ -606,6 +606,8 @@ void runClutterBoxExperiment(
         device_referenceShapeContextDescriptors = SpinImage::gpu::generate3DSCDescriptors(
                 scaledMeshesOnGPU.at(0),
                 spinOrigins_reference,
+                0.1,
+                0,
                 spinImageWidth,
                 spinImageSampleCount,
                 generator(),
@@ -772,6 +774,8 @@ void runClutterBoxExperiment(
             SpinImage::array<shapeContextBinType> device_sample3DSCDescriptors = SpinImage::gpu::generate3DSCDescriptors(
                     boxScene,
                     device_uniqueSpinOrigins,
+                    0.2,
+                    0,
                     spinImageWidth,
                     spinImageSampleCount,
                     meshSamplingSeed,
