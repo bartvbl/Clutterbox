@@ -281,11 +281,9 @@ void dumpResultsFile(
 
     if(scDescriptorActive) {
         outJson["runtimes"]["3DSCSearch"]["total"] = {};
-        outJson["runtimes"]["3DSCSearch"]["averaging"] = {};
         outJson["runtimes"]["3DSCSearch"]["search"] = {};
         for (auto &SISearchRun : SISearchRuns) {
             outJson["runtimes"]["3DSCSearch"]["total"].push_back(SISearchRun.totalExecutionTimeSeconds);
-            outJson["runtimes"]["3DSCSearch"]["averaging"].push_back(SISearchRun.averagingExecutionTimeSeconds);
             outJson["runtimes"]["3DSCSearch"]["search"].push_back(SISearchRun.searchExecutionTimeSeconds);
         }
     }
@@ -784,12 +782,13 @@ void runClutterBoxExperiment(
             std::cout << "\t\tTimings: (total " << scSampleRunInfo.totalExecutionTimeSeconds
                       << ", initialisation " << scSampleRunInfo.initialisationTimeSeconds
                       << ", sampling " << scSampleRunInfo.meshSamplingTimeSeconds
+                      << ", point counting " << scSampleRunInfo.pointCountingTimeSeconds
                       << ", generation " << scSampleRunInfo.generationTimeSeconds << ")" << std::endl;
 
             std::cout << "\tSearching in 3D Shape Context descriptors.." << std::endl;
             SpinImage::debug::SCSearchRunInfo scSearchRun;
             SpinImage::array<unsigned int> ShapeContextSearchResults = SpinImage::gpu::compute3DSCSearchResultRanks(
-                    device_referenceSpinImages,
+                    device_referenceShapeContextDescriptors,
                     referenceMeshImageCount,
                     device_sample3DSCDescriptors,
                     imageCount,
@@ -797,7 +796,6 @@ void runClutterBoxExperiment(
             ShapeContextSearchRuns.push_back(scSearchRun);
             raw3DSCSearchResults.push_back(ShapeContextSearchResults);
             std::cout << "\t\tTimings: (total " << scSearchRun.totalExecutionTimeSeconds
-                      << ", averaging " << scSearchRun.averagingExecutionTimeSeconds
                       << ", searching " << scSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
             Histogram SCHistogram = computeSearchResultHistogram(referenceMeshImageCount, ShapeContextSearchResults);
             cudaFree(device_sample3DSCDescriptors.content);
