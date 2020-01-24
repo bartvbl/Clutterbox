@@ -445,7 +445,9 @@ void runClutterBoxExperiment(
         std::vector<int> objectCountList,
         int overrideObjectCount,
         float boxSize,
-        float spinImageWidth,
+        float pointDensityRadius3dsc,
+        float minSupportRadius3dsc,
+        float supportRadius,
         float spinImageSupportAngleDegrees,
         bool dumpRawSearchResults,
         std::string outputDirectory,
@@ -571,7 +573,7 @@ void runClutterBoxExperiment(
         device_referenceRICIImages = SpinImage::gpu::generateRadialIntersectionCountImages(
                 scaledMeshesOnGPU.at(0),
                 spinOrigins_reference,
-                spinImageWidth,
+                supportRadius,
                 &riciReferenceRunInfo);
 
         RICIRuns.push_back(riciReferenceRunInfo);
@@ -584,7 +586,7 @@ void runClutterBoxExperiment(
         device_referenceSpinImages = SpinImage::gpu::generateSpinImages(
                 scaledMeshesOnGPU.at(0),
                 spinOrigins_reference,
-                spinImageWidth,
+                supportRadius,
                 spinImageSampleCount,
                 spinImageSupportAngleDegrees,
                 generator(),
@@ -604,9 +606,9 @@ void runClutterBoxExperiment(
         device_referenceShapeContextDescriptors = SpinImage::gpu::generate3DSCDescriptors(
                 scaledMeshesOnGPU.at(0),
                 spinOrigins_reference,
-                0.1,
-                0,
-                spinImageWidth,
+                pointDensityRadius3dsc,
+                minSupportRadius3dsc,
+                supportRadius,
                 spinImageSampleCount,
                 generator(),
                 &scReferenceRunInfo);
@@ -685,7 +687,7 @@ void runClutterBoxExperiment(
             SpinImage::array<radialIntersectionCountImagePixelType> device_sampleRICIImages = SpinImage::gpu::generateRadialIntersectionCountImages(
                     boxScene,
                     device_uniqueSpinOrigins,
-                    spinImageWidth,
+                    supportRadius,
                     &riciSampleRunInfo);
             RICIRuns.push_back(riciSampleRunInfo);
             std::cout << "\t\tTimings: (total " << riciSampleRunInfo.totalExecutionTimeSeconds
@@ -730,7 +732,7 @@ void runClutterBoxExperiment(
             SpinImage::array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(
                     boxScene,
                     device_uniqueSpinOrigins,
-                    spinImageWidth,
+                    supportRadius,
                     spinImageSampleCount,
                     spinImageSupportAngleDegrees,
                     meshSamplingSeed,
@@ -772,9 +774,9 @@ void runClutterBoxExperiment(
             SpinImage::array<shapeContextBinType> device_sample3DSCDescriptors = SpinImage::gpu::generate3DSCDescriptors(
                     boxScene,
                     device_uniqueSpinOrigins,
-                    0.2,
-                    0,
-                    spinImageWidth,
+                    pointDensityRadius3dsc,
+                    minSupportRadius3dsc,
+                    supportRadius,
                     spinImageSampleCount,
                     meshSamplingSeed,
                     &scSampleRunInfo);
@@ -824,7 +826,7 @@ void runClutterBoxExperiment(
             objectCountList,
             overrideObjectCount,
             boxSize,
-            spinImageWidth,
+            supportRadius,
             generator(),
             RICIRuns, SIRuns, ShapeContextRuns,
             RICISearchRuns, SISearchRuns, ShapeContextSearchRuns,

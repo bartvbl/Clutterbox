@@ -31,7 +31,9 @@ int main(int argc, const char **argv)
 	const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", 'b', arrrgh::Optional, -1);
 	const auto& boxSize = parser.add<float>("box-size", "Size of the cube box for the clutter box experiment", '\0', arrrgh::Optional, 1);
 	const auto& objectDirectory = parser.add<std::string>("source-directory", "Defines the directory from which input objects are read", '\0', arrrgh::Optional, "");
-	const auto& spinImageWidth = parser.add<float>("spin-image-width", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
+	const auto& supportRadius = parser.add<float>("support-radius", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
+    const auto& minSupportRadius3dsc = parser.add<float>("3dsc-min-support-radius", "The 3DSC descriptor also requires a minimum support radius to be set", '\0', arrrgh::Optional, 0.1);
+    const auto& pointDensityRadius3dsc = parser.add<float>("3dsc-point-density-radius", "The 3DSC descriptor requires a set radius for its point density computation pre-processing step", '\0', arrrgh::Optional, 0.05);
 	const auto& spinImageSupportAngle = parser.add<float>("spin-image-support-angle-degrees", "The support angle to use for filtering spin image point samples", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_SUPPORT_ANGLE_DEGREES);
     const auto& forcedSeed = parser.add<std::string>("force-seed", "Specify the seed to use for random generation. Used for reproducing results.", '\0', arrrgh::Optional, "0");
 	const auto& dumpRawResults = parser.add<bool>("dump-raw-search-results", "Enable dumping of raw search result index values", '\0', arrrgh::Optional, false);
@@ -112,7 +114,19 @@ int main(int argc, const char **argv)
 
     std::sort(objectCountList.begin(), objectCountList.end());
 
-	runClutterBoxExperiment(objectDirectory.value(), descriptorList, objectCountList, overrideObjectCount.value(), boxSize.value(), spinImageWidth.value(), spinImageSupportAngle.value(), dumpRawResults.value(), outputDirectory.value(), randomSeed);
+	runClutterBoxExperiment(
+	        objectDirectory.value(),
+	        descriptorList,
+	        objectCountList,
+	        overrideObjectCount.value(),
+	        boxSize.value(),
+	        pointDensityRadius3dsc.value(),
+	        minSupportRadius3dsc.value(),
+            supportRadius.value(),
+	        spinImageSupportAngle.value(),
+	        dumpRawResults.value(),
+	        outputDirectory.value(),
+	        randomSeed);
 
     return 0;
 }
