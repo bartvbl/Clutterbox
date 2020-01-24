@@ -1,5 +1,7 @@
 #include "clutterBoxExperiment.hpp"
 
+#include <cuda_runtime_api.h>
+
 #include <vector>
 #include <memory>
 #include <random>
@@ -23,6 +25,7 @@
 #include <spinImage/utilities/copy/deviceDescriptorsToHost.h>
 #include <spinImage/utilities/dumpers/spinImageDumper.h>
 #include <spinImage/utilities/dumpers/searchResultDumper.h>
+#include <spinImage/utilities/meshSampler.cuh>
 
 #include <experiments/clutterBox/clutterBoxUtilities.h>
 #include <fstream>
@@ -30,9 +33,9 @@
 #include <map>
 #include <sstream>
 #include <algorithm>
-#include <cuda_runtime_api.h>
 #include <json.hpp>
 #include <tsl/ordered_map.h>
+#include <spinImage/gpu/types/PointCloud.h>
 
 template<class Key, class T, class Ignore, class Allocator,
         class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
@@ -560,6 +563,7 @@ void runClutterBoxExperiment(
     std::cout << "\t\tReduced " << scaledMeshesOnGPU.at(0).vertexCount << " vertices to " << referenceImageCount << "." << std::endl;
 
     size_t spinImageSampleCount = computeSpinImageSampleCount(scaledMeshesOnGPU.at(0).vertexCount);
+    const size_t referenceSampleCount = spinImageSampleCount;
     std::cout << "\tUsing sample count: " << spinImageSampleCount << std::endl;
 
     // 9 Compute spin image for reference model
@@ -719,9 +723,28 @@ void runClutterBoxExperiment(
 
         // Computing common settings for SI and 3DSC
         size_t meshSamplingSeed = generator();
+        size_t currentReferenceObjectSampleCount = 0;
         if(siDescriptorActive || shapeContextDescriptorActive) {
             spinImageSampleCount = computeSpinImageSampleCount(imageCount);
             spinImageSampleCounts.push_back(spinImageSampleCount);
+
+            // wasteful solution, but I don't want to do ugly hacks that destroy the function API's
+            SpinImage::internal::MeshSamplingBuffers sampleBuffers;
+            SpinImage::gpu::PointCloud device_pointCloud = SpinImage::utilities::sampleMesh(boxScene, spinImageSampleCount, meshSamplingSeed, &sampleBuffers);
+            float totalArea;
+            float referenceObjectTotalArea;
+            size_t referenceObjectTriangleCount = scaledMeshesOnGPU.at(0).vertexCount / 3;
+            size_t sceneTriangleCount = boxScene.vertexCount / 3;
+            checkCudaErrors(cudaMemcpy(&totalArea,
+                    sampleBuffers.cumulativeAreaArray.content + (sceneTriangleCount - 1),
+                    sizeof(float), cudaMemcpyDeviceToHost));
+            checkCudaErrors(cudaMemcpy(&referenceObjectTotalArea,
+                    sampleBuffers.cumulativeAreaArray.content + (referenceObjectTriangleCount - 1),
+                    sizeof(float), cudaMemcpyDeviceToHost));
+            cudaFree(sampleBuffers.cumulativeAreaArray.content);
+            float areaFraction = referenceObjectTotalArea / totalArea;
+            currentReferenceObjectSampleCount = size_t(double(areaFraction) * double(spinImageSampleCount));
+            std::cout << "\t\tReference object sample count: " << currentReferenceObjectSampleCount << std::endl;
         }
 
 
@@ -792,8 +815,10 @@ void runClutterBoxExperiment(
             SpinImage::array<unsigned int> ShapeContextSearchResults = SpinImage::gpu::compute3DSCSearchResultRanks(
                     device_referenceShapeContextDescriptors,
                     referenceMeshImageCount,
+                    referenceSampleCount,
                     device_sample3DSCDescriptors,
                     imageCount,
+                    currentReferenceObjectSampleCount,
                     &scSearchRun);
             ShapeContextSearchRuns.push_back(scSearchRun);
             raw3DSCSearchResults.push_back(ShapeContextSearchResults);
