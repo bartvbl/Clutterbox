@@ -584,6 +584,7 @@ void runClutterBoxExperiment(
         std::cout << "\t\tExecution time: " << riciReferenceRunInfo.generationTimeSeconds << std::endl;
     }
 
+    size_t referenceGenerationRandomSeed = generator();
     if(siDescriptorActive) {
         std::cout << "\tGenerating reference spin images.." << std::endl;
         SpinImage::debug::SIRunInfo siReferenceRunInfo;
@@ -593,15 +594,11 @@ void runClutterBoxExperiment(
                 supportRadius,
                 spinImageSampleCount,
                 spinImageSupportAngleDegrees,
-                generator(),
+                referenceGenerationRandomSeed,
                 &siReferenceRunInfo);
 
         SIRuns.push_back(siReferenceRunInfo);
         std::cout << "\t\tExecution time: " << siReferenceRunInfo.generationTimeSeconds << std::endl;
-    } else {
-        // This keeps the random number generator in a constant state
-        // Generating spin images causes a single random number to be generated.
-        generator();
     }
 
     if(shapeContextDescriptorActive) {
@@ -614,15 +611,11 @@ void runClutterBoxExperiment(
                 minSupportRadius3dsc,
                 supportRadius,
                 spinImageSampleCount,
-                generator(),
+                referenceGenerationRandomSeed,
                 &scReferenceRunInfo);
 
         ShapeContextRuns.push_back(scReferenceRunInfo);
         std::cout << "\t\tExecution time: " << scReferenceRunInfo.generationTimeSeconds << std::endl;
-    } else {
-        // This keeps the random number generator in a constant state
-        // Generating 3DSC descriptors causes a single random number to be generated.
-        generator();
     }
 
     checkCudaErrors(cudaFree(spinOrigins_reference.content));
