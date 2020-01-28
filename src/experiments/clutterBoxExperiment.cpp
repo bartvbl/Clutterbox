@@ -96,6 +96,8 @@ void dumpResultsFile(
         int overrideObjectCount,
         float boxSize,
         float spinImageWidth,
+        float pointDensityRadius3dsc,
+        float minSupportRadius3dsc,
         size_t assertionRandomToken,
         std::vector<SpinImage::debug::RICIRunInfo> RICIRuns,
         std::vector<SpinImage::debug::SIRunInfo> SIRuns,
@@ -191,6 +193,8 @@ void dumpResultsFile(
     outJson["spinImageSupportAngle"] = spinImageSupportAngleDegrees;
     outJson["spinImageSampleCounts"] = spinImageSampleCounts;
     outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
+    outJson["3dscMinSupportRadius"] = minSupportRadius3dsc;
+    outJson["3dscPointDensityRadius"] = pointDensityRadius3dsc;
     outJson["inputFiles"] = chosenFiles;
     outJson["vertexCounts"] = {};
     for (auto &sampleMesh : sampleMeshes) {
@@ -845,6 +849,8 @@ void runClutterBoxExperiment(
             overrideObjectCount,
             boxSize,
             supportRadius,
+            minSupportRadius3dsc,
+            pointDensityRadius3dsc,
             generator(),
             RICIRuns, SIRuns, ShapeContextRuns,
             RICISearchRuns, SISearchRuns, ShapeContextSearchRuns,
