@@ -285,9 +285,9 @@ void dumpResultsFile(
     if(scDescriptorActive) {
         outJson["runtimes"]["3DSCSearch"]["total"] = {};
         outJson["runtimes"]["3DSCSearch"]["search"] = {};
-        for (auto &SISearchRun : SISearchRuns) {
-            outJson["runtimes"]["3DSCSearch"]["total"].push_back(SISearchRun.totalExecutionTimeSeconds);
-            outJson["runtimes"]["3DSCSearch"]["search"].push_back(SISearchRun.searchExecutionTimeSeconds);
+        for (auto &SCSearchRun : SCSearchRuns) {
+            outJson["runtimes"]["3DSCSearch"]["total"].push_back(SCSearchRun.totalExecutionTimeSeconds);
+            outJson["runtimes"]["3DSCSearch"]["search"].push_back(SCSearchRun.searchExecutionTimeSeconds);
         }
     }
 

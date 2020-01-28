@@ -1,5 +1,6 @@
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include "modelScaler.h"
 
 SpinImage::cpu::Mesh fitMeshInsideSphereOfRadius(SpinImage::cpu::Mesh input, float radius) {
