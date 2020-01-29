@@ -33,6 +33,8 @@ inputDirectories = {
     '../IDUNRUNS/output_supportanglechart60_si_v4_5': ('60 support angle, 5 objects', 'IDUN'),
     '../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/': ('60 support angle, 10 objects', 'HEID'),
     '../HEIDRUNS/output_qsifix_si_v4_60deg_5objects_missing/output/': ('60 support angle, 5 objects', 'HEID'),
+
+    '../IDUNRUNS/output_run4_3dsc_main/': ('3DSC, 1, 5, 10 objects', 'IDUN'),
 }
 
 # The location where the master spreadsheet should be written to
@@ -44,6 +46,7 @@ heatmapSize = 256
 rawInputDirectories = {
     'QSI': ['../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output/raw', '../IDUNRUNS/output_lotsofobjects_v4/raw'],
     'SI': ['../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output/raw', '../IDUNRUNS/output_mainchart_si_v4_15/raw'],
+    '3DSC': ['../IDUNRUNS/output_run4_3dsc_main/'],
 }
 rawInputObjectCount = 5
 
@@ -78,15 +81,19 @@ def isSiResultValid(fileCreationDateTime, resultJson):
 
     return hasCorrectOverrideObjectCount or hasCorrectSampleSetSize
 
+def is3dscResultValid(fileCreationTime, resultJson):
+    return True
+
 
 # -- global initialisation --
 
 # Maps seeds to a list of (dataset, value) tuples
 seedmap_top_result_rici = {}
 seedmap_top_result_si = {}
+seedmap_top_result_3dsc = {}
 seedmap_top10_results_rici = {}
 seedmap_top10_results_si = {}
-
+seedmap_top10_results_3dsc = {}
 
 # -- code --
 
@@ -123,7 +130,7 @@ def loadOutputFileDirectory(path):
 
     results = {
         'path': path,
-        'results': {'RICI': {}, 'SI': {}},
+        'results': {'RICI': {}, 'SI': {}, '3DSC': {}},
         'settings': {}
     }
 
@@ -131,9 +138,12 @@ def loadOutputFileDirectory(path):
 
     ignoredListRICI = []
     ignoredListSI = []
+    ignoredList3DSC = []
 
     allRICIResultsInvalid = False
     allSIResultsInvalid = False
+    all3DSCResultsInvalid = False
+
     for fileindex, file in enumerate(originalFiles):
         print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r')
         with open(os.path.join(path, file), 'r') as openFile:
@@ -155,6 +165,9 @@ def loadOutputFileDirectory(path):
             if not isSiResultValid(creation_time, fileContents):
                 ignoredListSI.append(file)
                 allSIResultsInvalid = True
+            if not is3dscResultValid(creation_time, fileContents):
+                ignoredList3DSC.append(file)
+                all3DSCResultsInvalid = True
 
     previousExperimentSettings = None
     for fileindex, file in enumerate(originalFiles):
@@ -178,33 +191,44 @@ def loadOutputFileDirectory(path):
                 ignoredListRICI.append(file)
             if file not in ignoredListSI:
                 ignoredListSI.append(file)
+            if file not in ignoredList3DSC:
+                ignoredList3DSC.append(file)
             # print('ignored 0',file)
         if fileContents['spinImageWidthPixels'] == 32:
             if file not in ignoredListRICI:
                 ignoredListRICI.append(file)
             if file not in ignoredListSI:
                 ignoredListSI.append(file)
+            if file not in ignoredList3DSC:
+                ignoredList3DSC.append(file)
 
         # Beauty checks
         if file not in ignoredListRICI and allRICIResultsInvalid:
             ignoredListRICI.append(file)
         if file not in ignoredListSI and allSIResultsInvalid:
             ignoredListSI.append(file)
+        if file not in ignoredList3DSC and all3DSCResultsInvalid:
+            ignoredList3DSC.append(file)
 
-        containsQSIResults = ('descriptors' in fileContents and 'qsi' in fileContents[
+        containsRICIResults = ('descriptors' in fileContents and 'qsi' in fileContents[
             'descriptors']) or 'QSIhistograms' in fileContents
         containsSIResults = ('descriptors' in fileContents and 'si' in fileContents[
             'descriptors']) or 'SIhistograms' in fileContents
+        contains3DSCResults = ('descriptors' in fileContents and '3dsc' in fileContents[
+            'descriptors']) or '3DSChistograms' in fileContents
 
         # Sanity checks are done. We can now add any remaining valid entries to the result lists
         if not file in ignoredListRICI and not allRICIResultsInvalid and containsRICIResults:
             results['results']['QSI'][str(fileContents['seed'])] = fileContents
         if not file in ignoredListSI and not allSIResultsInvalid and containsSIResults:
             results['results']['SI'][str(fileContents['seed'])] = fileContents
+        if not file in ignoredList3DSC and not all3DSCResultsInvalid and contains3DSCResults:
+            results['results']['3DSC'][str(fileContents['seed'])] = fileContents
 
     print()
-    #print('%i/%i RICI files had discrepancies and had to be ignored.' % (len(ignoredListRICI), len(originalFiles)))
-    #print('%i/%i SI files had discrepancies and had to be ignored.' % (len(ignoredListSI), len(originalFiles)))
+    # print('%i/%i RICI files had discrepancies and had to be ignored.' % (len(ignoredListRICI), len(originalFiles)))
+    # print('%i/%i SI files had discrepancies and had to be ignored.' % (len(ignoredListSI), len(originalFiles)))
+    # print('%i/%i 3DSC files had discrepancies and had to be ignored.' % (len(ignoredList3DSC), len(originalFiles)))
 
     results['settings'] = previousExperimentSettings
     pp = pprint.PrettyPrinter(indent=4)
@@ -222,7 +246,7 @@ def objects(count):
 
 
 print('Loading raw data files..')
-loadedRawResults = {'RICI': {}, 'SI': {}}
+loadedRawResults = {'RICI': {}, 'SI': {}, '3DSC': {}}
 for algorithm in rawInputDirectories:
     for path in rawInputDirectories[algorithm]:
         print('Loading raw directory:', path)
