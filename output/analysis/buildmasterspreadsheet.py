@@ -118,6 +118,8 @@ def extractExperimentSettings(loadedJson):
             descriptors.append('qsi')
         if 'SIhistograms' in loadedJson:
             descriptors.append('si')
+        if '3DSChistograms' in loadedJson:
+            descriptors.append('3dsc')
         settings['descriptors'] = descriptors
     settings['version'] = loadedJson['version']
     return settings
@@ -130,7 +132,7 @@ def loadOutputFileDirectory(path):
 
     results = {
         'path': path,
-        'results': {'RICI': {}, 'SI': {}, '3DSC': {}},
+        'results': {'QSI': {}, 'SI': {}, '3DSC': {}},
         'settings': {}
     }
 
@@ -246,7 +248,7 @@ def objects(count):
 
 
 print('Loading raw data files..')
-loadedRawResults = {'RICI': {}, 'SI': {}, '3DSC': {}}
+loadedRawResults = {'QSI': {}, 'SI': {}, '3DSC': {}}
 for algorithm in rawInputDirectories:
     for path in rawInputDirectories[algorithm]:
         print('Loading raw directory:', path)
@@ -325,7 +327,7 @@ def split(directory):
 
     for itemCountIndex, itemCount in enumerate(result['settings']['sampleObjectCounts']):
         out = {
-            'results': {'RICI': {}, 'SI': {}},
+            'results': {'QSI': {}, 'SI': {}, '3DSC': {}},
             'settings': {}}
         out['settings'] = result['settings'].copy()
         out['settings']['sampleObjectCounts'] = [itemCount]
@@ -335,6 +337,9 @@ def split(directory):
 
         for siSeed in result['results']['SI']:
             out['results']['SI'][siSeed] = filterResultSet(result['results']['SI'][siSeed], itemCountIndex)
+
+        for scSeed in result['results']['3DSC']:
+            out['results']['3DSC'][scSeed] = filterResultSet(result['results']['3DSC'][scSeed], itemCountIndex)
 
         newDirectoryName = directory + ' (' + str(itemCount) + ' objects)'
 
@@ -363,11 +368,12 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
         print('Directory 1:', directory1_contents['settings'])
         print('Directory 2:', directory2_contents['settings'])
 
-    combinedResults = {'results': {'RICI': {}, 'SI': {}}, 'settings': directory1_contents['settings']}
+    combinedResults = {'results': {'QSI': {}, 'SI': {}, '3DSC': {}}, 'settings': directory1_contents['settings']}
 
     # Initialising with the original results
     combinedResults['results']['QSI'] = directory1_contents['results']['QSI']
     combinedResults['results']['SI'] = directory1_contents['results']['SI']
+    combinedResults['results']['3DSC'] = directory1_contents['results']['3DSC']
 
     additionCount = 0
 
@@ -451,6 +457,8 @@ for directory in inputDirectories.keys():
         seedSet.add(seed)
     for seed in loadedResults[directory]['results']['SI'].keys():
         seedSet.add(seed)
+    for seed in loadedResults[directory]['results']['3DSC'].keys():
+        seedSet.add(seed)
 seedList = [x for x in seedSet]
 
 print('Found', len(seedSet), 'seeds in result sets')
@@ -472,6 +480,10 @@ if removeSeedsWithMissingEntries:
                 if not seed in loadedResults[directory]['results']['SI']:
                     missingSeeds.append(seed)
                     cutCount += 1
+            if len(loadedResults[directory]['results']['3DSC']) > 0:
+                if not seed in loadedResults[directory]['results']['3DSC']:
+                    missingSeeds.append(seed)
+                    cutCount += 1
         print(directory, '- removed seed count:', cutCount)
 
     print('Detected', len(set(missingSeeds)), 'unique seeds with missing entries. Removing..')
@@ -482,6 +494,8 @@ if removeSeedsWithMissingEntries:
                 del loadedResults[directory]['results']['QSI'][missingSeed]
             if missingSeed in loadedResults[directory]['results']['SI']:
                 del loadedResults[directory]['results']['SI'][missingSeed]
+            if missingSeed in loadedResults[directory]['results']['3DSC']:
+                del loadedResults[directory]['results']['3DSC'][missingSeed]
         if missingSeed in seedList:
             del seedList[seedList.index(missingSeed)]
 
@@ -529,6 +543,7 @@ print()
 # Create heatmap histograms
 hist_rici = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
 hist_si = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
+hist_3dsc = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
 
 print('Computing histograms..')
 histogramEntryCount = 0
@@ -536,10 +551,11 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
     print(str(rawSeedIndex + 1) + '/' + str(len(rawSeedList)) + " processed", end='\r')
 
     clutterValues = clutterFileMap[rawSeed]['clutterValues']
-    qsiRanks = loadedRawResults['QSI'][rawSeed]
+    riciRanks = loadedRawResults['QSI'][rawSeed]
     siRanks = loadedRawResults['SI'][rawSeed]
+    scRanks = loadedRawResults['3DSC'][rawSeed]
 
-    if not(len(clutterValues) == len(riciRanks) == len(siRanks)):
+    if not(len(clutterValues) == len(riciRanks) == len(siRanks) == len(scRanks)):
         print('WARNING: batch size mismatch!', [len(clutterValues), len(riciRanks), len(siRanks)])
 
     histogramEntryCount += len(clutterValues)
@@ -548,6 +564,7 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
         clutterValue = clutterValues[i]
         index_rici = riciRanks[i]
         index_si = siRanks[i]
+        index_3dsc = scRanks[i]
 
         # Apparently some NaN in there
         if clutterValue is None:
@@ -565,12 +582,17 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
         if yBin_si < heatmapSize:
             hist_si[heatmapSize - 1 - yBin_si, xBin] += 1
 
+        yBin_3dsc = index_3dsc
+        if yBin_3dsc < heatmapSize:
+            hist_3dsc[heatmapSize - 1 - yBin_3dsc, xBin] += 1
+
 print('Histogram computed over', histogramEntryCount, 'values')
 
 
 
 hist_rici = np.log10(np.maximum(hist_rici,0.1))
 hist_si = np.log10(np.maximum(hist_si,0.1))
+hist_3dsc = np.log10(np.maximum(hist_3dsc,0.1))
 
 extent = [0, heatmapSize, 0, heatmapSize]
 
@@ -578,8 +600,8 @@ extent = [0, heatmapSize, 0, heatmapSize]
 plt.clf()
 
 colorbar_ticks = np.arange(0, 8, 1)
-total_minimum_value = min(np.amin(hist_rici), np.amin(hist_si))
-total_maximum_value = max(np.amax(hist_rici), np.amax(hist_si))
+total_minimum_value = min(np.amin(hist_rici), np.amin(hist_si), np.amin(hist_3dsc))
+total_maximum_value = max(np.amax(hist_rici), np.amax(hist_si), np.amax(hist_3dsc))
 print('range:', total_minimum_value, total_maximum_value)
 normalisation = colors.Normalize(vmin=total_minimum_value,vmax=total_maximum_value)
 
@@ -593,7 +615,14 @@ plt.xlabel('clutter percentage')
 rici_im = plt.imshow(hist_rici, extent=extent, cmap='nipy_spectral', norm=normalisation)
 plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
 
-siplt = plt.figure(2)
+scplot = plt.figure(2)
+plt.title('')
+plt.ylabel('rank')
+plt.xlabel('clutter percentage')
+scim_im = plt.imshow(hist_3dsc, extent=extent, cmap='nipy_spectral', norm=normalisation)
+plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+
+siplt = plt.figure(3)
 plt.title('')
 plt.ylabel('rank')
 plt.xlabel('clutter percentage')
@@ -604,6 +633,7 @@ si_cbar.ax.set_yticklabels(["{:.0E}".format(x) for x in np.power(10, colorbar_ti
 si_cbar.set_label('Sample count', rotation=90)
 
 riciplt.show()
+scplot.show()
 siplt.show()
 
 input()
@@ -640,7 +670,7 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
             experimentSheet.write(directoryIndex + 1, keyIndex + 1, ' ')
 
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 1, cluster)
-    experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len([x for x in result['results']['RICI'] if x in seedList]))
+    experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len([x for x in result['results']['QSI'] if x in seedList]))
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 3, len([x for x in result['results']['SI'] if x in seedList]))
 
 # Sheets
