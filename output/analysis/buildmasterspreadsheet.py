@@ -46,7 +46,7 @@ heatmapSize = 256
 rawInputDirectories = {
     'QSI': ['../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output/raw', '../IDUNRUNS/output_lotsofobjects_v4/raw'],
     'SI': ['../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output/raw', '../IDUNRUNS/output_mainchart_si_v4_15/raw'],
-    '3DSC': ['../IDUNRUNS/output_run4_3dsc_main/'],
+    '3DSC': ['../IDUNRUNS/output_run4_3dsc_main/raw'],
 }
 rawInputObjectCount = 5
 
@@ -63,6 +63,12 @@ enableResultSetSizeLimit = True
 
 
 # --- start of code ---
+
+print()
+print(' === Processing of experiment output files into the master spreadsheet ===')
+print('This spreadsheet contains the exact data used to construct the charts in the paper')
+print('Having a machine with 32GB of RAM is probably a necessity for running this')
+print()
 
 # Last known fault in code: unsigned integer subtraction in RICI comparison function
 # Date threshold corresponds to this commit
@@ -282,12 +288,9 @@ def filterResultSet(resultSet, index):
 
     if 'QSISampleGeneration' in out['runtimes']:
         out['runtimes']['QSISampleGeneration']['total'] = [out['runtimes']['QSISampleGeneration']['total'][index]]
-        out['runtimes']['QSISampleGeneration']['meshScale'] = [
-            out['runtimes']['QSISampleGeneration']['meshScale'][index]]
-        out['runtimes']['QSISampleGeneration']['redistribution'] = [
-            out['runtimes']['QSISampleGeneration']['redistribution'][index]]
-        out['runtimes']['QSISampleGeneration']['generation'] = [
-            out['runtimes']['QSISampleGeneration']['generation'][index]]
+        out['runtimes']['QSISampleGeneration']['meshScale'] = [out['runtimes']['QSISampleGeneration']['meshScale'][index]]
+        out['runtimes']['QSISampleGeneration']['redistribution'] = [out['runtimes']['QSISampleGeneration']['redistribution'][index]]
+        out['runtimes']['QSISampleGeneration']['generation'] = [out['runtimes']['QSISampleGeneration']['generation'][index]]
 
     if 'QSISearch' in out['runtimes']:
         out['runtimes']['QSISearch']['total'] = [out['runtimes']['QSISearch']['total'][index]]
@@ -295,22 +298,34 @@ def filterResultSet(resultSet, index):
 
     if 'SISampleGeneration' in out['runtimes']:
         out['runtimes']['SISampleGeneration']['total'] = [out['runtimes']['SISampleGeneration']['total'][index]]
-        out['runtimes']['SISampleGeneration']['initialisation'] = [
-            out['runtimes']['SISampleGeneration']['initialisation'][index]]
+        out['runtimes']['SISampleGeneration']['initialisation'] = [out['runtimes']['SISampleGeneration']['initialisation'][index]]
         out['runtimes']['SISampleGeneration']['sampling'] = [out['runtimes']['SISampleGeneration']['sampling'][index]]
-        out['runtimes']['SISampleGeneration']['generation'] = [
-            out['runtimes']['SISampleGeneration']['generation'][index]]
+        out['runtimes']['SISampleGeneration']['generation'] = [out['runtimes']['SISampleGeneration']['generation'][index]]
 
     if 'SISearch' in out['runtimes']:
         out['runtimes']['SISearch']['total'] = [out['runtimes']['SISearch']['total'][index]]
         out['runtimes']['SISearch']['averaging'] = [out['runtimes']['SISearch']['averaging'][index]]
         out['runtimes']['SISearch']['search'] = [out['runtimes']['SISearch']['search'][index]]
 
+    if '3DSCSampleGeneration' in out['runtimes']:
+        out['runtimes']['3DSCSampleGeneration']['total'] = [out['runtimes']['3DSCSampleGeneration']['total'][index]]
+        out['runtimes']['3DSCSampleGeneration']['initialisation'] = [out['runtimes']['3DSCSampleGeneration']['initialisation'][index]]
+        out['runtimes']['3DSCSampleGeneration']['sampling'] = [out['runtimes']['3DSCSampleGeneration']['sampling'][index]]
+        out['runtimes']['3DSCSampleGeneration']['pointSampling'] = [out['runtimes']['3DSCSampleGeneration']['pointSampling'][index]]
+        out['runtimes']['3DSCSampleGeneration']['generation'] = [out['runtimes']['3DSCSampleGeneration']['generation'][index]]
+
+    if '3DSCSearch' in out['runtimes']:
+        out['runtimes']['3DSCSearch']['total'] = [out['runtimes']['3DSCSearch']['total'][index]]
+        out['runtimes']['3DSCSearch']['search'] = [out['runtimes']['3DSCSearch']['search'][index]]
+
     if 'QSIhistograms' in out:
         out['QSIhistograms'] = {'0': out['QSIhistograms'][str(index)]}
 
     if 'SIhistograms' in out:
         out['SIhistograms'] = {'0': out['SIhistograms'][str(index)]}
+
+    if '3DSChistograms' in out:
+        out['3DSChistograms'] = {'0': out['3DSChistograms'][str(index)]}
 
     return out
 
@@ -523,6 +538,8 @@ print('\nComputing condensed seed set')
 print('Starting raw QSI seed set size:', len(loadedRawResults['QSI'].keys()))
 rawSeedList = [x for x in loadedRawResults['QSI'].keys() if x in loadedRawResults['SI'].keys()]
 print('Merged with SI:', len(rawSeedList))
+rawSeedList = [x for x in rawSeedList if x in loadedRawResults['3DSC'].keys()]
+print('Merged with 3DSC:', len(rawSeedList))
 rawSeedList = [x for x in rawSeedList if x in seedList]
 print('Merged with seedList:', len(rawSeedList))
 rawSeedList = [x for x in rawSeedList if x in clutterFileMap.keys()]
@@ -556,7 +573,7 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
     scRanks = loadedRawResults['3DSC'][rawSeed]
 
     if not(len(clutterValues) == len(riciRanks) == len(siRanks) == len(scRanks)):
-        print('WARNING: batch size mismatch!', [len(clutterValues), len(riciRanks), len(siRanks)])
+        print('WARNING: batch size mismatch!', [len(clutterValues), len(riciRanks), len(siRanks), len(scRanks)])
 
     histogramEntryCount += len(clutterValues)
 
@@ -657,6 +674,7 @@ for keyIndex, key in enumerate(allColumns):
 experimentSheet.write(0, len(allColumns) + 1, 'Cluster')
 experimentSheet.write(0, len(allColumns) + 2, 'RICI Count')
 experimentSheet.write(0, len(allColumns) + 3, 'SI Count')
+experimentSheet.write(0, len(allColumns) + 4, '3DSC Count')
 
 # Overview table contents
 for directoryIndex, directory in enumerate(inputDirectories.keys()):
@@ -672,16 +690,25 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 1, cluster)
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len([x for x in result['results']['QSI'] if x in seedList]))
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 3, len([x for x in result['results']['SI'] if x in seedList]))
+    experimentSheet.write(directoryIndex + 1, len(allColumns) + 4, len([x for x in result['results']['3DSC'] if x in seedList]))
 
 # Sheets
 top0sheetRICI = book.add_sheet("Rank 0 RICI results")
 top0sheetSI = book.add_sheet("Rank 0 SI results")
+top0sheet3DSC = book.add_sheet("Rank 0 3DSC results")
+
 top10sheetRICI = book.add_sheet("Top 10 RICI results")
 top10sheetSI = book.add_sheet("Top 10 SI results")
-riciGenerationSpeedSheet = book.add_sheet("RICI Generation Times")
-siGenerationSpeedSheet = book.add_sheet("SI Generation Times")
-riciComparisonSpeedSheet = book.add_sheet("RICI Comparison Times")
-siComparisonSpeedSheet = book.add_sheet("SI Comparison Times")
+top10sheet3DSC = book.add_sheet("Top 10 3DSC results")
+
+generationSpeedSheetRICI = book.add_sheet("RICI Generation Times")
+generationSpeedSheetSI = book.add_sheet("SI Generation Times")
+generationSpeedSheet3DSC = book.add_sheet("3DSC Generation Times")
+
+comparisonSpeedSheetRICI = book.add_sheet("RICI Comparison Times")
+comparisonSpeedSheetSI = book.add_sheet("SI Comparison Times")
+comparisonSpeedSheet3DSC = book.add_sheet("3DSC Comparison Times")
+
 vertexCountSheet = book.add_sheet("Reference Image Count")
 totalVertexCountSheet = book.add_sheet("Total Image Count")
 totalTriangleCountSheet = book.add_sheet("Total Triangle Count")
@@ -695,12 +722,20 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
     if directoryIndex == 0:
         top0sheetRICI.write(0, 0, 'seed')
         top0sheetSI.write(0, 0, 'seed')
+        top0sheet3DSC.write(0, 0, 'seed')
+
         top10sheetRICI.write(0, 0, 'seed')
         top10sheetSI.write(0, 0, 'seed')
-        riciGenerationSpeedSheet.write(0, 0, 'seed')
-        siGenerationSpeedSheet.write(0, 0, 'seed')
-        riciComparisonSpeedSheet.write(0, 0, 'seed')
-        siComparisonSpeedSheet.write(0, 0, 'seed')
+        top10sheet3DSC.write(0, 0, 'seed')
+
+        generationSpeedSheetRICI.write(0, 0, 'seed')
+        generationSpeedSheetSI.write(0, 0, 'seed')
+        generationSpeedSheet3DSC.write(0, 0, 'seed')
+
+        comparisonSpeedSheetRICI.write(0, 0, 'seed')
+        comparisonSpeedSheetSI.write(0, 0, 'seed')
+        comparisonSpeedSheet3DSC.write(0, 0, 'seed')
+
         vertexCountSheet.write(0, 0, 'seed')
         totalVertexCountSheet.write(0, 0, 'seed')
         totalTriangleCountSheet.write(0, 0, 'seed')
@@ -708,12 +743,20 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
         for seedIndex, seed in enumerate(seedList):
             top0sheetRICI.write(seedIndex + 1, 0, seed)
             top0sheetSI.write(seedIndex + 1, 0, seed)
+            top0sheet3DSC.write(seedIndex + 1, 0, seed)
+
             top10sheetRICI.write(seedIndex + 1, 0, seed)
             top10sheetSI.write(seedIndex + 1, 0, seed)
-            riciGenerationSpeedSheet.write(seedIndex + 1, 0, seed)
-            siGenerationSpeedSheet.write(seedIndex + 1, 0, seed)
-            riciComparisonSpeedSheet.write(seedIndex + 1, 0, seed)
-            siComparisonSpeedSheet.write(seedIndex + 1, 0, seed)
+            top10sheet3DSC.write(seedIndex + 1, 0, seed)
+
+            generationSpeedSheetRICI.write(seedIndex + 1, 0, seed)
+            generationSpeedSheetSI.write(seedIndex + 1, 0, seed)
+            generationSpeedSheet3DSC.write(seedIndex + 1, 0, seed)
+
+            comparisonSpeedSheetRICI.write(seedIndex + 1, 0, seed)
+            comparisonSpeedSheetSI.write(seedIndex + 1, 0, seed)
+            comparisonSpeedSheet3DSC.write(seedIndex + 1, 0, seed)
+
             vertexCountSheet.write(seedIndex + 1, 0, seed)
             totalVertexCountSheet.write(seedIndex + 1, 0, seed)
             totalTriangleCountSheet.write(seedIndex + 1, 0, seed)
@@ -725,15 +768,22 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
     for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
         columnHeader = directoryName + ' (' + str(sampleObjectCount) + ' ' + objects(
             len(resultSet['settings']['sampleObjectCounts'])) + ')'
+
         top0sheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
         top0sheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        top0sheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
+
         top10sheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
         top10sheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        top10sheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
 
-        riciGenerationSpeedSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
-        siGenerationSpeedSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
-        riciComparisonSpeedSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
-        siComparisonSpeedSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
+        generationSpeedSheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        generationSpeedSheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        generationSpeedSheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
+
+        comparisonSpeedSheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        comparisonSpeedSheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
+        comparisonSpeedSheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
 
         vertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
         totalVertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
@@ -758,11 +808,11 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 
                 # generation execution time
                 generationTime = entry['runtimes']['QSISampleGeneration']['total'][sampleCountIndex]
-                riciGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
+                generationSpeedSheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
 
                 # search execution time
                 comparisonTime = entry['runtimes']['QSISearch']['total'][sampleCountIndex]
-                riciComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
+                comparisonSpeedSheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
 
                 # Vertex count sanity check
                 vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
@@ -774,8 +824,8 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
                 top0sheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
                 top10sheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                riciGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                riciComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                generationSpeedSheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                comparisonSpeedSheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
 
         if seed in resultSet['results']['SI']:
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
@@ -795,11 +845,11 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 
                 # generation execution time
                 generationTime = entry['runtimes']['SISampleGeneration']['total'][sampleCountIndex]
-                siGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
+                generationSpeedSheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
 
                 # search execution time
                 comparisonTime = entry['runtimes']['SISearch']['total'][sampleCountIndex]
-                siComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
+                comparisonSpeedSheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
 
                 # Vertex count sanity check
                 vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
@@ -811,8 +861,8 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
             for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
                 top0sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
                 top10sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                siGenerationSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                siComparisonSpeedSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                generationSpeedSheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                comparisonSpeedSheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
 
     # Moving on to the next column
     currentColumn += len(resultSet['settings']['sampleObjectCounts'])
@@ -821,13 +871,13 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 for seedIndex, seed in enumerate(seedList + ['dummy entry for final row']):
     top0sheetRICI.write(seedIndex, currentColumn, ' ')
     top10sheetRICI.write(seedIndex, currentColumn, ' ')
-    riciGenerationSpeedSheet.write(seedIndex, currentColumn, ' ')
-    riciComparisonSpeedSheet.write(seedIndex, currentColumn, ' ')
+    generationSpeedSheetRICI.write(seedIndex, currentColumn, ' ')
+    comparisonSpeedSheetRICI.write(seedIndex, currentColumn, ' ')
 
     top0sheetSI.write(seedIndex, currentColumn, ' ')
     top10sheetSI.write(seedIndex, currentColumn, ' ')
-    siGenerationSpeedSheet.write(seedIndex, currentColumn, ' ')
-    siComparisonSpeedSheet.write(seedIndex, currentColumn, ' ')
+    generationSpeedSheetSI.write(seedIndex, currentColumn, ' ')
+    comparisonSpeedSheetSI.write(seedIndex, currentColumn, ' ')
 
     vertexCountSheet.write(seedIndex, currentColumn, ' ')
     totalVertexCountSheet.write(seedIndex, currentColumn, ' ')
