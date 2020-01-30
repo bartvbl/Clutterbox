@@ -34,7 +34,7 @@ inputDirectories = {
     '../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/': ('60 support angle, 10 objects', 'HEID'),
     '../HEIDRUNS/output_qsifix_si_v4_60deg_5objects_missing/output/': ('60 support angle, 5 objects', 'HEID'),
 
-    '../IDUNRUNS/output_run4_3dsc_main/': ('3DSC, 1, 5, 10 objects', 'IDUN'),
+    '../HEIDRUNS/run1_3dsc_main/output/': ('3DSC, 1, 5, 10 objects', 'HEID'),
 }
 
 # The location where the master spreadsheet should be written to
@@ -46,7 +46,7 @@ heatmapSize = 256
 rawInputDirectories = {
     'QSI': ['../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output/raw', '../IDUNRUNS/output_lotsofobjects_v4/raw'],
     'SI': ['../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output/raw', '../IDUNRUNS/output_mainchart_si_v4_15/raw'],
-    '3DSC': ['../IDUNRUNS/output_run4_3dsc_main/raw'],
+    '3DSC': ['../HEIDRUNS/run1_3dsc_main/output/raw'],
 }
 rawInputObjectCount = 5
 
@@ -153,7 +153,7 @@ def loadOutputFileDirectory(path):
     all3DSCResultsInvalid = False
 
     for fileindex, file in enumerate(originalFiles):
-        print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r')
+        print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r', flush=True)
         with open(os.path.join(path, file), 'r') as openFile:
             # Read JSON file
             try:
@@ -179,7 +179,7 @@ def loadOutputFileDirectory(path):
 
     previousExperimentSettings = None
     for fileindex, file in enumerate(originalFiles):
-        print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r')
+        print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r', flush=True)
 
         # Read JSON file
         fileContents = jsonCache[file]
@@ -260,7 +260,7 @@ for algorithm in rawInputDirectories:
         print('Loading raw directory:', path)
         rawFiles = os.listdir(path)
         for fileIndex, file in enumerate(rawFiles):
-            print(str(fileIndex + 1) + '/' + str(len(rawFiles)), file + '        ', end='\r')
+            print(str(fileIndex + 1) + '/' + str(len(rawFiles)), file + '        ', end='\r', flush=True)
             seed = file.split('.')[0].split("_")[2]
             if not seed in loadedRawResults[algorithm]:
                 with open(os.path.join(path, file), 'r') as openFile:
@@ -520,7 +520,7 @@ for clutterFileDirectory in clutterFileDirectories:
     print('Reading directory', clutterFileDirectory)
     clutterFiles = os.listdir(clutterFileDirectory)
     for clutterFileIndex, clutterFile in enumerate(clutterFiles):
-        print(str(clutterFileIndex + 1) + '/' + str(len(clutterFiles)), clutterFile + '        ', end='\r')
+        print(str(clutterFileIndex + 1) + '/' + str(len(clutterFiles)), clutterFile + '        ', end='\r', flush=True)
         with open(os.path.join(clutterFileDirectory, clutterFile), 'r') as openFile:
             # Read JSON file
             try:
@@ -565,7 +565,7 @@ hist_3dsc = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
 print('Computing histograms..')
 histogramEntryCount = 0
 for rawSeedIndex, rawSeed in enumerate(rawSeedList):
-    print(str(rawSeedIndex + 1) + '/' + str(len(rawSeedList)) + " processed", end='\r')
+    print(str(rawSeedIndex + 1) + '/' + str(len(rawSeedList)) + " processed", end='\r', flush=True)
 
     clutterValues = clutterFileMap[rawSeed]['clutterValues']
     riciRanks = loadedRawResults['QSI'][rawSeed]
@@ -574,6 +574,7 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
 
     if not(len(clutterValues) == len(riciRanks) == len(siRanks) == len(scRanks)):
         print('WARNING: batch size mismatch!', [len(clutterValues), len(riciRanks), len(siRanks), len(scRanks)])
+    print('INFO: Batch Sizes', [len(clutterValues), len(riciRanks), len(siRanks), len(scRanks)])
 
     histogramEntryCount += len(clutterValues)
 
@@ -653,7 +654,7 @@ riciplt.show()
 scplot.show()
 siplt.show()
 
-input()
+#input()
 
 # -- Dump to spreadsheet --
 
@@ -863,6 +864,45 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
                 top10sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
                 generationSpeedSheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
                 comparisonSpeedSheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+
+        if seed in resultSet['results']['3DSC']:
+            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
+                # Top 1 performance
+                entry = resultSet['results']['3DSC'][seed]
+                totalImageCount = entry['imageCounts'][0]
+                experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
+                percentageAtPlace0 = 0
+                if '0' in entry['3DSChistograms'][str(sampleCountIndex)]:
+                    float(entry['3DSChistograms'][str(sampleCountIndex)]['0']) / float(totalImageCount)
+                top0sheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
+
+                # Top 10 performance
+                totalImageCountInTop10 = sum(
+                    [entry['3DSChistograms'][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
+                     str(x) in entry['3DSChistograms'][str(sampleCountIndex)]])
+                percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
+                top10sheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
+
+                # generation execution time
+                generationTime = entry['runtimes']['3DSCSampleGeneration']['total'][sampleCountIndex]
+                generationSpeedSheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
+
+                # search execution time
+                comparisonTime = entry['runtimes']['3DSCSearch']['total'][sampleCountIndex]
+                comparisonSpeedSheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
+
+                # Vertex count sanity check
+                vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
+                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
+                                            sum(entry['imageCounts'][0:sampleObjectCount]))
+                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
+                                              sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
+        else:
+            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
+                top0sheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                top10sheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                generationSpeedSheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                comparisonSpeedSheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
 
     # Moving on to the next column
     currentColumn += len(resultSet['settings']['sampleObjectCounts'])
