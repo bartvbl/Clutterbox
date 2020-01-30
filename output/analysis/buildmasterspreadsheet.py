@@ -873,7 +873,7 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
                 experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
                 percentageAtPlace0 = 0
                 if '0' in entry['3DSChistograms'][str(sampleCountIndex)]:
-                    float(entry['3DSChistograms'][str(sampleCountIndex)]['0']) / float(totalImageCount)
+                    percentageAtPlace0 = float(entry['3DSChistograms'][str(sampleCountIndex)]['0']) / float(totalImageCount)
                 top0sheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
 
                 # Top 10 performance
