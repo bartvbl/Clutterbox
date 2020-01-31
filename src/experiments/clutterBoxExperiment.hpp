@@ -15,4 +15,6 @@ void runClutterBoxExperiment(
         float spinImageSupportAngleDegrees,
         bool dumpRawSearchResults,
         std::string outputDirectory,
+        bool dumpSceneOBJFiles,
+        std::string sceneOBJFileDumpDir,
         size_t overrideSeed = 0);

@@ -36,6 +36,8 @@
 #include <json.hpp>
 #include <tsl/ordered_map.h>
 #include <spinImage/gpu/types/PointCloud.h>
+#include <spinImage/utilities/dumpers/meshDumper.h>
+#include <spinImage/utilities/copy/deviceMeshToHost.h>
 
 template<class Key, class T, class Ignore, class Allocator,
         class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
@@ -458,6 +460,8 @@ void runClutterBoxExperiment(
         float spinImageSupportAngleDegrees,
         bool dumpRawSearchResults,
         std::string outputDirectory,
+        bool dumpSceneOBJFiles,
+        std::string sceneOBJFileDumpDir,
         size_t overrideSeed) {
 
     // Determine which algorithms to enable
@@ -681,6 +685,7 @@ void runClutterBoxExperiment(
         // Marking the current object count as processed
         currentObjectListIndex++;
 
+
         // Generating radial intersection count images
         if(riciDescriptorActive) {
             std::cout << "\tGenerating RICI images.. (" << imageCount << " images)" << std::endl;
@@ -787,7 +792,7 @@ void runClutterBoxExperiment(
         }
 
 
-
+        // Generating 3D Shape Context descriptors
         if(shapeContextDescriptorActive) {
             std::cout << "\tGenerating 3D shape context descriptors.. (" << imageCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
             SpinImage::debug::SCRunInfo scSampleRunInfo;
@@ -829,6 +834,27 @@ void runClutterBoxExperiment(
 
             // Storing results
             shapeContextHistograms.push_back(SCHistogram);
+        }
+
+
+        // Dumping OBJ file of current scene, if enabled
+        if(dumpSceneOBJFiles) {
+            SpinImage::cpu::Mesh hostMesh;
+            hostMesh = SpinImage::copy::deviceMeshToHost(boxScene);
+
+            std::stringstream outFilePath;
+            outFilePath << sceneOBJFileDumpDir;
+            if(sceneOBJFileDumpDir[sceneOBJFileDumpDir.length() - 1] == '/' ||
+               sceneOBJFileDumpDir[sceneOBJFileDumpDir.length() - 1] == '\\') {
+                outFilePath << "/";
+            }
+            outFilePath << randomSeed << "_" << (objectCount + 1) << ".obj";
+
+            std::cout << "\tDumping OBJ file of scene to " << outFilePath.str() << std::endl;
+
+            SpinImage::dump::mesh(hostMesh, outFilePath.str());
+
+            SpinImage::cpu::freeMesh(hostMesh);
         }
     }
 

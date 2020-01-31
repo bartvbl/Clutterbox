@@ -40,6 +40,7 @@ int main(int argc, const char **argv)
 	const auto& outputDirectory = parser.add<std::string>("output-directory", "Specify the location where output files should be dumped", '\0', arrrgh::Optional, "../output/");
     const auto& objectCounts = parser.add<std::string>("object-counts", "Specify the number of objects the experiment should be performed with, as a comma separated list WITHOUT spaces (e.g. --object-counts=1,2,5)", '\0', arrrgh::Optional, "NONE");
     const auto& overrideObjectCount = parser.add<int>("override-total-object-count", "If you want a specified number of objects to be used for the experiment (for ensuring consistency between seeds)", '\0', arrrgh::Optional, -1);
+    const auto& dumpSceneOBJFiles = parser.add<std::string>("scene-obj-file-dump-directory", "Specifying a directory path will dump OBJ files at each specified object count", '\0', arrrgh::Optional, "NONE_SELECTED");
     const auto& descriptors = parser.add<std::string>("descriptors", "Specify the descriptors that should be used in the experiment, with as valid options \"rici\", \"si\", \"3dsc\", and \"all\", as a comma separated list WITHOUT spaces (e.g. --object-counts=rici,si). Use value \"all\" for using all supported descriptors", '\0', arrrgh::Optional, "all");
 
 	try
@@ -94,6 +95,10 @@ int main(int argc, const char **argv)
         objectCountList.push_back(std::stoi(objectCountPart));
     }
 
+    // Interpret the OBJ file dump parameter
+    bool enableOBJDump = dumpSceneOBJFiles.value() != "NONE_SELECTED";
+    std::string sceneOBJDumpDir = dumpSceneOBJFiles.value();
+
     // Interpret the descriptor list string
     std::vector<std::string> descriptorListParts;
     splitByCharacter(&descriptorListParts, descriptors.value(), ',');
@@ -102,13 +107,16 @@ int main(int argc, const char **argv)
     for (const auto &descriptorPart : descriptorListParts) {
         if(descriptorPart == "all") {
             containsAll = true;
+        } else if(descriptorPart == "none") {
+            // Keep list empty; do nothing
         } else if(descriptorPart != "rici" && descriptorPart != "si" && descriptorPart != "3dsc") {
             std::cout << "Error: Unknown descriptor name detected: \"" + descriptorPart + "\". Ignoring." << std::endl;
         } else {
             descriptorList.push_back(descriptorPart);
         }
     }
-    if(containsAll /*|| descriptorList.size() == 0 feature, not a bug*/) {
+
+    if(containsAll) {
         descriptorList = {"rici", "si", "3dsc"};
     }
 
@@ -126,6 +134,8 @@ int main(int argc, const char **argv)
 	        spinImageSupportAngle.value(),
 	        dumpRawResults.value(),
 	        outputDirectory.value(),
+            enableOBJDump,
+            sceneOBJDumpDir,
 	        randomSeed);
 
     return 0;
