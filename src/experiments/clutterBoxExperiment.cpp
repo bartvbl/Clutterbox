@@ -182,7 +182,7 @@ void dumpResultsFile(
 
     json outJson;
 
-    outJson["version"] = "v9";
+    outJson["version"] = "v10";
     outJson["seed"] = seed;
     outJson["descriptors"] = descriptorList;
     outJson["sampleSetSize"] = sampleObjectCount;
@@ -201,7 +201,7 @@ void dumpResultsFile(
     outJson["gpuInfo"] = {};
     outJson["gpuInfo"]["name"] = gpuMetaData.name;
     outJson["gpuInfo"]["clockrate"] = gpuMetaData.clockRate;
-    outJson["gpuInfo"]["memoryCapacity"] = gpuMetaData.memorySizeMB;
+    outJson["gpuInfo"]["memoryCapacityInMB"] = gpuMetaData.memorySizeMB;
     outJson["inputFiles"] = chosenFiles;
     outJson["vertexCounts"] = {};
     for (auto &sampleMesh : sampleMeshes) {

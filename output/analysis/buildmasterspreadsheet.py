@@ -573,7 +573,7 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
     scRanks = loadedRawResults['3DSC'][rawSeed]
 
     if not(len(clutterValues) == len(riciRanks) == len(siRanks) == len(scRanks)):
-        print('WARNING: batch size mismatch!', [len(clutterValues), len(riciRanks), len(siRanks), len(scRanks)])
+        print('WARNING: batch size mismatch at seed', rawSeed , '!', [len(clutterValues), len(riciRanks), len(siRanks), len(scRanks)])
     print('INFO: Batch Sizes', [len(clutterValues), len(riciRanks), len(siRanks), len(scRanks)])
 
     histogramEntryCount += len(clutterValues)
