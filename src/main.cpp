@@ -65,6 +65,11 @@ int main(int argc, const char **argv)
 	
 	cudaDeviceProp device_information = setCurrentCUDADevice(listGPUs.value(), forceGPU.value());
 
+    GPUMetaData gpuMetaData;
+    gpuMetaData.name = std::string(device_information.name);
+    gpuMetaData.clockRate = device_information.clockRate;
+    gpuMetaData.memorySizeMB = device_information.totalGlobalMem / (1024 * 1024);
+
 	if(listGPUs.value()) {
 		return 0;
 	}
@@ -136,6 +141,7 @@ int main(int argc, const char **argv)
 	        outputDirectory.value(),
             enableOBJDump,
             sceneOBJDumpDir,
+            gpuMetaData,
 	        randomSeed);
 
     return 0;

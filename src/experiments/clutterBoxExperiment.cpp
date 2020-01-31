@@ -109,7 +109,8 @@ void dumpResultsFile(
         std::vector<SpinImage::debug::SCSearchRunInfo> SCSearchRuns,
         float spinImageSupportAngleDegrees,
         std::vector<size_t> uniqueVertexCounts,
-        std::vector<size_t> spinImageSampleCounts) {
+        std::vector<size_t> spinImageSampleCounts,
+        GPUMetaData gpuMetaData) {
     std::cout << std::endl << "Dumping results file.." << std::endl;
 
     std::default_random_engine generator{seed};
@@ -197,6 +198,10 @@ void dumpResultsFile(
     outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
     outJson["3dscMinSupportRadius"] = minSupportRadius3dsc;
     outJson["3dscPointDensityRadius"] = pointDensityRadius3dsc;
+    outJson["gpuInfo"] = {};
+    outJson["gpuInfo"]["name"] = gpuMetaData.name;
+    outJson["gpuInfo"]["clockrate"] = gpuMetaData.clockRate;
+    outJson["gpuInfo"]["memoryCapacity"] = gpuMetaData.memorySizeMB;
     outJson["inputFiles"] = chosenFiles;
     outJson["vertexCounts"] = {};
     for (auto &sampleMesh : sampleMeshes) {
@@ -462,6 +467,7 @@ void runClutterBoxExperiment(
         std::string outputDirectory,
         bool dumpSceneOBJFiles,
         std::string sceneOBJFileDumpDir,
+        GPUMetaData gpuMetaData,
         size_t overrideSeed) {
 
     // Determine which algorithms to enable
@@ -882,7 +888,8 @@ void runClutterBoxExperiment(
             RICISearchRuns, SISearchRuns, ShapeContextSearchRuns,
             spinImageSupportAngleDegrees,
             uniqueVertexCounts,
-            spinImageSampleCounts);
+            spinImageSampleCounts,
+            gpuMetaData);
 
     if(dumpRawSearchResults) {
         dumpRawSearchResultFile(
