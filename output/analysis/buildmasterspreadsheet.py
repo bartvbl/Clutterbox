@@ -35,6 +35,7 @@ inputDirectories = {
     '../HEIDRUNS/output_qsifix_si_v4_60deg_5objects_missing/output/': ('60 support angle, 5 objects', 'HEID'),
 
     '../HEIDRUNS/run1_3dsc_main/output/': ('3DSC, 1, 5, 10 objects', 'HEID'),
+    #'../IDUNRUNS/output_run4_3dsc_main/run1/': ('3DSC, 1, 5, 10 objects', 'IDUN'),
 }
 
 # The location where the master spreadsheet should be written to
@@ -47,6 +48,7 @@ rawInputDirectories = {
     'QSI': ['../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output/raw', '../IDUNRUNS/output_lotsofobjects_v4/raw'],
     'SI': ['../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output/raw', '../IDUNRUNS/output_mainchart_si_v4_15/raw'],
     '3DSC': ['../HEIDRUNS/run1_3dsc_main/output/raw'],
+    #'3DSC': ['../IDUNRUNS/output_run4_3dsc_main/run1/raw'],
 }
 rawInputObjectCount = 5
 
