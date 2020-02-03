@@ -657,12 +657,14 @@ void runClutterBoxExperiment(
     size_t imageCount = 0;
 
     // 14 Ensure enough memory is available to complete the experiment.
-    std::cout << "\tTesting for sufficient memory capacity on GPU.. ";
-    int* device_largestNecessaryImageBuffer;
-    size_t largestImageBufferSize = totalUniqueVertexCount * spinImageWidthPixels * spinImageWidthPixels * sizeof(int);
-    checkCudaErrors(cudaMalloc((void**) &device_largestNecessaryImageBuffer, largestImageBufferSize));
-    checkCudaErrors(cudaFree(device_largestNecessaryImageBuffer));
-    std::cout << "Success." << std::endl;
+    if(riciDescriptorActive || siDescriptorActive || shapeContextDescriptorActive) {
+        std::cout << "\tTesting for sufficient memory capacity on GPU.. ";
+        int* device_largestNecessaryImageBuffer;
+        size_t largestImageBufferSize = totalUniqueVertexCount * spinImageWidthPixels * spinImageWidthPixels * sizeof(int);
+        checkCudaErrors(cudaMalloc((void**) &device_largestNecessaryImageBuffer, largestImageBufferSize));
+        checkCudaErrors(cudaFree(device_largestNecessaryImageBuffer));
+        std::cout << "Success." << std::endl;
+    }
 
     std::vector<SpinImage::array<unsigned int>> rawRICISearchResults;
     std::vector<SpinImage::array<unsigned int>> rawSISearchResults;
