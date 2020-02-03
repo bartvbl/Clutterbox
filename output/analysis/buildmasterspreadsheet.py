@@ -34,7 +34,7 @@ inputDirectories = {
     '../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/': ('60 support angle, 10 objects', 'HEID'),
     '../HEIDRUNS/output_qsifix_si_v4_60deg_5objects_missing/output/': ('60 support angle, 5 objects', 'HEID'),
 
-    '../HEIDRUNS/run1_3dsc_main/output/': ('3DSC, 1, 5, 10 objects', 'HEID'),
+    '../HEIDRUNS/run1_3dsc_main/output/': ('3DSC', 'HEID'),
     #'../IDUNRUNS/output_run4_3dsc_main/run1/': ('3DSC, 1, 5, 10 objects', 'IDUN'),
 }
 
@@ -69,7 +69,7 @@ enableResultSetSizeLimit = True
 print()
 print(' === Processing of experiment output files into the master spreadsheet ===')
 print('This spreadsheet contains the exact data used to construct the charts in the paper')
-print('Having a machine with 32GB of RAM is probably a necessity for running this')
+print('Having a machine with 24GB of RAM is probably a necessity for running this')
 print()
 
 # Last known fault in code: unsigned integer subtraction in RICI comparison function
@@ -313,7 +313,7 @@ def filterResultSet(resultSet, index):
         out['runtimes']['3DSCSampleGeneration']['total'] = [out['runtimes']['3DSCSampleGeneration']['total'][index]]
         out['runtimes']['3DSCSampleGeneration']['initialisation'] = [out['runtimes']['3DSCSampleGeneration']['initialisation'][index]]
         out['runtimes']['3DSCSampleGeneration']['sampling'] = [out['runtimes']['3DSCSampleGeneration']['sampling'][index]]
-        out['runtimes']['3DSCSampleGeneration']['pointSampling'] = [out['runtimes']['3DSCSampleGeneration']['pointSampling'][index]]
+        out['runtimes']['3DSCSampleGeneration']['pointCounting'] = [out['runtimes']['3DSCSampleGeneration']['pointCounting'][index]]
         out['runtimes']['3DSCSampleGeneration']['generation'] = [out['runtimes']['3DSCSampleGeneration']['generation'][index]]
 
     if '3DSCSearch' in out['runtimes']:
@@ -411,6 +411,7 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
 loadedResults['../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output']['settings']['overrideObjectCount'] = 10
 
 print('\nRestructuring datasets..\n')
+split('../HEIDRUNS/run1_3dsc_main/output/')
 split('../IDUNRUNS/output_smallsupportangle_lotsofobjects')
 split('../IDUNRUNS/output_qsifix_smallsupportangle_rerun')
 split('../IDUNRUNS/output_mainchart_si_v4_15')
@@ -656,7 +657,7 @@ riciplt.show()
 scplot.show()
 siplt.show()
 
-#input()
+input()
 
 # -- Dump to spreadsheet --
 
