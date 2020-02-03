@@ -860,7 +860,7 @@ void runClutterBoxExperiment(
 
             std::cout << "\tDumping OBJ file of scene to " << outFilePath.str() << std::endl;
 
-            SpinImage::dump::mesh(hostMesh, outFilePath.str());
+            SpinImage::dump::mesh(hostMesh, outFilePath.str(), 0, scaledMeshesOnGPU.at(0).vertexCount);
 
             SpinImage::cpu::freeMesh(hostMesh);
         }
