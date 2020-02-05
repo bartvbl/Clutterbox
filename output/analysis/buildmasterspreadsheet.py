@@ -411,7 +411,6 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
 loadedResults['../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output']['settings']['overrideObjectCount'] = 10
 
 print('\nRestructuring datasets..\n')
-split('../HEIDRUNS/run1_3dsc_main/output/')
 split('../IDUNRUNS/output_smallsupportangle_lotsofobjects')
 split('../IDUNRUNS/output_qsifix_smallsupportangle_rerun')
 split('../IDUNRUNS/output_mainchart_si_v4_15')
@@ -466,6 +465,8 @@ merge('../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/',
       'HEID + IDUN')
 merge('SI 60 deg 10 objects intermediate', '../IDUNRUNS/output_qsifix_smallsupportangle_rerun (10 objects)',
       'SI 60 degrees, 10 objects', 'HEID + IDUN')
+
+split('../HEIDRUNS/run1_3dsc_main/output/')
 
 print('\nProcessing..\n')
 
