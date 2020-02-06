@@ -466,6 +466,7 @@ merge('../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/',
 merge('SI 60 deg 10 objects intermediate', '../IDUNRUNS/output_qsifix_smallsupportangle_rerun (10 objects)',
       'SI 60 degrees, 10 objects', 'HEID + IDUN')
 
+print()
 split('../HEIDRUNS/run1_3dsc_main/output/')
 
 print('\nProcessing..\n')
@@ -578,7 +579,6 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
 
     if not(len(clutterValues) == len(riciRanks) == len(siRanks) == len(scRanks)):
         print('WARNING: batch size mismatch at seed', rawSeed , '!', [len(clutterValues), len(riciRanks), len(siRanks), len(scRanks)])
-    print('INFO: Batch Sizes', [len(clutterValues), len(riciRanks), len(siRanks), len(scRanks)])
 
     histogramEntryCount += len(clutterValues)
 
