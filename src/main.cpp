@@ -40,8 +40,9 @@ int main(int argc, const char **argv)
 	const auto& outputDirectory = parser.add<std::string>("output-directory", "Specify the location where output files should be dumped", '\0', arrrgh::Optional, "../output/");
     const auto& objectCounts = parser.add<std::string>("object-counts", "Specify the number of objects the experiment should be performed with, as a comma separated list WITHOUT spaces (e.g. --object-counts=1,2,5)", '\0', arrrgh::Optional, "NONE");
     const auto& overrideObjectCount = parser.add<int>("override-total-object-count", "If you want a specified number of objects to be used for the experiment (for ensuring consistency between seeds)", '\0', arrrgh::Optional, -1);
-    const auto& dumpSceneOBJFiles = parser.add<std::string>("scene-obj-file-dump-directory", "Specifying a directory path will dump OBJ files at each specified object count", '\0', arrrgh::Optional, "NONE_SELECTED");
     const auto& descriptors = parser.add<std::string>("descriptors", "Specify the descriptors that should be used in the experiment, with as valid options \"rici\", \"si\", \"3dsc\", and \"all\", as a comma separated list WITHOUT spaces (e.g. --object-counts=rici,si). Use value \"all\" for using all supported descriptors", '\0', arrrgh::Optional, "all");
+    const auto& dumpSceneOBJFiles = parser.add<std::string>("scene-obj-file-dump-directory", "Specifying a directory path will dump OBJ files at each specified object count", '\0', arrrgh::Optional, "NONE_SELECTED");
+    const auto& visualiseMatches = parser.add<bool>("obj-dump-visualise-matches", "When scene OBJ dumping is enabled, this additional flag causes the dumped model to highlight matches. Requires --dump-raw-search-results to be enabled.", '\0', arrrgh::Optional, false);
 
 	try
 	{
@@ -102,7 +103,13 @@ int main(int argc, const char **argv)
 
     // Interpret the OBJ file dump parameter
     bool enableOBJDump = dumpSceneOBJFiles.value() != "NONE_SELECTED";
+    bool enableMatchVisualisation = visualiseMatches.value() && enableOBJDump && dumpRawResults.value();
     std::string sceneOBJDumpDir = dumpSceneOBJFiles.value();
+    if(visualiseMatches.value() && enableOBJDump && !dumpRawResults.value()) {
+        std::cout << "Warning: Visualisation of matches on the OBJ dump file is enabled, "
+                     "which requires the --dump-raw-search-results flag in addition, which has not been set. "
+                     "Add this flag to enable this feature."
+    }
 
     // Interpret the descriptor list string
     std::vector<std::string> descriptorListParts;
@@ -140,6 +147,7 @@ int main(int argc, const char **argv)
 	        dumpRawResults.value(),
 	        outputDirectory.value(),
             enableOBJDump,
+            enableMatchVisualisation,
             sceneOBJDumpDir,
             gpuMetaData,
 	        randomSeed);

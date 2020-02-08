@@ -466,6 +466,7 @@ void runClutterBoxExperiment(
         bool dumpRawSearchResults,
         std::string outputDirectory,
         bool dumpSceneOBJFiles,
+        bool enableMatchVisualisation,
         std::string sceneOBJFileDumpDir,
         GPUMetaData gpuMetaData,
         size_t overrideSeed) {
@@ -860,7 +861,19 @@ void runClutterBoxExperiment(
 
             std::cout << "\tDumping OBJ file of scene to " << outFilePath.str() << std::endl;
 
-            SpinImage::dump::mesh(hostMesh, outFilePath.str(), 0, scaledMeshesOnGPU.at(0).vertexCount);
+            if(enableMatchVisualisation && dumpRawSearchResults) {
+                SpinImage::array<float2> textureCoords = {hostMesh.vertexCount, new float2[hostMesh.vertexCount]};
+                for(size_t vertexIndex = 0; vertexIndex < hostMesh.vertexCount; vertexIndex++) {
+                    size_t imageIndex = ;
+                    unsigned int searchResult = raw3DSCSearchResults.at(raw3DSCSearchResults.size() - 1).content[imageIndex];
+                    float texCoord = searchResult == 0 ? 1 : 0;
+                    textureCoords.content[vertexIndex] = {texCoord, texCoord};
+                }
+                SpinImage::dump::mesh(hostMesh, outFilePath.str(), 0, scaledMeshesOnGPU.at(0).vertexCount);
+            } else {
+                SpinImage::dump::mesh(hostMesh, outFilePath.str(), 0, scaledMeshesOnGPU.at(0).vertexCount);
+            }
+
 
             SpinImage::cpu::freeMesh(hostMesh);
         }
