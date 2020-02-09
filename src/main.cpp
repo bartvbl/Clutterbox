@@ -42,8 +42,8 @@ int main(int argc, const char **argv)
     const auto& overrideObjectCount = parser.add<int>("override-total-object-count", "If you want a specified number of objects to be used for the experiment (for ensuring consistency between seeds)", '\0', arrrgh::Optional, -1);
     const auto& descriptors = parser.add<std::string>("descriptors", "Specify the descriptors that should be used in the experiment, with as valid options \"rici\", \"si\", \"3dsc\", and \"all\", as a comma separated list WITHOUT spaces (e.g. --object-counts=rici,si). Use value \"all\" for using all supported descriptors", '\0', arrrgh::Optional, "all");
     const auto& dumpSceneOBJFiles = parser.add<std::string>("scene-obj-file-dump-directory", "Specifying a directory path will dump OBJ files at each specified object count", '\0', arrrgh::Optional, "NONE_SELECTED");
-    const auto& visualiseMatches = parser.add<bool>("obj-dump-visualise-matches", "When scene OBJ dumping is enabled, this additional flag causes the dumped model to highlight matches. Requires --dump-raw-search-results to be enabled.", '\0', arrrgh::Optional, false);
-
+    const auto& visualiseMatchesDirectory = parser.add<std::string>("dump-matches-visualisation-obj-directory", "Directory where OBJ files indicating top search results should be dumped. Requires --dump-raw-search-results to be enabled.", '\0', arrrgh::Optional, "NONE_SELECTED");
+    const auto& visualiseMatchesDescriptors = parser.add<std::string>("dump-matches-visualisation-obj-descriptors", "Specifies for which descriptors the search results should be visualised. Requires --dump-matches-visualisation-obj-directory to be enabled.", '\0', arrrgh::Optional, "NONE_SELECTED");
 	try
 	{
 		parser.parse(argc, argv);
@@ -103,13 +103,13 @@ int main(int argc, const char **argv)
 
     // Interpret the OBJ file dump parameter
     bool enableOBJDump = dumpSceneOBJFiles.value() != "NONE_SELECTED";
-    bool enableMatchVisualisation = visualiseMatches.value() && enableOBJDump && dumpRawResults.value();
     std::string sceneOBJDumpDir = dumpSceneOBJFiles.value();
-    if(visualiseMatches.value() && enableOBJDump && !dumpRawResults.value()) {
-        std::cout << "Warning: Visualisation of matches on the OBJ dump file is enabled, "
-                     "which requires the --dump-raw-search-results flag in addition, which has not been set. "
-                     "Add this flag to enable this feature."
-    }
+
+    // Interpret OBJ match visualisation parameters
+    bool enableMatchOBJDump = visualiseMatchesDirectory.value() != "NONE_SELECTED";
+    std::string matchVisualisationOutputDir = visualiseMatchesDirectory.value();
+    std::vector<std::string> matchVisualisationDescriptors;
+    splitByCharacter(&matchVisualisationDescriptors, visualiseMatchesDescriptors.value(), ',');
 
     // Interpret the descriptor list string
     std::vector<std::string> descriptorListParts;
@@ -134,23 +134,25 @@ int main(int argc, const char **argv)
 
     std::sort(objectCountList.begin(), objectCountList.end());
 
-	runClutterBoxExperiment(
-	        objectDirectory.value(),
-	        descriptorList,
-	        objectCountList,
-	        overrideObjectCount.value(),
-	        boxSize.value(),
-	        pointDensityRadius3dsc.value(),
-	        minSupportRadius3dsc.value(),
+    runClutterBoxExperiment(
+            objectDirectory.value(),
+            descriptorList,
+            objectCountList,
+            overrideObjectCount.value(),
+            boxSize.value(),
+            pointDensityRadius3dsc.value(),
+            minSupportRadius3dsc.value(),
             supportRadius.value(),
-	        spinImageSupportAngle.value(),
-	        dumpRawResults.value(),
-	        outputDirectory.value(),
+            spinImageSupportAngle.value(),
+            dumpRawResults.value(),
+            outputDirectory.value(),
             enableOBJDump,
-            enableMatchVisualisation,
             sceneOBJDumpDir,
+            enableMatchOBJDump,
+            matchVisualisationOutputDir,
+            matchVisualisationDescriptors,
             gpuMetaData,
-	        randomSeed);
+            randomSeed);
 
     return 0;
 }

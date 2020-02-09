@@ -22,7 +22,9 @@ void runClutterBoxExperiment(
         bool dumpRawSearchResults,
         std::string outputDirectory,
         bool dumpSceneOBJFiles,
-        bool enableMatchVisualisation,
         std::string sceneOBJFileDumpDir,
+        bool enableMatchVisualisation,
+        std::string matchVisualisationOutputDir,
+        std::vector<std::string> matchVisualisationDescriptorList,
         GPUMetaData gpuMetaData,
         size_t overrideSeed = 0);
