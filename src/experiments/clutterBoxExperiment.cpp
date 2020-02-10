@@ -453,6 +453,54 @@ void dumpRadialIntersectionCountImages(std::string filename, SpinImage::array<ra
     delete[] hostDescriptors.content;
 }
 
+void dumpSearchResultVisualisationMesh(const SpinImage::array<unsigned int> &searchResults,
+                                       const SpinImage::gpu::Mesh &referenceDeviceMesh,
+                                       const std::experimental::filesystem::path outFilePath) {
+    size_t totalUniqueVertexCount;
+    std::vector<size_t> vertexCounts;
+    SpinImage::array<signed long long> device_indexMapping = computeUniqueIndexMapping(referenceDeviceMesh, {referenceDeviceMesh}, &vertexCounts, totalUniqueVertexCount);
+
+    SpinImage::cpu::Mesh hostMesh = SpinImage::copy::deviceMeshToHost(referenceDeviceMesh);
+
+    size_t referenceMeshVertexCount = referenceDeviceMesh.vertexCount;
+    SpinImage::array<signed long long> host_indexMapping = {0, nullptr};
+    host_indexMapping.content = new signed long long[referenceMeshVertexCount];
+    host_indexMapping.length = referenceMeshVertexCount;
+    cudaMemcpy(host_indexMapping.content, device_indexMapping.content, referenceMeshVertexCount * sizeof(signed long long), cudaMemcpyDeviceToHost);
+    cudaFree(device_indexMapping.content);
+
+    SpinImage::array<float2> textureCoords = {referenceMeshVertexCount, new float2[referenceMeshVertexCount]};
+    for(size_t vertexIndex = 0; vertexIndex < referenceMeshVertexCount; vertexIndex++) {
+
+        SpinImage::cpu::float3 vertex = hostMesh.vertices[vertexIndex];
+        SpinImage::cpu::float3 normal = hostMesh.normals[vertexIndex];
+        size_t targetIndex = 0;
+        for(size_t duplicateVertexIndex = 0; duplicateVertexIndex < hostMesh.vertexCount; duplicateVertexIndex++) {
+            SpinImage::cpu::float3 otherVertex = hostMesh.vertices[duplicateVertexIndex];
+            SpinImage::cpu::float3 otherNormal = hostMesh.normals[duplicateVertexIndex];
+            if(vertex == otherVertex && normal == otherNormal) {
+                break;
+            }
+            if(host_indexMapping.content[duplicateVertexIndex] != -1) {
+                targetIndex++;
+            }
+        }
+        unsigned int searchResult = searchResults.content[targetIndex];
+
+        // Entry has been marked as duplicate
+        // So we need to find the correct index
+
+        float texComponent = searchResult == 0 ? 0.5 : 0;
+        float2 texCoord = {texComponent, texComponent};
+        textureCoords.content[vertexIndex] = texCoord;
+    }
+
+    SpinImage::dump::mesh(hostMesh, outFilePath, textureCoords, "colourTexture.png");
+
+    delete[] host_indexMapping.content;
+    SpinImage::cpu::freeMesh(hostMesh);
+}
+
 void runClutterBoxExperiment(
         std::string objectDirectory,
         std::vector<std::string> descriptorList,
@@ -467,6 +515,9 @@ void runClutterBoxExperiment(
         std::string outputDirectory,
         bool dumpSceneOBJFiles,
         std::string sceneOBJFileDumpDir,
+        bool enableMatchVisualisation,
+        std::string matchVisualisationOutputDir,
+        std::vector<std::string> matchVisualisationDescriptorList,
         GPUMetaData gpuMetaData,
         size_t overrideSeed) {
 
@@ -723,6 +774,18 @@ void runClutterBoxExperiment(
                       << ", searching " << riciSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
             Histogram RICIHistogram = computeSearchResultHistogram(referenceMeshImageCount, RICIsearchResults);
             cudaFree(device_sampleRICIImages.content);
+
+            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(),
+                    matchVisualisationDescriptorList.end(), "rici") != matchVisualisationDescriptorList.end()) {
+                std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
+                SpinImage::gpu::Mesh referenceDeviceMesh = scaledMeshesOnGPU.at(0);
+
+                std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
+                outFilePath = outFilePath / (std::to_string(randomSeed) + "_rici_" + std::to_string(objectCount + 1) + ".obj");
+
+                dumpSearchResultVisualisationMesh(RICIsearchResults, referenceDeviceMesh, outFilePath);
+            }
+
             if(!dumpRawSearchResults) {
                 delete[] RICIsearchResults.content;
             }
@@ -847,20 +910,14 @@ void runClutterBoxExperiment(
 
         // Dumping OBJ file of current scene, if enabled
         if(dumpSceneOBJFiles) {
-            SpinImage::cpu::Mesh hostMesh;
-            hostMesh = SpinImage::copy::deviceMeshToHost(boxScene);
+            SpinImage::cpu::Mesh hostMesh = SpinImage::copy::deviceMeshToHost(boxScene);
 
-            std::stringstream outFilePath;
-            outFilePath << sceneOBJFileDumpDir;
-            if(sceneOBJFileDumpDir[sceneOBJFileDumpDir.length() - 1] == '/' ||
-               sceneOBJFileDumpDir[sceneOBJFileDumpDir.length() - 1] == '\\') {
-                outFilePath << "/";
-            }
-            outFilePath << randomSeed << "_" << (objectCount + 1) << ".obj";
+            std::experimental::filesystem::path outFilePath = sceneOBJFileDumpDir;
+            outFilePath = outFilePath / (std::to_string(randomSeed) + "_" + std::to_string(objectCount + 1) + ".obj");
 
-            std::cout << "\tDumping OBJ file of scene to " << outFilePath.str() << std::endl;
+            std::cout << "\tDumping OBJ file of scene to " << outFilePath << std::endl;
 
-            SpinImage::dump::mesh(hostMesh, outFilePath.str(), 0, scaledMeshesOnGPU.at(0).vertexCount);
+            SpinImage::dump::mesh(hostMesh, outFilePath, 0, scaledMeshesOnGPU.at(0).vertexCount);
 
             SpinImage::cpu::freeMesh(hostMesh);
         }
