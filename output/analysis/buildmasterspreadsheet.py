@@ -7,6 +7,7 @@ import pprint
 import copy
 
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from PIL import Image
@@ -71,6 +72,8 @@ print(' === Processing of experiment output files into the master spreadsheet ==
 print('This spreadsheet contains the exact data used to construct the charts in the paper')
 print('Having a machine with 24GB of RAM is probably a necessity for running this')
 print()
+
+matplotlib.use('Qt5Agg')
 
 # Last known fault in code: unsigned integer subtraction in RICI comparison function
 # Date threshold corresponds to this commit
