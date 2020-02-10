@@ -775,15 +775,11 @@ void runClutterBoxExperiment(
             Histogram RICIHistogram = computeSearchResultHistogram(referenceMeshImageCount, RICIsearchResults);
             cudaFree(device_sampleRICIImages.content);
 
-            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(),
-                    matchVisualisationDescriptorList.end(), "rici") != matchVisualisationDescriptorList.end()) {
+            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), "rici") != matchVisualisationDescriptorList.end()) {
                 std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
-                SpinImage::gpu::Mesh referenceDeviceMesh = scaledMeshesOnGPU.at(0);
-
                 std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
                 outFilePath = outFilePath / (std::to_string(randomSeed) + "_rici_" + std::to_string(objectCount + 1) + ".obj");
-
-                dumpSearchResultVisualisationMesh(RICIsearchResults, referenceDeviceMesh, outFilePath);
+                dumpSearchResultVisualisationMesh(RICIsearchResults, scaledMeshesOnGPU.at(0), outFilePath);
             }
 
             if(!dumpRawSearchResults) {
@@ -854,6 +850,14 @@ void runClutterBoxExperiment(
                       << ", searching " << siSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
             Histogram SIHistogram = computeSearchResultHistogram(referenceMeshImageCount, SpinImageSearchResults);
             cudaFree(device_sampleSpinImages.content);
+
+            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), "si") != matchVisualisationDescriptorList.end()) {
+                std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
+                std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
+                outFilePath = outFilePath / (std::to_string(randomSeed) + "_si_" + std::to_string(objectCount + 1) + ".obj");
+                dumpSearchResultVisualisationMesh(SpinImageSearchResults, scaledMeshesOnGPU.at(0), outFilePath);
+            }
+
             if(!dumpRawSearchResults) {
                 delete[] SpinImageSearchResults.content;
             }
@@ -899,6 +903,14 @@ void runClutterBoxExperiment(
                       << ", searching " << scSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
             Histogram SCHistogram = computeSearchResultHistogram(referenceMeshImageCount, ShapeContextSearchResults);
             cudaFree(device_sample3DSCDescriptors.content);
+
+            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), "3dsc") != matchVisualisationDescriptorList.end()) {
+                std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
+                std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
+                outFilePath = outFilePath / (std::to_string(randomSeed) + "_3dsc_" + std::to_string(objectCount + 1) + ".obj");
+                dumpSearchResultVisualisationMesh(ShapeContextSearchResults, scaledMeshesOnGPU.at(0), outFilePath);
+            }
+
             if(!dumpRawSearchResults) {
                 delete[] ShapeContextSearchResults.content;
             }
