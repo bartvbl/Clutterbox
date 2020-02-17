@@ -1,5 +1,7 @@
 #include "clutterBoxExperiment.hpp"
 
+#include <cuda_runtime_api.h>
+
 #include <vector>
 #include <memory>
 #include <random>
@@ -18,6 +20,8 @@
 #include <spinImage/gpu/quickIntersectionCountImageSearcher.cuh>
 #include <spinImage/gpu/spinImageGenerator.cuh>
 #include <spinImage/gpu/spinImageSearcher.cuh>
+#include <spinImage/gpu/3dShapeContextGenerator.cuh>
+#include <spinImage/gpu/3dShapeContextSearcher.cuh>
 #include <spinImage/utilities/OBJLoader.h>
 #include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/utilities/copy/deviceDescriptorsToHost.h>
@@ -25,6 +29,7 @@
 #include <spinImage/utilities/dumpers/searchResultDumper.h>
 #include <spinImage/utilities/duplicateRemoval.cuh>
 #include <spinImage/utilities/modelScaler.h>
+#include <spinImage/utilities/meshSampler.cuh>
 
 #include <experiments/clutterBox/clutterBoxUtilities.h>
 #include <fstream>
@@ -32,9 +37,11 @@
 #include <map>
 #include <sstream>
 #include <algorithm>
-#include <cuda_runtime_api.h>
 #include <json.hpp>
 #include <tsl/ordered_map.h>
+#include <spinImage/gpu/types/PointCloud.h>
+#include <spinImage/utilities/dumpers/meshDumper.h>
+#include <spinImage/utilities/copy/deviceMeshToHost.h>
 
 template<class Key, class T, class Ignore, class Allocator,
         class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
@@ -83,19 +90,34 @@ std::vector<std::string> generateRandomFileList(const std::string &objectDirecto
     return filePaths;
 }
 
-void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptorList, size_t seed,
-                     std::vector<Histogram> RICIHistograms, std::vector<Histogram> QUICCIHistograms,
-                     std::vector<Histogram> SIHistograms,
-                     const std::string &sourceFileDirectory, std::vector<int> objectCountList, int overrideObjectCount,
-                     float boxSize, float spinImageWidth, size_t assertionRandomToken,
-                     std::vector<SpinImage::debug::RICIRunInfo> RICIRuns,
-                     std::vector<SpinImage::debug::QUICCIRunInfo> QUICCIRuns,
-                     std::vector<SpinImage::debug::SIRunInfo> SIRuns,
-                     std::vector<SpinImage::debug::RICISearchRunInfo> RICISearchRuns,
-                     std::vector<SpinImage::debug::QUICCISearchRunInfo> QUICCISearchRuns,
-                     std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns, float spinImageSupportAngleDegrees,
-                     std::vector<size_t> uniqueVertexCounts, std::vector<size_t> spinImageSampleCounts,
-                     GPUMetaData gpuMetaData) {
+void dumpResultsFile(
+        std::string outputFile,
+        std::vector<std::string> descriptorList,
+        size_t seed,
+        std::vector<Histogram> RICIHistograms,
+        std::vector<Histogram> QUICCIHistograms,
+        std::vector<Histogram> SIHistograms,
+        std::vector<Histogram> SCHistograms,
+        const std::string &sourceFileDirectory,
+        std::vector<int> objectCountList,
+        int overrideObjectCount,
+        float boxSize,
+        float spinImageWidth,
+        float pointDensityRadius3dsc,
+        float minSupportRadius3dsc,
+        size_t assertionRandomToken,
+        std::vector<SpinImage::debug::RICIRunInfo> RICIRuns,
+        std::vector<SpinImage::debug::QUICCIRunInfo> QUICCIRuns,
+        std::vector<SpinImage::debug::SIRunInfo> SIRuns,
+        std::vector<SpinImage::debug::SCRunInfo> SCRuns,
+        std::vector<SpinImage::debug::RICISearchRunInfo> RICISearchRuns,
+        std::vector<SpinImage::debug::QUICCISearchRunInfo> QUICCISearchRuns,
+        std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns,
+        std::vector<SpinImage::debug::SCSearchRunInfo> SCSearchRuns,
+        float spinImageSupportAngleDegrees,
+        std::vector<size_t> uniqueVertexCounts,
+        std::vector<size_t> spinImageSampleCounts,
+        GPUMetaData gpuMetaData) {
     std::cout << std::endl << "Dumping results file.." << std::endl;
 
     std::default_random_engine generator{seed};
@@ -154,6 +176,7 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
     bool riciDescriptorActive = false;
     bool quicciDescriptorActive = false;
     bool siDescriptorActive = false;
+    bool scDescriptorActive = false;
 
     for(const auto& descriptor : descriptorList) {
         if(descriptor == "rici") {
@@ -162,6 +185,8 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
             quicciDescriptorActive = true;
         } else if(descriptor == "si") {
             siDescriptorActive = true;
+        } else if(descriptor == "3dsc") {
+            scDescriptorActive = true;
         }
     }
 
@@ -181,13 +206,15 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
     outJson["spinImageSupportAngle"] = spinImageSupportAngleDegrees;
     outJson["spinImageSampleCounts"] = spinImageSampleCounts;
     outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
-    outJson["inputFiles"] = chosenFiles;
-    outJson["riciEarlyExitEnabled"] = ENABLE_RICI_COMPARISON_EARLY_EXIT;
-    outJson["riciSharedMemoryImageEnabled"] = ENABLE_SHARED_MEMORY_IMAGE;
+    outJson["3dscMinSupportRadius"] = minSupportRadius3dsc;
+    outJson["3dscPointDensityRadius"] = pointDensityRadius3dsc;
     outJson["gpuInfo"] = {};
     outJson["gpuInfo"]["name"] = gpuMetaData.name;
     outJson["gpuInfo"]["clockrate"] = gpuMetaData.clockRate;
-    outJson["gpuInfo"]["memoryCapacity"] = gpuMetaData.memorySizeMB;
+    outJson["gpuInfo"]["memoryCapacityInMB"] = gpuMetaData.memorySizeMB;
+    outJson["inputFiles"] = chosenFiles;
+    outJson["riciEarlyExitEnabled"] = ENABLE_RICI_COMPARISON_EARLY_EXIT;
+    outJson["riciSharedMemoryImageEnabled"] = ENABLE_SHARED_MEMORY_IMAGE;
     outJson["vertexCounts"] = {};
     for (auto &sampleMesh : sampleMeshes) {
         outJson["vertexCounts"].push_back(sampleMesh.vertexCount);
@@ -249,6 +276,27 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
         }
     }
 
+    if(scDescriptorActive) {
+        outJson["runtimes"]["3DSCReferenceGeneration"]["total"] = SCRuns.at(0).totalExecutionTimeSeconds;
+        outJson["runtimes"]["3DSCReferenceGeneration"]["initialisation"] = SCRuns.at(0).initialisationTimeSeconds;
+        outJson["runtimes"]["3DSCReferenceGeneration"]["sampling"] = SCRuns.at(0).meshSamplingTimeSeconds;
+        outJson["runtimes"]["3DSCReferenceGeneration"]["pointCounting"] = SCRuns.at(0).pointCountingTimeSeconds;
+        outJson["runtimes"]["3DSCReferenceGeneration"]["generation"] = SCRuns.at(0).generationTimeSeconds;
+
+        outJson["runtimes"]["3DSCSampleGeneration"]["total"] = {};
+        outJson["runtimes"]["3DSCSampleGeneration"]["initialisation"] = {};
+        outJson["runtimes"]["3DSCSampleGeneration"]["sampling"] = {};
+        outJson["runtimes"]["3DSCSampleGeneration"]["pointCounting"] = {};
+        outJson["runtimes"]["3DSCSampleGeneration"]["generation"] = {};
+        for(unsigned int i = 1; i < SCRuns.size(); i++) {
+            outJson["runtimes"]["3DSCSampleGeneration"]["total"].push_back(SCRuns.at(i).totalExecutionTimeSeconds);
+            outJson["runtimes"]["3DSCSampleGeneration"]["initialisation"].push_back(SCRuns.at(i).initialisationTimeSeconds);
+            outJson["runtimes"]["3DSCSampleGeneration"]["sampling"].push_back(SCRuns.at(i).meshSamplingTimeSeconds);
+            outJson["runtimes"]["3DSCSampleGeneration"]["pointCounting"].push_back(SCRuns.at(i).pointCountingTimeSeconds);
+            outJson["runtimes"]["3DSCSampleGeneration"]["generation"].push_back(SCRuns.at(i).generationTimeSeconds);
+        }
+    }
+
     if(riciDescriptorActive) {
         outJson["runtimes"]["RICISearch"]["total"] = {};
         outJson["runtimes"]["RICISearch"]["search"] = {};
@@ -275,6 +323,15 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
             outJson["runtimes"]["SISearch"]["total"].push_back(SISearchRun.totalExecutionTimeSeconds);
             outJson["runtimes"]["SISearch"]["averaging"].push_back(SISearchRun.averagingExecutionTimeSeconds);
             outJson["runtimes"]["SISearch"]["search"].push_back(SISearchRun.searchExecutionTimeSeconds);
+        }
+    }
+
+    if(scDescriptorActive) {
+        outJson["runtimes"]["3DSCSearch"]["total"] = {};
+        outJson["runtimes"]["3DSCSearch"]["search"] = {};
+        for (auto &SCSearchRun : SCSearchRuns) {
+            outJson["runtimes"]["3DSCSearch"]["total"].push_back(SCSearchRun.totalExecutionTimeSeconds);
+            outJson["runtimes"]["3DSCSearch"]["search"].push_back(SCSearchRun.searchExecutionTimeSeconds);
         }
     }
 
@@ -326,6 +383,22 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
         }
     }
 
+    if(scDescriptorActive) {
+        outJson["3DSChistograms"] = {};
+        for(unsigned int i = 0; i < objectCountList.size(); i++) {
+            std::map<unsigned int, size_t> scMap = SCHistograms.at(i).getMap();
+            std::vector<unsigned int> keys;
+            for (auto &content : scMap) {
+                keys.push_back(content.first);
+            }
+            std::sort(keys.begin(), keys.end());
+
+            for(auto &key : keys) {
+                outJson["3DSChistograms"][std::to_string(i)][std::to_string(key)] = scMap[key];
+            }
+        }
+    }
+
     std::ofstream outFile(outputFile);
     outFile << outJson.dump(4);
     outFile.close();
@@ -335,22 +408,26 @@ void dumpResultsFile(std::string outputFile, std::vector<std::string> descriptor
     }
 }
 
-void dumpRawSearchResultFile(std::string outputFile, std::vector<std::string> descriptorList,
-                             std::vector<int> objectCountList,
-                             std::vector<SpinImage::array<unsigned int>> rawRICISearchResults,
-                             std::vector<SpinImage::array<unsigned int>> rawQUICCISearchResults,
-                             std::vector<SpinImage::array<unsigned int>> rawSISearchResults,
-                             size_t seed) {
+void dumpRawSearchResultFile(
+        std::string outputFile,
+        std::vector<std::string> descriptorList,
+        std::vector<int> objectCountList,
+        std::vector<SpinImage::array<unsigned int>> rawRICISearchResults,
+        std::vector<SpinImage::array<unsigned int>> rawQUICCISearchResults,
+        std::vector<SpinImage::array<unsigned int>> rawSISearchResults,
+        std::vector<SpinImage::array<unsigned int>> rawSCSearchResults,
+        size_t seed) {
 
     json outJson;
 
-    outJson["version"] = "rawfile_v3";
+    outJson["version"] = "rawfile_v4";
     outJson["sampleObjectCounts"] = objectCountList;
     outJson["seed"] = seed;
 
     bool riciDescriptorActive = false;
     bool quicciDescriptorActive = false;
     bool siDescriptorActive = false;
+    bool scDescriptorActive = false;
 
     for(const auto& descriptor : descriptorList) {
         if(descriptor == "rici") {
@@ -359,6 +436,8 @@ void dumpRawSearchResultFile(std::string outputFile, std::vector<std::string> de
             quicciDescriptorActive = true;
         } else if(descriptor == "si") {
             siDescriptorActive = true;
+        } else if(descriptor == "3dsc") {
+            scDescriptorActive = true;
         }
     }
 
@@ -386,14 +465,26 @@ void dumpRawSearchResultFile(std::string outputFile, std::vector<std::string> de
         }
     }
 
+    // SI block
     if(siDescriptorActive) {
-        // SI block
         outJson["SI"] = {};
         for(int i = 0; i < rawSISearchResults.size(); i++) {
             std::string indexString = std::to_string(objectCountList.at(i));
             outJson["SI"][indexString] = {};
             for(int j = 0; j < rawSISearchResults.at(i).length; j++) {
                 outJson["SI"][indexString].push_back(rawSISearchResults.at(i).content[j]);
+            }
+        }
+    }
+
+    // 3DSC block
+    if(scDescriptorActive) {
+        outJson["3DSC"] = {};
+        for(int i = 0; i < rawSCSearchResults.size(); i++) {
+            std::string indexString = std::to_string(objectCountList.at(i));
+            outJson["3DSC"][indexString] = {};
+            for(int j = 0; j < rawSCSearchResults.at(i).length; j++) {
+                outJson["3DSC"][indexString].push_back(rawSCSearchResults.at(i).content[j]);
             }
         }
     }
@@ -429,36 +520,95 @@ void dumpRadialIntersectionCountImages(std::string filename, SpinImage::array<ra
     delete[] hostDescriptors.content;
 }
 
+void dumpSearchResultVisualisationMesh(const SpinImage::array<unsigned int> &searchResults,
+                                       const SpinImage::gpu::Mesh &referenceDeviceMesh,
+                                       const std::experimental::filesystem::path outFilePath) {
+    size_t totalUniqueVertexCount;
+    std::vector<size_t> vertexCounts;
+    SpinImage::array<signed long long> device_indexMapping = computeUniqueIndexMapping(referenceDeviceMesh, {referenceDeviceMesh}, &vertexCounts, totalUniqueVertexCount);
+
+    SpinImage::cpu::Mesh hostMesh = SpinImage::copy::deviceMeshToHost(referenceDeviceMesh);
+
+    size_t referenceMeshVertexCount = referenceDeviceMesh.vertexCount;
+    SpinImage::array<signed long long> host_indexMapping = {0, nullptr};
+    host_indexMapping.content = new signed long long[referenceMeshVertexCount];
+    host_indexMapping.length = referenceMeshVertexCount;
+    cudaMemcpy(host_indexMapping.content, device_indexMapping.content, referenceMeshVertexCount * sizeof(signed long long), cudaMemcpyDeviceToHost);
+    cudaFree(device_indexMapping.content);
+
+    SpinImage::array<float2> textureCoords = {referenceMeshVertexCount, new float2[referenceMeshVertexCount]};
+    for(size_t vertexIndex = 0; vertexIndex < referenceMeshVertexCount; vertexIndex++) {
+
+        SpinImage::cpu::float3 vertex = hostMesh.vertices[vertexIndex];
+        SpinImage::cpu::float3 normal = hostMesh.normals[vertexIndex];
+        size_t targetIndex = 0;
+        for(size_t duplicateVertexIndex = 0; duplicateVertexIndex < hostMesh.vertexCount; duplicateVertexIndex++) {
+            SpinImage::cpu::float3 otherVertex = hostMesh.vertices[duplicateVertexIndex];
+            SpinImage::cpu::float3 otherNormal = hostMesh.normals[duplicateVertexIndex];
+            if(vertex == otherVertex && normal == otherNormal) {
+                break;
+            }
+            if(host_indexMapping.content[duplicateVertexIndex] != -1) {
+                targetIndex++;
+            }
+        }
+        unsigned int searchResult = searchResults.content[targetIndex];
+
+        // Entry has been marked as duplicate
+        // So we need to find the correct index
+
+        float texComponent = searchResult == 0 ? 0.5 : 0;
+        float2 texCoord = {texComponent, texComponent};
+        textureCoords.content[vertexIndex] = texCoord;
+    }
+
+    SpinImage::dump::mesh(hostMesh, outFilePath, textureCoords, "colourTexture.png");
+
+    delete[] host_indexMapping.content;
+    SpinImage::cpu::freeMesh(hostMesh);
+}
+
 void runClutterBoxExperiment(
         std::string objectDirectory,
         std::vector<std::string> descriptorList,
         std::vector<int> objectCountList,
         int overrideObjectCount,
         float boxSize,
-        float spinImageWidth,
+        float pointDensityRadius3dsc,
+        float minSupportRadius3dsc,
+        float supportRadius,
         float spinImageSupportAngleDegrees,
         bool dumpRawSearchResults,
         std::string outputDirectory,
+        bool dumpSceneOBJFiles,
+        std::string sceneOBJFileDumpDir,
+        bool enableMatchVisualisation,
+        std::string matchVisualisationOutputDir,
+        std::vector<std::string> matchVisualisationDescriptorList,
         GPUMetaData gpuMetaData,
         size_t overrideSeed) {
 
     // Determine which algorithms to enable
     bool riciDescriptorActive = false;
-    bool siDescriptorActive = false;
     bool quicciDescriptorActive = false;
+    bool siDescriptorActive = false;
+    bool shapeContextDescriptorActive = false;
 
     std::cout << "Running clutterbox experiment for the following descriptors: ";
 
     for(const auto& descriptor : descriptorList) {
         if(descriptor == "rici") {
             riciDescriptorActive = true;
-            std::cout << (quicciDescriptorActive || siDescriptorActive ? ", " : "") << "Radial Intersection Count Image";
+            std::cout << (quicciDescriptorActive || siDescriptorActive || shapeContextDescriptorActive ? ", " : "") << "Radial Intersection Count Image";
         } else if(descriptor == "si") {
             siDescriptorActive = true;
-            std::cout << (quicciDescriptorActive || riciDescriptorActive ? ", " : "") << "Spin Image";
+            std::cout << (quicciDescriptorActive || riciDescriptorActive || shapeContextDescriptorActive ? ", " : "") << "Spin Image";
         } else if(descriptor == "quicci") {
             quicciDescriptorActive = true;
-            std::cout << (riciDescriptorActive || siDescriptorActive ? ", " : "") << "Quick Intersection Count Change Image";
+            std::cout << (riciDescriptorActive || siDescriptorActive || shapeContextDescriptorActive ? ", " : "") << "Quick Intersection Count Change Image";
+        } else if(descriptor == "3dsc") {
+            shapeContextDescriptorActive = true;
+            std::cout << (quicciDescriptorActive || riciDescriptorActive || siDescriptorActive ? ", " : "") << "3D Shape Context";
         }
     }
     std::cout << std::endl;
@@ -480,14 +630,17 @@ void runClutterBoxExperiment(
 
     std::vector<Histogram> RICIHistograms;
     std::vector<Histogram> spinImageHistograms;
+    std::vector<Histogram> shapeContextHistograms;
     std::vector<Histogram> QUICCIHistograms;
 
     std::vector<SpinImage::debug::RICIRunInfo> RICIRuns;
     std::vector<SpinImage::debug::SIRunInfo> SIRuns;
+    std::vector<SpinImage::debug::SCRunInfo> ShapeContextRuns;
     std::vector<SpinImage::debug::QUICCIRunInfo> QUICCIRuns;
 
     std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns;
     std::vector<SpinImage::debug::RICISearchRunInfo> RICISearchRuns;
+    std::vector<SpinImage::debug::SCSearchRunInfo> ShapeContextSearchRuns;
     std::vector<SpinImage::debug::QUICCISearchRunInfo> QUICCISearchRuns;
 
     // The number of sample objects that need to be loaded depends on the largest number of objects required in the list
@@ -549,11 +702,13 @@ void runClutterBoxExperiment(
     std::cout << "\t\tReduced " << scaledMeshesOnGPU.at(0).vertexCount << " vertices to " << referenceImageCount << "." << std::endl;
 
     size_t spinImageSampleCount = computeSpinImageSampleCount(scaledMeshesOnGPU.at(0).vertexCount);
+    const size_t referenceSampleCount = spinImageSampleCount;
     std::cout << "\tUsing sample count: " << spinImageSampleCount << std::endl;
 
     // 9 Compute spin image for reference model
     SpinImage::array<radialIntersectionCountImagePixelType> device_referenceRICIImages;
     SpinImage::array<spinImagePixelType> device_referenceSpinImages;
+    SpinImage::array<shapeContextBinType> device_referenceShapeContextDescriptors;
     SpinImage::gpu::QUICCIImages device_referenceQuiccImages;
 
     if(riciDescriptorActive) {
@@ -562,7 +717,7 @@ void runClutterBoxExperiment(
         device_referenceRICIImages = SpinImage::gpu::generateRadialIntersectionCountImages(
                 scaledMeshesOnGPU.at(0),
                 spinOrigins_reference,
-                spinImageWidth,
+                supportRadius,
                 &riciReferenceRunInfo);
 
         RICIRuns.push_back(riciReferenceRunInfo);
@@ -583,24 +738,38 @@ void runClutterBoxExperiment(
         }
     }
 
+    size_t referenceGenerationRandomSeed = generator();
     if(siDescriptorActive) {
         std::cout << "\tGenerating reference spin images.." << std::endl;
         SpinImage::debug::SIRunInfo siReferenceRunInfo;
         device_referenceSpinImages = SpinImage::gpu::generateSpinImages(
                 scaledMeshesOnGPU.at(0),
                 spinOrigins_reference,
-                spinImageWidth,
+                supportRadius,
                 spinImageSampleCount,
                 spinImageSupportAngleDegrees,
-                generator(),
+                referenceGenerationRandomSeed,
                 &siReferenceRunInfo);
 
         SIRuns.push_back(siReferenceRunInfo);
         std::cout << "\t\tExecution time: " << siReferenceRunInfo.generationTimeSeconds << std::endl;
-    } else {
-        // This keeps the random number generator in a constant state
-        // Generating spin images causes a single random number to be generated.
-        generator();
+    }
+
+    if(shapeContextDescriptorActive) {
+        std::cout << "\tGenerating reference 3D shape context descriptors.." << std::endl;
+        SpinImage::debug::SCRunInfo scReferenceRunInfo;
+        device_referenceShapeContextDescriptors = SpinImage::gpu::generate3DSCDescriptors(
+                scaledMeshesOnGPU.at(0),
+                spinOrigins_reference,
+                pointDensityRadius3dsc,
+                minSupportRadius3dsc,
+                supportRadius,
+                spinImageSampleCount,
+                referenceGenerationRandomSeed,
+                &scReferenceRunInfo);
+
+        ShapeContextRuns.push_back(scReferenceRunInfo);
+        std::cout << "\t\tExecution time: " << scReferenceRunInfo.generationTimeSeconds << std::endl;
     }
 
     checkCudaErrors(cudaFree(spinOrigins_reference.content));
@@ -628,16 +797,19 @@ void runClutterBoxExperiment(
     size_t imageCount = 0;
 
     // 14 Ensure enough memory is available to complete the experiment.
-    std::cout << "\tTesting for sufficient memory capacity on GPU.. ";
-    int* device_largestNecessaryImageBuffer;
-    size_t largestImageBufferSize = totalUniqueVertexCount * spinImageWidthPixels * spinImageWidthPixels * sizeof(int);
-    checkCudaErrors(cudaMalloc((void**) &device_largestNecessaryImageBuffer, largestImageBufferSize));
-    checkCudaErrors(cudaFree(device_largestNecessaryImageBuffer));
-    std::cout << "Success." << std::endl;
+    if(riciDescriptorActive || quicciDescriptorActive || siDescriptorActive || shapeContextDescriptorActive) {
+        std::cout << "\tTesting for sufficient memory capacity on GPU.. ";
+        int* device_largestNecessaryImageBuffer;
+        size_t largestImageBufferSize = totalUniqueVertexCount * spinImageWidthPixels * spinImageWidthPixels * sizeof(int);
+        checkCudaErrors(cudaMalloc((void**) &device_largestNecessaryImageBuffer, largestImageBufferSize));
+        checkCudaErrors(cudaFree(device_largestNecessaryImageBuffer));
+        std::cout << "Success." << std::endl;
+    }
 
     std::vector<SpinImage::array<unsigned int>> rawRICISearchResults;
     std::vector<SpinImage::array<unsigned int>> rawQUICCISearchResults;
     std::vector<SpinImage::array<unsigned int>> rawSISearchResults;
+    std::vector<SpinImage::array<unsigned int>> raw3DSCSearchResults;
     std::vector<size_t> spinImageSampleCounts;
 
     int currentObjectListIndex = 0;
@@ -662,6 +834,7 @@ void runClutterBoxExperiment(
         // Marking the current object count as processed
         currentObjectListIndex++;
 
+
         // Generating radial intersection count images
         if(riciDescriptorActive) {
             std::cout << "\tGenerating RICI images.. (" << imageCount << " images)" << std::endl;
@@ -669,7 +842,7 @@ void runClutterBoxExperiment(
             SpinImage::array<radialIntersectionCountImagePixelType> device_sampleRICIImages = SpinImage::gpu::generateRadialIntersectionCountImages(
                     boxScene,
                     device_uniqueSpinOrigins,
-                    spinImageWidth,
+                    supportRadius,
                     &riciSampleRunInfo);
             RICIRuns.push_back(riciSampleRunInfo);
             std::cout << "\t\tTimings: (total " << riciSampleRunInfo.totalExecutionTimeSeconds
@@ -690,6 +863,14 @@ void runClutterBoxExperiment(
             std::cout << "\t\tTimings: (total " << riciSearchRun.totalExecutionTimeSeconds
                       << ", searching " << riciSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
             Histogram RICIHistogram = computeSearchResultHistogram(referenceMeshImageCount, RICIsearchResults);
+
+            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), "rici") != matchVisualisationDescriptorList.end()) {
+                std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
+                std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
+                outFilePath = outFilePath / (std::to_string(randomSeed) + "_rici_" + std::to_string(objectCount + 1) + ".obj");
+                dumpSearchResultVisualisationMesh(RICIsearchResults, scaledMeshesOnGPU.at(0), outFilePath);
+            }
+
             if(!dumpRawSearchResults) {
                 delete[] RICIsearchResults.content;
             }
@@ -734,21 +915,44 @@ void runClutterBoxExperiment(
             cudaFree(device_sampleRICIImages.content);
         }
 
+        // Computing common settings for SI and 3DSC
+        size_t meshSamplingSeed = generator();
+        size_t currentReferenceObjectSampleCount = 0;
+        if(siDescriptorActive || shapeContextDescriptorActive) {
+            spinImageSampleCount = computeSpinImageSampleCount(imageCount);
+            spinImageSampleCounts.push_back(spinImageSampleCount);
+
+            // wasteful solution, but I don't want to do ugly hacks that destroy the function API's
+            SpinImage::internal::MeshSamplingBuffers sampleBuffers;
+            SpinImage::gpu::PointCloud device_pointCloud = SpinImage::utilities::sampleMesh(boxScene, spinImageSampleCount, meshSamplingSeed, &sampleBuffers);
+            float totalArea;
+            float referenceObjectTotalArea;
+            size_t referenceObjectTriangleCount = scaledMeshesOnGPU.at(0).vertexCount / 3;
+            size_t sceneTriangleCount = boxScene.vertexCount / 3;
+            checkCudaErrors(cudaMemcpy(&totalArea,
+                    sampleBuffers.cumulativeAreaArray.content + (sceneTriangleCount - 1),
+                    sizeof(float), cudaMemcpyDeviceToHost));
+            checkCudaErrors(cudaMemcpy(&referenceObjectTotalArea,
+                    sampleBuffers.cumulativeAreaArray.content + (referenceObjectTriangleCount - 1),
+                    sizeof(float), cudaMemcpyDeviceToHost));
+            cudaFree(sampleBuffers.cumulativeAreaArray.content);
+            float areaFraction = referenceObjectTotalArea / totalArea;
+            currentReferenceObjectSampleCount = size_t(double(areaFraction) * double(spinImageSampleCount));
+            std::cout << "\t\tReference object sample count: " << currentReferenceObjectSampleCount << std::endl;
+        }
 
 
         // Generating spin images
         if(siDescriptorActive) {
-            spinImageSampleCount = computeSpinImageSampleCount(imageCount);
-            spinImageSampleCounts.push_back(spinImageSampleCount);
             std::cout << "\tGenerating spin images.. (" << imageCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
             SpinImage::debug::SIRunInfo siSampleRunInfo;
             SpinImage::array<spinImagePixelType> device_sampleSpinImages = SpinImage::gpu::generateSpinImages(
                     boxScene,
                     device_uniqueSpinOrigins,
-                    spinImageWidth,
+                    supportRadius,
                     spinImageSampleCount,
                     spinImageSupportAngleDegrees,
-                    generator(),
+                    meshSamplingSeed,
                     &siSampleRunInfo);
             SIRuns.push_back(siSampleRunInfo);
             std::cout << "\t\tTimings: (total " << siSampleRunInfo.totalExecutionTimeSeconds
@@ -771,15 +975,88 @@ void runClutterBoxExperiment(
                       << ", searching " << siSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
             Histogram SIHistogram = computeSearchResultHistogram(referenceMeshImageCount, SpinImageSearchResults);
             cudaFree(device_sampleSpinImages.content);
+
+            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), "si") != matchVisualisationDescriptorList.end()) {
+                std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
+                std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
+                outFilePath = outFilePath / (std::to_string(randomSeed) + "_si_" + std::to_string(objectCount + 1) + ".obj");
+                dumpSearchResultVisualisationMesh(SpinImageSearchResults, scaledMeshesOnGPU.at(0), outFilePath);
+            }
+
             if(!dumpRawSearchResults) {
                 delete[] SpinImageSearchResults.content;
             }
 
             // Storing results
             spinImageHistograms.push_back(SIHistogram);
-        } else {
-            // Keeping the random number generator in sync
-            generator();
+        }
+
+
+        // Generating 3D Shape Context descriptors
+        if(shapeContextDescriptorActive) {
+            std::cout << "\tGenerating 3D shape context descriptors.. (" << imageCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
+            SpinImage::debug::SCRunInfo scSampleRunInfo;
+            SpinImage::array<shapeContextBinType> device_sample3DSCDescriptors = SpinImage::gpu::generate3DSCDescriptors(
+                    boxScene,
+                    device_uniqueSpinOrigins,
+                    pointDensityRadius3dsc,
+                    minSupportRadius3dsc,
+                    supportRadius,
+                    spinImageSampleCount,
+                    meshSamplingSeed,
+                    &scSampleRunInfo);
+            ShapeContextRuns.push_back(scSampleRunInfo);
+            std::cout << "\t\tTimings: (total " << scSampleRunInfo.totalExecutionTimeSeconds
+                      << ", initialisation " << scSampleRunInfo.initialisationTimeSeconds
+                      << ", sampling " << scSampleRunInfo.meshSamplingTimeSeconds
+                      << ", point counting " << scSampleRunInfo.pointCountingTimeSeconds
+                      << ", generation " << scSampleRunInfo.generationTimeSeconds << ")" << std::endl;
+
+            std::cout << "\tSearching in 3D Shape Context descriptors.." << std::endl;
+            SpinImage::debug::SCSearchRunInfo scSearchRun;
+            SpinImage::array<unsigned int> ShapeContextSearchResults = SpinImage::gpu::compute3DSCSearchResultRanks(
+                    device_referenceShapeContextDescriptors,
+                    referenceMeshImageCount,
+                    referenceSampleCount,
+                    device_sample3DSCDescriptors,
+                    imageCount,
+                    currentReferenceObjectSampleCount,
+                    &scSearchRun);
+            ShapeContextSearchRuns.push_back(scSearchRun);
+            raw3DSCSearchResults.push_back(ShapeContextSearchResults);
+            std::cout << "\t\tTimings: (total " << scSearchRun.totalExecutionTimeSeconds
+                      << ", searching " << scSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
+            Histogram SCHistogram = computeSearchResultHistogram(referenceMeshImageCount, ShapeContextSearchResults);
+            cudaFree(device_sample3DSCDescriptors.content);
+
+            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), "3dsc") != matchVisualisationDescriptorList.end()) {
+                std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
+                std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
+                outFilePath = outFilePath / (std::to_string(randomSeed) + "_3dsc_" + std::to_string(objectCount + 1) + ".obj");
+                dumpSearchResultVisualisationMesh(ShapeContextSearchResults, scaledMeshesOnGPU.at(0), outFilePath);
+            }
+
+            if(!dumpRawSearchResults) {
+                delete[] ShapeContextSearchResults.content;
+            }
+
+            // Storing results
+            shapeContextHistograms.push_back(SCHistogram);
+        }
+
+
+        // Dumping OBJ file of current scene, if enabled
+        if(dumpSceneOBJFiles) {
+            SpinImage::cpu::Mesh hostMesh = SpinImage::copy::deviceMeshToHost(boxScene);
+
+            std::experimental::filesystem::path outFilePath = sceneOBJFileDumpDir;
+            outFilePath = outFilePath / (std::to_string(randomSeed) + "_" + std::to_string(objectCount + 1) + ".obj");
+
+            std::cout << "\tDumping OBJ file of scene to " << outFilePath << std::endl;
+
+            SpinImage::dump::mesh(hostMesh, outFilePath, 0, scaledMeshesOnGPU.at(0).vertexCount);
+
+            SpinImage::cpu::freeMesh(hostMesh);
         }
     }
 
@@ -799,18 +1076,23 @@ void runClutterBoxExperiment(
             RICIHistograms,
             QUICCIHistograms,
             spinImageHistograms,
+            shapeContextHistograms,
             objectDirectory,
             objectCountList,
             overrideObjectCount,
             boxSize,
-            spinImageWidth,
+            supportRadius,
+            minSupportRadius3dsc,
+            pointDensityRadius3dsc,
             generator(),
             RICIRuns,
             QUICCIRuns,
             SIRuns,
+            ShapeContextRuns,
             RICISearchRuns,
             QUICCISearchRuns,
             SISearchRuns,
+            ShapeContextSearchRuns,
             spinImageSupportAngleDegrees,
             uniqueVertexCounts,
             spinImageSampleCounts,
@@ -824,6 +1106,7 @@ void runClutterBoxExperiment(
                 rawRICISearchResults,
                 rawQUICCISearchResults,
                 rawSISearchResults,
+                raw3DSCSearchResults,
                 randomSeed);
 
         // Cleanup
@@ -835,6 +1118,9 @@ void runClutterBoxExperiment(
             delete[] results.content;
         }
         for(auto results : rawSISearchResults) {
+            delete[] results.content;
+        }
+        for(auto results : raw3DSCSearchResults) {
             delete[] results.content;
         }
     }
