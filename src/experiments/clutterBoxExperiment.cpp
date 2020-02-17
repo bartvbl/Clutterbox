@@ -192,7 +192,7 @@ void dumpResultsFile(
 
     json outJson;
 
-    outJson["version"] = "v10";
+    outJson["version"] = "v11";
     outJson["seed"] = seed;
     outJson["descriptors"] = descriptorList;
     outJson["sampleSetSize"] = sampleObjectCount;
@@ -903,6 +903,14 @@ void runClutterBoxExperiment(
                 Histogram QUICCIHistogram = computeSearchResultHistogram(referenceMeshImageCount, QUICCIsearchResults);
                 cudaFree(device_sampleQUICCImages.horizontallyDecreasingImages);
                 cudaFree(device_sampleQUICCImages.horizontallyIncreasingImages);
+
+                if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), "quicci") != matchVisualisationDescriptorList.end()) {
+                    std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
+                    std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
+                    outFilePath = outFilePath / (std::to_string(randomSeed) + "_quicci_" + std::to_string(objectCount + 1) + ".obj");
+                    dumpSearchResultVisualisationMesh(QUICCIsearchResults, scaledMeshesOnGPU.at(0), outFilePath);
+                }
+
                 if(!dumpRawSearchResults) {
                     delete[] QUICCIsearchResults.content;
                 }
