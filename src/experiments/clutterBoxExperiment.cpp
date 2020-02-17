@@ -525,7 +525,7 @@ void dumpSearchResultVisualisationMesh(const SpinImage::array<unsigned int> &sea
                                        const std::experimental::filesystem::path outFilePath) {
     size_t totalUniqueVertexCount;
     std::vector<size_t> vertexCounts;
-    SpinImage::array<signed long long> device_indexMapping = computeUniqueIndexMapping(referenceDeviceMesh, {referenceDeviceMesh}, &vertexCounts, totalUniqueVertexCount);
+    SpinImage::array<signed long long> device_indexMapping = SpinImage::utilities::computeUniqueIndexMapping(referenceDeviceMesh, {referenceDeviceMesh}, &vertexCounts, totalUniqueVertexCount);
 
     SpinImage::cpu::Mesh hostMesh = SpinImage::copy::deviceMeshToHost(referenceDeviceMesh);
 
