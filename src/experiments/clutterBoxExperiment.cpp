@@ -248,12 +248,18 @@ void dumpResultsFile(
 
     if(quicciDescriptorActive) {
         outJson["runtimes"]["QUICCIReferenceGeneration"]["total"] = QUICCIRuns.at(0).totalExecutionTimeSeconds;
+        outJson["runtimes"]["QUICCIReferenceGeneration"]["meshScale"] = QUICCIRuns.at(0).meshScaleTimeSeconds;
+        outJson["runtimes"]["QUICCIReferenceGeneration"]["redistribution"] = QUICCIRuns.at(0).redistributionTimeSeconds;
         outJson["runtimes"]["QUICCIReferenceGeneration"]["generation"] = QUICCIRuns.at(0).generationTimeSeconds;
 
         outJson["runtimes"]["QUICCISampleGeneration"]["total"] = {};
         outJson["runtimes"]["QUICCISampleGeneration"]["generation"] = {};
+        outJson["runtimes"]["QUICCISampleGeneration"]["meshScale"] = {};
+        outJson["runtimes"]["QUICCISampleGeneration"]["redistribution"] = {};
         for(unsigned int i = 1; i < RICIRuns.size(); i++) {
             outJson["runtimes"]["QUICCISampleGeneration"]["total"].push_back(QUICCIRuns.at(i).totalExecutionTimeSeconds);
+            outJson["runtimes"]["QUICCISampleGeneration"]["meshScale"].push_back(QUICCIRuns.at(i).meshScaleTimeSeconds);
+            outJson["runtimes"]["QUICCISampleGeneration"]["redistribution"].push_back(QUICCIRuns.at(i).redistributionTimeSeconds);
             outJson["runtimes"]["QUICCISampleGeneration"]["generation"].push_back(QUICCIRuns.at(i).generationTimeSeconds);
         }
     }
@@ -722,20 +728,20 @@ void runClutterBoxExperiment(
 
         RICIRuns.push_back(riciReferenceRunInfo);
         std::cout << "\t\tExecution time: " << riciReferenceRunInfo.generationTimeSeconds << std::endl;
+    }
 
-        // Requires results from RICI descriptors, therefore put inside here
-        if(quicciDescriptorActive) {
-            std::cout << "\tGenerating QUICCI images.." << std::endl;
+    if(quicciDescriptorActive) {
+        std::cout << "\tGenerating QUICCI images.." << std::endl;
 
-            SpinImage::debug::QUICCIRunInfo quicciReferenceRunInfo;
-            device_referenceQuiccImages = SpinImage::gpu::generateQUICCImages(
-                    device_referenceRICIImages,
-                    &quicciReferenceRunInfo
-            );
+        SpinImage::debug::QUICCIRunInfo quicciReferenceRunInfo;
+        device_referenceQuiccImages = SpinImage::gpu::generateQUICCImages(
+                scaledMeshesOnGPU.at(0),
+                spinOrigins_reference,
+                supportRadius,
+                &quicciReferenceRunInfo);
 
-            QUICCIRuns.push_back(quicciReferenceRunInfo);
-            std::cout << "\t\tExecution time: " << quicciReferenceRunInfo.generationTimeSeconds << std::endl;
-        }
+        QUICCIRuns.push_back(quicciReferenceRunInfo);
+        std::cout << "\t\tExecution time: " << quicciReferenceRunInfo.generationTimeSeconds << std::endl;
     }
 
     size_t referenceGenerationRandomSeed = generator();
@@ -878,49 +884,50 @@ void runClutterBoxExperiment(
             // Storing results
             RICIHistograms.push_back(RICIHistogram);
 
-            if(quicciDescriptorActive) {
-                std::cout << "\tGenerating QUICCI images.. (" << imageCount << " images)" << std::endl;
-                SpinImage::debug::QUICCIRunInfo quicciSampleRunInfo;
-                SpinImage::gpu::QUICCIImages device_sampleQUICCImages = SpinImage::gpu::generateQUICCImages(
-                        device_sampleRICIImages,
-                        &quicciSampleRunInfo);
-                QUICCIRuns.push_back(quicciSampleRunInfo);
-                std::cout << "\t\tTimings: (total " << quicciSampleRunInfo.totalExecutionTimeSeconds
-                          << ", generation " << quicciSampleRunInfo.generationTimeSeconds << ")" << std::endl;
-
-                std::cout << "\tSearching in QUICC images.." << std::endl;
-                SpinImage::debug::QUICCISearchRunInfo quicciSearchRun;
-                SpinImage::array<unsigned int> QUICCIsearchResults = SpinImage::gpu::computeQUICCImageSearchResultRanks(
-                        device_referenceQuiccImages,
-                        referenceMeshImageCount,
-                        device_sampleQUICCImages,
-                        imageCount,
-                        &quicciSearchRun);
-                QUICCISearchRuns.push_back(quicciSearchRun);
-                rawQUICCISearchResults.push_back(QUICCIsearchResults);
-                std::cout << "\t\tTimings: (total " << quicciSearchRun.totalExecutionTimeSeconds
-                          << ", searching " << quicciSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
-                Histogram QUICCIHistogram = computeSearchResultHistogram(referenceMeshImageCount, QUICCIsearchResults);
-                cudaFree(device_sampleQUICCImages.horizontallyDecreasingImages);
-                cudaFree(device_sampleQUICCImages.horizontallyIncreasingImages);
-
-                if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), "quicci") != matchVisualisationDescriptorList.end()) {
-                    std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
-                    std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
-                    outFilePath = outFilePath / (std::to_string(randomSeed) + "_quicci_" + std::to_string(objectCount + 1) + ".obj");
-                    dumpSearchResultVisualisationMesh(QUICCIsearchResults, scaledMeshesOnGPU.at(0), outFilePath);
-                }
-
-                if(!dumpRawSearchResults) {
-                    delete[] QUICCIsearchResults.content;
-                }
-
-                // Storing results
-                QUICCIHistograms.push_back(QUICCIHistogram);
-            }
-
             // Finally, delete the RICI descriptor images
             cudaFree(device_sampleRICIImages.content);
+        }
+
+        if(quicciDescriptorActive) {
+            std::cout << "\tGenerating QUICCI images.. (" << imageCount << " images)" << std::endl;
+            SpinImage::debug::QUICCIRunInfo quicciSampleRunInfo;
+            SpinImage::gpu::QUICCIImages device_sampleQUICCImages = SpinImage::gpu::generateQUICCImages(
+                    boxScene,
+                    device_uniqueSpinOrigins,
+                    supportRadius,
+                    &quicciSampleRunInfo);
+            QUICCIRuns.push_back(quicciSampleRunInfo);
+            std::cout << "\t\tTimings: (total " << quicciSampleRunInfo.totalExecutionTimeSeconds
+                      << ", generation " << quicciSampleRunInfo.generationTimeSeconds << ")" << std::endl;
+
+            std::cout << "\tSearching in QUICC images.." << std::endl;
+            SpinImage::debug::QUICCISearchRunInfo quicciSearchRun;
+            SpinImage::array<unsigned int> QUICCIsearchResults = SpinImage::gpu::computeQUICCImageSearchResultRanks(
+                    device_referenceQuiccImages,
+                    referenceMeshImageCount,
+                    device_sampleQUICCImages,
+                    imageCount,
+                    &quicciSearchRun);
+            QUICCISearchRuns.push_back(quicciSearchRun);
+            rawQUICCISearchResults.push_back(QUICCIsearchResults);
+            std::cout << "\t\tTimings: (total " << quicciSearchRun.totalExecutionTimeSeconds
+                      << ", searching " << quicciSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
+            Histogram QUICCIHistogram = computeSearchResultHistogram(referenceMeshImageCount, QUICCIsearchResults);
+            cudaFree(device_sampleQUICCImages.horizontallyIncreasingImages);
+
+            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), "quicci") != matchVisualisationDescriptorList.end()) {
+                std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
+                std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
+                outFilePath = outFilePath / (std::to_string(randomSeed) + "_quicci_" + std::to_string(objectCount + 1) + ".obj");
+                dumpSearchResultVisualisationMesh(QUICCIsearchResults, scaledMeshesOnGPU.at(0), outFilePath);
+            }
+
+            if(!dumpRawSearchResults) {
+                delete[] QUICCIsearchResults.content;
+            }
+
+            // Storing results
+            QUICCIHistograms.push_back(QUICCIHistogram);
         }
 
         // Computing common settings for SI and 3DSC
@@ -1072,7 +1079,6 @@ void runClutterBoxExperiment(
     cudaFree(device_referenceRICIImages.content);
     cudaFree(device_referenceSpinImages.content);
     cudaFree(device_referenceQuiccImages.horizontallyIncreasingImages);
-    cudaFree(device_referenceQuiccImages.horizontallyDecreasingImages);
     cudaFree(device_uniqueSpinOrigins.content);
 
     std::string timestring = getCurrentDateTimeString();

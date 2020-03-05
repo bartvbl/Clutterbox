@@ -128,13 +128,6 @@ int main(int argc, const char **argv)
         descriptorList = {"rici", "si", "quicci", "3dsc"};
     }
 
-    if(std::find(descriptorList.begin(), descriptorList.end(), "quicci") != descriptorList.end() &&
-       std::find(descriptorList.begin(), descriptorList.end(), "rici") == descriptorList.end()) {
-        std::cout << "WARNING: RICI descriptor was not found in list of descriptors, even though QUICCI descriptor was enabled." << std::endl;
-        std::cout << "Both must be enabled for QUICCI to work, and therefore RICI is automatically added to the descriptor list." << std::endl;
-        descriptorList.emplace_back("rici");
-    }
-
     std::sort(objectCountList.begin(), objectCountList.end());
 
     runClutterBoxExperiment(
