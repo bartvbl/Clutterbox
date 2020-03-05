@@ -36,6 +36,8 @@ inputDirectories = {
     '../HEIDRUNS/output_qsifix_si_v4_60deg_5objects_missing/output/': ('60 support angle, 5 objects', 'HEID'),
 
     '../HEIDRUNS/run1_3dsc_main/output/': ('3DSC', 'HEID'),
+
+    '../HEIDRUNS/run2_quicci_main/output/': ('QUICCI', 'HEID'),
     #'../IDUNRUNS/output_run4_3dsc_main/run1/': ('3DSC, 1, 5, 10 objects', 'IDUN'),
 }
 
@@ -49,6 +51,7 @@ rawInputDirectories = {
     'QSI': ['../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output/raw', '../IDUNRUNS/output_lotsofobjects_v4/raw'],
     'SI': ['../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output/raw', '../IDUNRUNS/output_mainchart_si_v4_15/raw'],
     '3DSC': ['../HEIDRUNS/run1_3dsc_main/output/raw'],
+    'QUICCI': ['../HEIDRUNS/run2_quicci_main/output/raw'],
     #'3DSC': ['../IDUNRUNS/output_run4_3dsc_main/run1/raw'],
 }
 rawInputObjectCount = 5
@@ -95,6 +98,9 @@ def isSiResultValid(fileCreationDateTime, resultJson):
 def is3dscResultValid(fileCreationTime, resultJson):
     return True
 
+def isQuicciResultValid(fileCreationTime, resultJson):
+    return True
+
 
 # -- global initialisation --
 
@@ -102,9 +108,11 @@ def is3dscResultValid(fileCreationTime, resultJson):
 seedmap_top_result_rici = {}
 seedmap_top_result_si = {}
 seedmap_top_result_3dsc = {}
+seedmap_top_result_quicci = {}
 seedmap_top10_results_rici = {}
 seedmap_top10_results_si = {}
 seedmap_top10_results_3dsc = {}
+seedmap_top10_results_quicci = {}
 
 # -- code --
 
@@ -131,6 +139,8 @@ def extractExperimentSettings(loadedJson):
             descriptors.append('si')
         if '3DSChistograms' in loadedJson:
             descriptors.append('3dsc')
+        if 'QUICCIhistograms' in loadedJson:
+            descriptors.append('quicci')
         settings['descriptors'] = descriptors
     settings['version'] = loadedJson['version']
     return settings
@@ -143,7 +153,7 @@ def loadOutputFileDirectory(path):
 
     results = {
         'path': path,
-        'results': {'QSI': {}, 'SI': {}, '3DSC': {}},
+        'results': {'QSI': {}, 'SI': {}, '3DSC': {}, 'QUICCI': {}},
         'settings': {}
     }
 
@@ -152,10 +162,12 @@ def loadOutputFileDirectory(path):
     ignoredListRICI = []
     ignoredListSI = []
     ignoredList3DSC = []
+    ignoredListQUICCI = []
 
     allRICIResultsInvalid = False
     allSIResultsInvalid = False
     all3DSCResultsInvalid = False
+    allQuicciResultsInvalid = False
 
     for fileindex, file in enumerate(originalFiles):
         print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r', flush=True)
@@ -181,6 +193,9 @@ def loadOutputFileDirectory(path):
             if not is3dscResultValid(creation_time, fileContents):
                 ignoredList3DSC.append(file)
                 all3DSCResultsInvalid = True
+            if not isQuicciResultValid(creation_time, fileContents):
+                ignoredListQUICCI.append(file)
+                allQuicciResultsInvalid = True
 
     previousExperimentSettings = None
     for fileindex, file in enumerate(originalFiles):
@@ -206,6 +221,8 @@ def loadOutputFileDirectory(path):
                 ignoredListSI.append(file)
             if file not in ignoredList3DSC:
                 ignoredList3DSC.append(file)
+            if file not in ignoredListQUICCI:
+                ignoredListQUICCI.append(file)
             # print('ignored 0',file)
         if fileContents['spinImageWidthPixels'] == 32:
             if file not in ignoredListRICI:
@@ -214,6 +231,8 @@ def loadOutputFileDirectory(path):
                 ignoredListSI.append(file)
             if file not in ignoredList3DSC:
                 ignoredList3DSC.append(file)
+            if file not in ignoredListQUICCI:
+                ignoredListQUICCI.append(file)
 
         # Beauty checks
         if file not in ignoredListRICI and allRICIResultsInvalid:
@@ -222,6 +241,8 @@ def loadOutputFileDirectory(path):
             ignoredListSI.append(file)
         if file not in ignoredList3DSC and all3DSCResultsInvalid:
             ignoredList3DSC.append(file)
+        if file not in ignoredListQUICCI and allQuicciResultsInvalid:
+            ignoredListQUICCI.append(file)
 
         containsRICIResults = ('descriptors' in fileContents and 'qsi' in fileContents[
             'descriptors']) or 'QSIhistograms' in fileContents
@@ -229,6 +250,8 @@ def loadOutputFileDirectory(path):
             'descriptors']) or 'SIhistograms' in fileContents
         contains3DSCResults = ('descriptors' in fileContents and '3dsc' in fileContents[
             'descriptors']) or '3DSChistograms' in fileContents
+        containsQuicciResults = ('descriptors' in fileContents and 'quicci' in fileContents[
+            'descriptors']) or 'QUICCIhistograms' in fileContents
 
         # Sanity checks are done. We can now add any remaining valid entries to the result lists
         if not file in ignoredListRICI and not allRICIResultsInvalid and containsRICIResults:
@@ -237,6 +260,8 @@ def loadOutputFileDirectory(path):
             results['results']['SI'][str(fileContents['seed'])] = fileContents
         if not file in ignoredList3DSC and not all3DSCResultsInvalid and contains3DSCResults:
             results['results']['3DSC'][str(fileContents['seed'])] = fileContents
+        if not file in ignoredListQUICCI and not allQuicciResultsInvalid and containsQuicciResults:
+            results['results']['QUICCI'][str(fileContents['seed'])] = fileContents
 
     print()
     # print('%i/%i RICI files had discrepancies and had to be ignored.' % (len(ignoredListRICI), len(originalFiles)))
@@ -259,7 +284,7 @@ def objects(count):
 
 
 print('Loading raw data files..')
-loadedRawResults = {'QSI': {}, 'SI': {}, '3DSC': {}}
+loadedRawResults = {'QSI': {}, 'SI': {}, '3DSC': {}, 'QUICCI': {}}
 for algorithm in rawInputDirectories:
     for path in rawInputDirectories[algorithm]:
         print('Loading raw directory:', path)
@@ -323,6 +348,16 @@ def filterResultSet(resultSet, index):
         out['runtimes']['3DSCSearch']['total'] = [out['runtimes']['3DSCSearch']['total'][index]]
         out['runtimes']['3DSCSearch']['search'] = [out['runtimes']['3DSCSearch']['search'][index]]
 
+    if 'QUICCISampleGeneration' in out['runtimes']:
+        out['runtimes']['QUICCISampleGeneration']['total'] = [out['runtimes']['QUICCISampleGeneration']['total'][index]]
+        out['runtimes']['QUICCISampleGeneration']['meshScale'] = [out['runtimes']['QUICCISampleGeneration']['meshScale'][index]]
+        out['runtimes']['QUICCISampleGeneration']['redistribution'] = [out['runtimes']['QUICCISampleGeneration']['redistribution'][index]]
+        out['runtimes']['QUICCISampleGeneration']['generation'] = [out['runtimes']['QUICCISampleGeneration']['generation'][index]]
+
+    if 'QUICCISearch' in out['runtimes']:
+        out['runtimes']['QUICCISearch']['total'] = [out['runtimes']['QUICCISearch']['total'][index]]
+        out['runtimes']['QUICCISearch']['search'] = [out['runtimes']['QUICCISearch']['search'][index]]
+
     if 'QSIhistograms' in out:
         out['QSIhistograms'] = {'0': out['QSIhistograms'][str(index)]}
 
@@ -331,6 +366,9 @@ def filterResultSet(resultSet, index):
 
     if '3DSChistograms' in out:
         out['3DSChistograms'] = {'0': out['3DSChistograms'][str(index)]}
+
+    if 'QUICCIhistograms' in out:
+        out['QUICCIhistograms'] = {'0': out['QUICCIhistograms'][str(out['sampleObjectCounts'][index]) + ' objects']}
 
     return out
 
@@ -347,7 +385,7 @@ def split(directory):
 
     for itemCountIndex, itemCount in enumerate(result['settings']['sampleObjectCounts']):
         out = {
-            'results': {'QSI': {}, 'SI': {}, '3DSC': {}},
+            'results': {'QSI': {}, 'SI': {}, '3DSC': {}, 'QUICCI': {}},
             'settings': {}}
         out['settings'] = result['settings'].copy()
         out['settings']['sampleObjectCounts'] = [itemCount]
@@ -360,6 +398,9 @@ def split(directory):
 
         for scSeed in result['results']['3DSC']:
             out['results']['3DSC'][scSeed] = filterResultSet(result['results']['3DSC'][scSeed], itemCountIndex)
+
+        for scSeed in result['results']['QUICCI']:
+            out['results']['QUICCI'][scSeed] = filterResultSet(result['results']['QUICCI'][scSeed], itemCountIndex)
 
         newDirectoryName = directory + ' (' + str(itemCount) + ' objects)'
 
@@ -388,12 +429,13 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
         print('Directory 1:', directory1_contents['settings'])
         print('Directory 2:', directory2_contents['settings'])
 
-    combinedResults = {'results': {'QSI': {}, 'SI': {}, '3DSC': {}}, 'settings': directory1_contents['settings']}
+    combinedResults = {'results': {'QSI': {}, 'SI': {}, '3DSC': {}, 'QUICCI': {}}, 'settings': directory1_contents['settings']}
 
     # Initialising with the original results
     combinedResults['results']['QSI'] = directory1_contents['results']['QSI']
     combinedResults['results']['SI'] = directory1_contents['results']['SI']
     combinedResults['results']['3DSC'] = directory1_contents['results']['3DSC']
+    combinedResults['results']['QUICCI'] = directory1_contents['results']['QUICCI']
 
     additionCount = 0
 
@@ -471,6 +513,7 @@ merge('SI 60 deg 10 objects intermediate', '../IDUNRUNS/output_qsifix_smallsuppo
 
 print()
 split('../HEIDRUNS/run1_3dsc_main/output/')
+split('../HEIDRUNS/run2_quicci_main/output/')
 
 print('\nProcessing..\n')
 
@@ -481,6 +524,8 @@ for directory in inputDirectories.keys():
     for seed in loadedResults[directory]['results']['SI'].keys():
         seedSet.add(seed)
     for seed in loadedResults[directory]['results']['3DSC'].keys():
+        seedSet.add(seed)
+    for seed in loadedResults[directory]['results']['QUICCI'].keys():
         seedSet.add(seed)
 seedList = [x for x in seedSet]
 
@@ -507,6 +552,10 @@ if removeSeedsWithMissingEntries:
                 if not seed in loadedResults[directory]['results']['3DSC']:
                     missingSeeds.append(seed)
                     cutCount += 1
+            if len(loadedResults[directory]['results']['QUICCI']) > 0:
+                if not seed in loadedResults[directory]['results']['QUICCI']:
+                    missingSeeds.append(seed)
+                    cutCount += 1
         print(directory, '- removed seed count:', cutCount)
 
     print('Detected', len(set(missingSeeds)), 'unique seeds with missing entries. Removing..')
@@ -519,6 +568,8 @@ if removeSeedsWithMissingEntries:
                 del loadedResults[directory]['results']['SI'][missingSeed]
             if missingSeed in loadedResults[directory]['results']['3DSC']:
                 del loadedResults[directory]['results']['3DSC'][missingSeed]
+            if missingSeed in loadedResults[directory]['results']['QUICCI']:
+                del loadedResults[directory]['results']['QUICCI'][missingSeed]
         if missingSeed in seedList:
             del seedList[seedList.index(missingSeed)]
 
@@ -548,6 +599,8 @@ rawSeedList = [x for x in loadedRawResults['QSI'].keys() if x in loadedRawResult
 print('Merged with SI:', len(rawSeedList))
 rawSeedList = [x for x in rawSeedList if x in loadedRawResults['3DSC'].keys()]
 print('Merged with 3DSC:', len(rawSeedList))
+rawSeedList = [x for x in rawSeedList if x in loadedRawResults['QUICCI'].keys()]
+print('Merged with QUICCI:', len(rawSeedList))
 rawSeedList = [x for x in rawSeedList if x in seedList]
 print('Merged with seedList:', len(rawSeedList))
 rawSeedList = [x for x in rawSeedList if x in clutterFileMap.keys()]
@@ -569,6 +622,7 @@ print()
 hist_rici = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
 hist_si = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
 hist_3dsc = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
+hist_quicci = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
 
 print('Computing histograms..')
 histogramEntryCount = 0
@@ -579,9 +633,10 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
     riciRanks = loadedRawResults['QSI'][rawSeed]
     siRanks = loadedRawResults['SI'][rawSeed]
     scRanks = loadedRawResults['3DSC'][rawSeed]
+    quicciRanks = loadedRawResults['QUICCI'][rawSeed]
 
-    if not(len(clutterValues) == len(riciRanks) == len(siRanks) == len(scRanks)):
-        print('WARNING: batch size mismatch at seed', rawSeed , '!', [len(clutterValues), len(riciRanks), len(siRanks), len(scRanks)])
+    if not(len(clutterValues) == len(riciRanks) == len(siRanks) == len(scRanks) == len(quicciRanks)):
+        print('WARNING: batch size mismatch at seed', rawSeed , '!', [len(clutterValues), len(riciRanks), len(siRanks), len(scRanks), len(quicciRanks)])
 
     histogramEntryCount += len(clutterValues)
 
@@ -590,6 +645,7 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
         index_rici = riciRanks[i]
         index_si = siRanks[i]
         index_3dsc = scRanks[i]
+        index_quicci = quicciRanks[i]
 
         # Apparently some NaN in there
         if clutterValue is None:
@@ -611,6 +667,10 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
         if yBin_3dsc < heatmapSize:
             hist_3dsc[heatmapSize - 1 - yBin_3dsc, xBin] += 1
 
+        yBin_quicci = index_quicci
+        if yBin_quicci < heatmapSize:
+                hist_quicci[heatmapSize - 1 - yBin_quicci, xBin] += 1
+
 print('Histogram computed over', histogramEntryCount, 'values')
 
 
@@ -618,6 +678,7 @@ print('Histogram computed over', histogramEntryCount, 'values')
 hist_rici = np.log10(np.maximum(hist_rici,0.1))
 hist_si = np.log10(np.maximum(hist_si,0.1))
 hist_3dsc = np.log10(np.maximum(hist_3dsc,0.1))
+hist_quicci = np.log10(np.maximum(hist_quicci,0.1))
 
 extent = [0, heatmapSize, 0, heatmapSize]
 
@@ -625,8 +686,8 @@ extent = [0, heatmapSize, 0, heatmapSize]
 plt.clf()
 
 colorbar_ticks = np.arange(0, 8, 1)
-total_minimum_value = min(np.amin(hist_rici), np.amin(hist_si), np.amin(hist_3dsc))
-total_maximum_value = max(np.amax(hist_rici), np.amax(hist_si), np.amax(hist_3dsc))
+total_minimum_value = min(np.amin(hist_rici), np.amin(hist_si), np.amin(hist_3dsc), np.amin(hist_quicci))
+total_maximum_value = max(np.amax(hist_rici), np.amax(hist_si), np.amax(hist_3dsc), np.amax(hist_quicci))
 print('range:', total_minimum_value, total_maximum_value)
 normalisation = colors.Normalize(vmin=total_minimum_value,vmax=total_maximum_value)
 
@@ -647,7 +708,14 @@ plt.xlabel('clutter percentage')
 scim_im = plt.imshow(hist_3dsc, extent=extent, cmap='nipy_spectral', norm=normalisation)
 plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
 
-siplt = plt.figure(3)
+quicciplot = plt.figure(3)
+plt.title('')
+plt.ylabel('rank')
+plt.xlabel('clutter percentage')
+quicci_im = plt.imshow(hist_quicci, extent=extent, cmap='nipy_spectral', norm=normalisation)
+plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+
+siplt = plt.figure(4)
 plt.title('')
 plt.ylabel('rank')
 plt.xlabel('clutter percentage')
@@ -659,6 +727,7 @@ si_cbar.set_label('Sample count', rotation=90)
 
 riciplt.show()
 scplot.show()
+quicciplot.show()
 siplt.show()
 
 input()
@@ -683,6 +752,7 @@ experimentSheet.write(0, len(allColumns) + 1, 'Cluster')
 experimentSheet.write(0, len(allColumns) + 2, 'RICI Count')
 experimentSheet.write(0, len(allColumns) + 3, 'SI Count')
 experimentSheet.write(0, len(allColumns) + 4, '3DSC Count')
+experimentSheet.write(0, len(allColumns) + 5, 'QUICCI Count')
 
 # Overview table contents
 for directoryIndex, directory in enumerate(inputDirectories.keys()):
@@ -699,23 +769,28 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len([x for x in result['results']['QSI'] if x in seedList]))
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 3, len([x for x in result['results']['SI'] if x in seedList]))
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 4, len([x for x in result['results']['3DSC'] if x in seedList]))
+    experimentSheet.write(directoryIndex + 1, len(allColumns) + 5, len([x for x in result['results']['QUICCI'] if x in seedList]))
 
 # Sheets
 top0sheetRICI = book.add_sheet("Rank 0 RICI results")
 top0sheetSI = book.add_sheet("Rank 0 SI results")
 top0sheet3DSC = book.add_sheet("Rank 0 3DSC results")
+top0sheetQUICCI = book.add_sheet("Rank 0 QUICCI results")
 
 top10sheetRICI = book.add_sheet("Top 10 RICI results")
 top10sheetSI = book.add_sheet("Top 10 SI results")
 top10sheet3DSC = book.add_sheet("Top 10 3DSC results")
+top10sheetQUICCI = book.add_sheet("Top 10 QUICCI results")
 
 generationSpeedSheetRICI = book.add_sheet("RICI Generation Times")
 generationSpeedSheetSI = book.add_sheet("SI Generation Times")
 generationSpeedSheet3DSC = book.add_sheet("3DSC Generation Times")
+generationSpeedSheetQUICCI = book.add_sheet("QUICCI Generation Times")
 
 comparisonSpeedSheetRICI = book.add_sheet("RICI Comparison Times")
 comparisonSpeedSheetSI = book.add_sheet("SI Comparison Times")
 comparisonSpeedSheet3DSC = book.add_sheet("3DSC Comparison Times")
+comparisonSpeedSheetQUICCI = book.add_sheet("QUICCI Comparison Times")
 
 vertexCountSheet = book.add_sheet("Reference Image Count")
 totalVertexCountSheet = book.add_sheet("Total Image Count")
@@ -731,18 +806,22 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
         top0sheetRICI.write(0, 0, 'seed')
         top0sheetSI.write(0, 0, 'seed')
         top0sheet3DSC.write(0, 0, 'seed')
+        top0sheetQUICCI.write(0, 0, 'seed')
 
         top10sheetRICI.write(0, 0, 'seed')
         top10sheetSI.write(0, 0, 'seed')
         top10sheet3DSC.write(0, 0, 'seed')
+        top10sheetQUICCI.write(0, 0, 'seed')
 
         generationSpeedSheetRICI.write(0, 0, 'seed')
         generationSpeedSheetSI.write(0, 0, 'seed')
         generationSpeedSheet3DSC.write(0, 0, 'seed')
+        generationSpeedSheetQUICCI.write(0, 0, 'seed')
 
         comparisonSpeedSheetRICI.write(0, 0, 'seed')
         comparisonSpeedSheetSI.write(0, 0, 'seed')
         comparisonSpeedSheet3DSC.write(0, 0, 'seed')
+        comparisonSpeedSheetQUICCI.write(0, 0, 'seed')
 
         vertexCountSheet.write(0, 0, 'seed')
         totalVertexCountSheet.write(0, 0, 'seed')
@@ -752,18 +831,22 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
             top0sheetRICI.write(seedIndex + 1, 0, seed)
             top0sheetSI.write(seedIndex + 1, 0, seed)
             top0sheet3DSC.write(seedIndex + 1, 0, seed)
+            top0sheetQUICCI.write(seedIndex + 1, 0, seed)
 
             top10sheetRICI.write(seedIndex + 1, 0, seed)
             top10sheetSI.write(seedIndex + 1, 0, seed)
             top10sheet3DSC.write(seedIndex + 1, 0, seed)
+            top10sheetQUICCI.write(seedIndex + 1, 0, seed)
 
             generationSpeedSheetRICI.write(seedIndex + 1, 0, seed)
             generationSpeedSheetSI.write(seedIndex + 1, 0, seed)
             generationSpeedSheet3DSC.write(seedIndex + 1, 0, seed)
+            generationSpeedSheetQUICCI.write(seedIndex + 1, 0, seed)
 
             comparisonSpeedSheetRICI.write(seedIndex + 1, 0, seed)
             comparisonSpeedSheetSI.write(seedIndex + 1, 0, seed)
             comparisonSpeedSheet3DSC.write(seedIndex + 1, 0, seed)
+            comparisonSpeedSheetQUICCI.write(seedIndex + 1, 0, seed)
 
             vertexCountSheet.write(seedIndex + 1, 0, seed)
             totalVertexCountSheet.write(seedIndex + 1, 0, seed)
@@ -780,18 +863,22 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
         top0sheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
         top0sheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
         top0sheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
+        top0sheetQUICCI.write(0, currentColumn + sampleCountIndex, columnHeader)
 
         top10sheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
         top10sheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
         top10sheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
+        top10sheetQUICCI.write(0, currentColumn + sampleCountIndex, columnHeader)
 
         generationSpeedSheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
         generationSpeedSheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
         generationSpeedSheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
+        generationSpeedSheetQUICCI.write(0, currentColumn + sampleCountIndex, columnHeader)
 
         comparisonSpeedSheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
         comparisonSpeedSheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
         comparisonSpeedSheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
+        comparisonSpeedSheetQUICCI.write(0, currentColumn + sampleCountIndex, columnHeader)
 
         vertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
         totalVertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
@@ -911,6 +998,46 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
                 generationSpeedSheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
                 comparisonSpeedSheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
 
+        if seed in resultSet['results']['QUICCI']:
+            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
+                # Top 1 performance
+                entry = resultSet['results']['QUICCI'][seed]
+                totalImageCount = entry['imageCounts'][0]
+                experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
+                percentageAtPlace0 = 0
+                indexNameString = str(resultSet['settings']['sampleObjectCounts'][sampleCountIndex]) + ' objects'
+                if '0' in entry['QUICCIhistograms'][str(sampleCountIndex)]:
+                    percentageAtPlace0 = float(entry['QUICCIhistograms'][str(sampleCountIndex)]['0']) / float(totalImageCount)
+                top0sheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
+
+                # Top 10 performance
+                totalImageCountInTop10 = sum(
+                    [entry['QUICCIhistograms'][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
+                     str(x) in entry['QUICCIhistograms'][str(sampleCountIndex)]])
+                percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
+                top10sheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
+
+                # generation execution time
+                generationTime = entry['runtimes']['QUICCISampleGeneration']['total'][sampleCountIndex]
+                generationSpeedSheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
+
+                # search execution time
+                comparisonTime = entry['runtimes']['QUICCISearch']['total'][sampleCountIndex]
+                comparisonSpeedSheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
+
+                # Vertex count sanity check
+                vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
+                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
+                                            sum(entry['imageCounts'][0:sampleObjectCount]))
+                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
+                                              sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
+        else:
+            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
+                top0sheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                top10sheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                generationSpeedSheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                comparisonSpeedSheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+
     # Moving on to the next column
     currentColumn += len(resultSet['settings']['sampleObjectCounts'])
 
@@ -925,6 +1052,16 @@ for seedIndex, seed in enumerate(seedList + ['dummy entry for final row']):
     top10sheetSI.write(seedIndex, currentColumn, ' ')
     generationSpeedSheetSI.write(seedIndex, currentColumn, ' ')
     comparisonSpeedSheetSI.write(seedIndex, currentColumn, ' ')
+
+    top0sheet3DSC.write(seedIndex, currentColumn, ' ')
+    top10sheet3DSC.write(seedIndex, currentColumn, ' ')
+    generationSpeedSheet3DSC.write(seedIndex, currentColumn, ' ')
+    comparisonSpeedSheet3DSC.write(seedIndex, currentColumn, ' ')
+
+    top0sheetQUICCI.write(seedIndex, currentColumn, ' ')
+    top10sheetQUICCI.write(seedIndex, currentColumn, ' ')
+    generationSpeedSheetQUICCI.write(seedIndex, currentColumn, ' ')
+    comparisonSpeedSheetQUICCI.write(seedIndex, currentColumn, ' ')
 
     vertexCountSheet.write(seedIndex, currentColumn, ' ')
     totalVertexCountSheet.write(seedIndex, currentColumn, ' ')
