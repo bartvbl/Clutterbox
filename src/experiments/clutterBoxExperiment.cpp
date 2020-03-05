@@ -256,7 +256,7 @@ void dumpResultsFile(
         outJson["runtimes"]["QUICCISampleGeneration"]["generation"] = {};
         outJson["runtimes"]["QUICCISampleGeneration"]["meshScale"] = {};
         outJson["runtimes"]["QUICCISampleGeneration"]["redistribution"] = {};
-        for(unsigned int i = 1; i < RICIRuns.size(); i++) {
+        for(unsigned int i = 1; i < QUICCIRuns.size(); i++) {
             outJson["runtimes"]["QUICCISampleGeneration"]["total"].push_back(QUICCIRuns.at(i).totalExecutionTimeSeconds);
             outJson["runtimes"]["QUICCISampleGeneration"]["meshScale"].push_back(QUICCIRuns.at(i).meshScaleTimeSeconds);
             outJson["runtimes"]["QUICCISampleGeneration"]["redistribution"].push_back(QUICCIRuns.at(i).redistributionTimeSeconds);
