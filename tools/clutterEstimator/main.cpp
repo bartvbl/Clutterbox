@@ -13,13 +13,15 @@
 #include <experiments/clutterBox/clutterBoxUtilities.h>
 #include <spinImage/gpu/types/PointCloud.h>
 #include <spinImage/utilities/meshSampler.cuh>
+#include <spinImage/utilities/duplicateRemoval.cuh>
+#include <spinImage/utilities/modelScaler.h>
 #include <utilities/stringUtils.h>
 
 using json = nlohmann::json;
 
 #include "experimentUtilities/listDir.h"
 #include "experiments/clutterBox/clutterBoxKernels.cuh"
-#include "utilities/modelScaler.h"
+#include "spinImage/utilities/modelScaler.h"
 #include "clutterKernel.cuh"
 #include "nvidia/helper_cuda.h"
 
@@ -132,7 +134,7 @@ int main(int argc, const char** argv) {
         std::cout << "\tScaling meshes.." << std::endl;
         std::vector<SpinImage::cpu::Mesh> scaledMeshes(sampleObjectCount);
         for (unsigned int i = 0; i < sampleObjectCount; i++) {
-            scaledMeshes.at(i) = fitMeshInsideSphereOfRadius(objects.at(i), 1);
+            scaledMeshes.at(i) = SpinImage::utilities::fitMeshInsideSphereOfRadius(objects.at(i), 1);
             SpinImage::cpu::freeMesh(objects.at(i));
         }
 
@@ -160,7 +162,7 @@ int main(int argc, const char** argv) {
         // 11 Compute unique vertex mapping
         std::vector<size_t> uniqueVertexCounts;
         size_t totalUniqueVertexCount;
-        SpinImage::array<signed long long> device_indexMapping = computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts, totalUniqueVertexCount);
+        SpinImage::array<signed long long> device_indexMapping = SpinImage::utilities::computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts, totalUniqueVertexCount);
 
         // 12 Randomly transform objects
         std::cout << "\tRandomly transforming input objects.." << std::endl;
@@ -187,7 +189,7 @@ int main(int argc, const char** argv) {
         // 13 Compute corresponding transformed vertex buffer
         //    A mapping is used here because the previously applied transformation can cause non-unique vertices to become
         //    equivalent. It is vital we can rely on a 1:1 mapping existing between vertices.
-        SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_uniqueSpinOrigins = applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
+        SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_uniqueSpinOrigins = SpinImage::utilities::applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
         checkCudaErrors(cudaFree(device_indexMapping.content));
 
         // Should be as large as possible, but can be selected arbitrarily

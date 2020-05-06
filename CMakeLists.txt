@@ -3,14 +3,16 @@
 #
 cmake_minimum_required (VERSION 3.0)
 
-set(CUDAHOSTCXX /usr/bin/g++-6)
-set(CMAKE_CUDA_HOST_COMPILER /usr/bin/g++-6)
+set(CUDAHOSTCXX /usr/bin/g++-7)
+set(CMAKE_CUDA_HOST_COMPILER /usr/bin/g++-7)
+set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
+set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda")
 
 project (riciverification CXX CUDA)
 
 OPTION (USE_OpenMP "Use OpenMP" ON)
 
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 14)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set (CMAKE_VERBOSE_MAKEFILE 0) # 1 should be used for debugging
 set (CMAKE_SUPPRESS_REGENERATION TRUE) # Suppresses ZERO_CHECK
@@ -28,7 +30,7 @@ find_package(PCL 1.8.1 REQUIRED COMPONENTS common io)
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -frounding-math") #  -g -pg -pg -no-pie
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -march=native -frounding-math") #  -g -pg -pg -no-pie
 endif()
 
 # OpenMP
@@ -42,8 +44,6 @@ IF(USE_OpenMP)
 ENDIF()
 
 # CUDA
-
-set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda")
 
 find_package(CUDA REQUIRED)
 

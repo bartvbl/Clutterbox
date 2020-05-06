@@ -34,8 +34,11 @@
 lib/*
 .idea/*
 build/*
+misc/patterncounts/*
+misc/patternimages/*
 cmake-build-debug/*
 cmake-build-release/*
+cmake-build-relwithdebinfo/*
 output/*
 
 *.pyc
