@@ -913,7 +913,7 @@ void runClutterBoxExperiment(
             std::cout << "\t\tTimings: (total " << quicciSearchRun.totalExecutionTimeSeconds
                       << ", searching " << quicciSearchRun.searchExecutionTimeSeconds << ")" << std::endl;
             Histogram QUICCIHistogram = computeSearchResultHistogram(referenceMeshImageCount, QUICCIsearchResults);
-            cudaFree(device_sampleQUICCImages.horizontallyIncreasingImages);
+            cudaFree(device_sampleQUICCImages.images);
 
             if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), "quicci") != matchVisualisationDescriptorList.end()) {
                 std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
@@ -1078,7 +1078,7 @@ void runClutterBoxExperiment(
     SpinImage::gpu::freeMesh(boxScene);
     cudaFree(device_referenceRICIImages.content);
     cudaFree(device_referenceSpinImages.content);
-    cudaFree(device_referenceQuiccImages.horizontallyIncreasingImages);
+    cudaFree(device_referenceQuiccImages.images);
     cudaFree(device_uniqueSpinOrigins.content);
 
     std::string timestring = getCurrentDateTimeString();
