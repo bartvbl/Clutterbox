@@ -37,6 +37,7 @@ int main(int argc, const char **argv)
 	const auto& spinImageSupportAngle = parser.add<float>("spin-image-support-angle-degrees", "The support angle to use for filtering spin image point samples", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_SUPPORT_ANGLE_DEGREES);
     const auto& forcedSeed = parser.add<std::string>("force-seed", "Specify the seed to use for random generation. Used for reproducing results.", '\0', arrrgh::Optional, "0");
 	const auto& dumpRawResults = parser.add<bool>("dump-raw-search-results", "Enable dumping of raw search result index values", '\0', arrrgh::Optional, false);
+    const auto& waitOnCompletion = parser.add<bool>("wait-for-input-on-completion", "I needed the program to wait before exiting after completing the experiment. This does that job perfectly. Don't judge.", '\0', arrrgh::Optional, false);
 	const auto& outputDirectory = parser.add<std::string>("output-directory", "Specify the location where output files should be dumped", '\0', arrrgh::Optional, "../output/");
     const auto& objectCounts = parser.add<std::string>("object-counts", "Specify the number of objects the experiment should be performed with, as a comma separated list WITHOUT spaces (e.g. --object-counts=1,2,5)", '\0', arrrgh::Optional, "NONE");
     const auto& overrideObjectCount = parser.add<int>("override-total-object-count", "If you want a specified number of objects to be used for the experiment (for ensuring consistency between seeds)", '\0', arrrgh::Optional, -1);
@@ -149,6 +150,11 @@ int main(int argc, const char **argv)
             matchVisualisationDescriptors,
             gpuMetaData,
             randomSeed);
+
+    if(waitOnCompletion.value()) {
+        std::cout << "Experiment complete, press enter to exit" << std::endl;
+        std::cin.ignore();
+    }
 
     return 0;
 }
