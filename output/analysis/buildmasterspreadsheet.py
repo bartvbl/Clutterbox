@@ -12,71 +12,14 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from PIL import Image
 
-# --- SETTINGS ---
+# PREAMBLE, SCROLL DOWN FOR SETTINGS
 
-# Master input directories
-inputDirectories = {
-    '../HEIDRUNS/output_qsifix_v4_noearlyexit/output': ('QSI, No early exit, 5 objects', 'HEID'),
-    '../HEIDRUNS/output_qsifix_v4_withearlyexit/output': ('QSI, Early exit, 5 objects', 'HEID'),
-    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output': ('Failed jobs from IDUN run', 'HEID'),
-    '../IDUNRUNS/output_lotsofobjects_v4': ('primary QSI IDUN run', 'IDUN'),
-    '../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output': ('re-run of 5 object QSI results that were missing raw files', 'HEID'),
-
-    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output': ('180 support angle, 10 objects', 'HEID'),
-    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output': ('180 support angle, 5 objects', 'HEID'),
-    '../HEIDRUNS/output_qsifix_v4_180deg_si_missing/output': ('180 support angle, 10 objects', 'HEID'),
-    '../IDUNRUNS/output_smallsupportangle_lotsofobjects': ('60 support angle, primary', 'IDUN'),
-    '../IDUNRUNS/output_qsifix_smallsupportangle_rerun': ('60 support angle, secondary', 'IDUN'),
-    '../IDUNRUNS/output_mainchart_si_v4_15': ('180 support angle, 1 & 5 objects', 'IDUN'),
-    '../IDUNRUNS/output_mainchart_si_v4_10': ('180 support angle, 10 objects', 'IDUN'),
-    '../IDUNRUNS/output_mainchart_si_v4_1': ('180 support angle, 1 object', 'IDUN'),
-    '../IDUNRUNS/output_supportanglechart60_si_v4_1': ('60 support angle, 1 object', 'IDUN'),
-    '../IDUNRUNS/output_supportanglechart60_si_v4_5': ('60 support angle, 5 objects', 'IDUN'),
-    '../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/': ('60 support angle, 10 objects', 'HEID'),
-    '../HEIDRUNS/output_qsifix_si_v4_60deg_5objects_missing/output/': ('60 support angle, 5 objects', 'HEID'),
-
-    '../HEIDRUNS/run1_3dsc_main/output/': ('3DSC', 'HEID'),
-
-    '../HEIDRUNS/run2_quicci_main/output/': ('QUICCI', 'HEID'),
-    #'../IDUNRUNS/output_run4_3dsc_main/run1/': ('3DSC, 1, 5, 10 objects', 'IDUN'),
-}
-
-# The location where the master spreadsheet should be written to
-outfile = 'final_results/master_spreadsheet.xls'
-
-# Settings for clutter heatmaps
-heatmapSize = 256
-
-rawInputDirectories = {
-    'QSI': ['../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output/raw', '../IDUNRUNS/output_lotsofobjects_v4/raw'],
-    'SI': ['../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output/raw', '../IDUNRUNS/output_mainchart_si_v4_15/raw'],
-    '3DSC': ['../HEIDRUNS/run1_3dsc_main/output/raw'],
-    'QUICCI': ['../HEIDRUNS/run2_quicci_main/output/raw'],
-    #'3DSC': ['../IDUNRUNS/output_run4_3dsc_main/run1/raw'],
-}
-rawInputObjectCount = 5
-
-clutterFileDirectories = ['../clutter/output_5objects/output']
-
-
-
-# Distill the result set down to the entries we have all data for
-removeSeedsWithMissingEntries = True
-
-# Cut down the result set to a specific number of entries
-resultSetSizeLimit = 1500
-enableResultSetSizeLimit = True
-
-
-# --- start of code ---
-
-print()
-print(' === Processing of experiment output files into the master spreadsheet ===')
-print('This spreadsheet contains the exact data used to construct the charts in the paper')
-print('Having a machine with 24GB of RAM is probably a necessity for running this')
-print()
-
-matplotlib.use('Qt5Agg')
+# Some of the experimental runs contained multiple descriptor types.
+# However, I found out later that some of these descriptor generation/testing implementations contained some bugs
+# Which rendered the results of specific descriptors, but not the others, of specific result sets invalid.
+# I therefore added these; they're a safeguard that results for specific descriptor types which is known to be faulty
+# is not included in the produced results spreadsheet
+# (in case they somehow slip the net)
 
 # Last known fault in code: unsigned integer subtraction in RICI comparison function
 # Date threshold corresponds to this commit
@@ -102,17 +45,127 @@ def isQuicciResultValid(fileCreationTime, resultJson):
     return True
 
 
+
+
+
+
+
+
+# --- SETTINGS ---
+
+# Master input directories
+# Contains all data to be included in the spreadsheet
+# Format: [path to JSON output directory]: ([human readable name of result set], [cluster result set was executed on])
+#   Clusters used:
+#       IDUN: Large cluster, though machines contain many different graphics cards. Must ABSOLUTELY NOT be used for time sensitive results
+#       HEID: DGX-2 machine, contains 16 equivalent V100 cards. Used for time sensitive tests.
+inputDirectories = {
+    '../HEIDRUNS/output_qsifix_v4_noearlyexit/output': ('QSI, No early exit, 5 objects', 'HEID'),
+    '../HEIDRUNS/output_qsifix_v4_withearlyexit/output': ('QSI, Early exit, 5 objects', 'HEID'),
+    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_idun_failed/output': ('Failed jobs from IDUN run', 'HEID'),
+    '../IDUNRUNS/output_lotsofobjects_v4': ('primary QSI IDUN run', 'IDUN'),
+    '../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output': ('re-run of 5 object QSI results that were missing raw files', 'HEID'),
+
+    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_10_objects_only/output': ('180 support angle, 10 objects', 'HEID'),
+    '../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output': ('180 support angle, 5 objects', 'HEID'),
+    '../HEIDRUNS/output_qsifix_v4_180deg_si_missing/output': ('180 support angle, 10 objects', 'HEID'),
+    '../IDUNRUNS/output_smallsupportangle_lotsofobjects': ('60 support angle, primary', 'IDUN'),
+    '../IDUNRUNS/output_qsifix_smallsupportangle_rerun': ('60 support angle, secondary', 'IDUN'),
+    '../IDUNRUNS/output_mainchart_si_v4_15': ('180 support angle, 1 & 5 objects', 'IDUN'),
+    '../IDUNRUNS/output_mainchart_si_v4_10': ('180 support angle, 10 objects', 'IDUN'),
+    '../IDUNRUNS/output_mainchart_si_v4_1': ('180 support angle, 1 object', 'IDUN'),
+    '../IDUNRUNS/output_supportanglechart60_si_v4_1': ('60 support angle, 1 object', 'IDUN'),
+    '../IDUNRUNS/output_supportanglechart60_si_v4_5': ('60 support angle, 5 objects', 'IDUN'),
+    '../HEIDRUNS/output_qsifix_v4_60deg_si_missing/output/': ('60 support angle, 10 objects', 'HEID'),
+    '../HEIDRUNS/output_qsifix_si_v4_60deg_5objects_missing/output/': ('60 support angle, 5 objects', 'HEID'),
+
+    '../HEIDRUNS/run1_3dsc_main/output/': ('3DSC', 'HEID'),
+
+    '../HEIDRUNS/run2_quicci_main/output/': ('QUICCI', 'HEID'),
+    '../HEIDRUNS/run3_output_quicci_distance_functions_weightedHamming/output/': ('QUICCI', 'HEID'),
+    '../HEIDRUNS/run4_output_quicci_distance_functions_clutterResistant/output/': ('QUICCI', 'HEID'),
+    '../HEIDRUNS/run5_output_quicci_distance_functions_hamming/output/': ('QUICCI', 'HEID'),
+    #'../IDUNRUNS/output_run4_3dsc_main/run1/': ('3DSC, 1, 5, 10 objects', 'IDUN'),
+}
+
+# The location where the master spreadsheet should be written to
+outfile = 'final_results/master_spreadsheet.xls'
+
+# Map of methods contained in the output files
+methods = {
+    'RICI': {
+        'isValid': isQsiResultValid,
+        'nameInJSONFile': 'qsi',
+        'namePrefixInJSONFile': 'QSI',
+        'generationTimings': ['total', 'meshScale', 'redistribution', 'generation'],
+        'searchTimings': ['total', 'search']
+    },
+    'QUICCI': {
+        'isValid': isQuicciResultValid,
+        'nameInJSONFile': 'quicci',
+        'namePrefixInJSONFile': 'QUICCI',
+        'generationTimings': ['total', 'meshScale', 'redistribution', 'generation'],
+        'searchTimings': ['total', 'search']
+    },
+    'SI': {
+        'isValid': isSiResultValid,
+        'nameInJSONFile': 'si',
+        'namePrefixInJSONFile': 'SI',
+        'generationTimings': ['total', 'initialisation', 'sampling', 'generation'],
+        'searchTimings': ['total', 'averaging', 'search']
+    },
+    '3DSC': {
+        'isValid': is3dscResultValid,
+        'nameInJSONFile': '3dsc',
+        'namePrefixInJSONFile': '3DSC',
+        'generationTimings': ['total', 'initialisation', 'sampling', 'pointCounting', 'generation'],
+        'searchTimings': ['total', 'search']
+    }
+}
+
+
+# Settings for clutter heatmaps
+# Width and height of heatmap in pixels
+heatmapSize = 256
+
+rawInputDirectories = {
+    'QSI': ['../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output/raw', '../IDUNRUNS/output_lotsofobjects_v4/raw'],
+    'SI': ['../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output/raw', '../IDUNRUNS/output_mainchart_si_v4_15/raw'],
+    '3DSC': ['../HEIDRUNS/run1_3dsc_main/output/raw'],
+    'QUICCI': ['../HEIDRUNS/run2_quicci_main/output/raw'],
+}
+rawInputObjectCount = 5
+
+clutterFileDirectories = ['../clutter/output_5objects/output']
+
+
+
+# Distill the result set down to the entries we have all data for
+removeSeedsWithMissingEntries = True
+
+# Cut down the result set to a specific number of entries
+resultSetSizeLimit = 1500
+enableResultSetSizeLimit = True
+
+
+# --- start of code ---
+
+print()
+print(' === Processing of experiment output files into the master spreadsheet ===')
+print('This spreadsheet contains the exact data used to construct the charts in the paper')
+print('Having a machine with 24GB of RAM is probably a necessity for running this')
+print()
+
+matplotlib.use('Qt5Agg')
+
 # -- global initialisation --
 
 # Maps seeds to a list of (dataset, value) tuples
-seedmap_top_result_rici = {}
-seedmap_top_result_si = {}
-seedmap_top_result_3dsc = {}
-seedmap_top_result_quicci = {}
-seedmap_top10_results_rici = {}
-seedmap_top10_results_si = {}
-seedmap_top10_results_3dsc = {}
-seedmap_top10_results_quicci = {}
+seedmap_top_result = {}
+seedmap_top10_results = {}
+for methodName in methods:
+    seedmap_top_result[methodName] = {}
+    seedmap_top10_results[methodName] = {}
 
 # -- code --
 
@@ -133,14 +186,9 @@ def extractExperimentSettings(loadedJson):
         settings['descriptors'] = loadedJson['descriptors']
     else:
         descriptors = []
-        if 'QSIhistograms' in loadedJson:
-            descriptors.append('qsi')
-        if 'SIhistograms' in loadedJson:
-            descriptors.append('si')
-        if '3DSChistograms' in loadedJson:
-            descriptors.append('3dsc')
-        if 'QUICCIhistograms' in loadedJson:
-            descriptors.append('quicci')
+        for method in methods:
+            if methods[method]['namePrefixInJSONFile'] + 'histograms' in loadedJson:
+                descriptors.append(methods[method]['nameInJSONFile'])
         settings['descriptors'] = descriptors
     settings['version'] = loadedJson['version']
     return settings
@@ -153,22 +201,21 @@ def loadOutputFileDirectory(path):
 
     results = {
         'path': path,
-        'results': {'QSI': {}, 'SI': {}, '3DSC': {}, 'QUICCI': {}},
+        'results': {},
         'settings': {}
     }
 
     jsonCache = {}
 
-    ignoredListRICI = []
-    ignoredListSI = []
-    ignoredList3DSC = []
-    ignoredListQUICCI = []
+    ignoredLists = {}
+    allResultsInvalid = {}
 
-    allRICIResultsInvalid = False
-    allSIResultsInvalid = False
-    all3DSCResultsInvalid = False
-    allQuicciResultsInvalid = False
+    for method in methods:
+        results['results'][methods[method]['namePrefixInJSONFile']] = {}
+        ignoredLists[method] = []
+        allResultsInvalid[method] = False
 
+    # Reading file contents
     for fileindex, file in enumerate(originalFiles):
         print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r', flush=True)
         with open(os.path.join(path, file), 'r') as openFile:
@@ -184,19 +231,16 @@ def loadOutputFileDirectory(path):
             # Check validity of code by using knowledge about previous code changes
             filename_creation_time_part = file.split('_')[0]
             creation_time = datetime.datetime.strptime(filename_creation_time_part, "%Y-%m-%d %H-%M-%S")
-            if not isQsiResultValid(creation_time, fileContents):
-                ignoredListRICI.append(file)
-                allRICIResultsInvalid = True
-            if not isSiResultValid(creation_time, fileContents):
-                ignoredListSI.append(file)
-                allSIResultsInvalid = True
-            if not is3dscResultValid(creation_time, fileContents):
-                ignoredList3DSC.append(file)
-                all3DSCResultsInvalid = True
-            if not isQuicciResultValid(creation_time, fileContents):
-                ignoredListQUICCI.append(file)
-                allQuicciResultsInvalid = True
 
+            for method in methods:
+                if not methods[method]['isValid'](creation_time, fileContents):
+                    ignoredLists[method].append(file)
+                    # If only a single result is deemed invalid,
+                    # THE ENTIRE SET is marked as invalid for this descriptor type
+                    # Data integrity is of the utmost importance, so I'm not taking any chances here.
+                    allResultsInvalid[method] = True
+
+    # Processing file contents
     previousExperimentSettings = None
     for fileindex, file in enumerate(originalFiles):
         print(str(fileindex + 1) + '/' + str(len(originalFiles)), file + '        ', end='\r', flush=True)
@@ -213,64 +257,29 @@ def loadOutputFileDirectory(path):
         previousExperimentSettings = currentExperimentSettings
         results['settings'] = currentExperimentSettings
 
-        # Check for other incorrect settings. Ignore files if detected
-        if 0 in fileContents['imageCounts']:
-            if file not in ignoredListRICI:
-                ignoredListRICI.append(file)
-            if file not in ignoredListSI:
-                ignoredListSI.append(file)
-            if file not in ignoredList3DSC:
-                ignoredList3DSC.append(file)
-            if file not in ignoredListQUICCI:
-                ignoredListQUICCI.append(file)
-            # print('ignored 0',file)
-        if fileContents['spinImageWidthPixels'] == 32:
-            if file not in ignoredListRICI:
-                ignoredListRICI.append(file)
-            if file not in ignoredListSI:
-                ignoredListSI.append(file)
-            if file not in ignoredList3DSC:
-                ignoredList3DSC.append(file)
-            if file not in ignoredListQUICCI:
-                ignoredListQUICCI.append(file)
+        for method in methods:
+            # Check for other incorrect settings. Ignore files if detected
+            if 0 in fileContents['imageCounts']:
+                if file not in ignoredLists[method]:
+                    ignoredLists[method].append(file)
+            if fileContents['spinImageWidthPixels'] == 32:
+                if file not in ignoredLists[method]:
+                    ignoredLists[method].append(file)
 
-        # Beauty checks
-        if file not in ignoredListRICI and allRICIResultsInvalid:
-            ignoredListRICI.append(file)
-        if file not in ignoredListSI and allSIResultsInvalid:
-            ignoredListSI.append(file)
-        if file not in ignoredList3DSC and all3DSCResultsInvalid:
-            ignoredList3DSC.append(file)
-        if file not in ignoredListQUICCI and allQuicciResultsInvalid:
-            ignoredListQUICCI.append(file)
+            # Beauty checks
+            if file not in ignoredLists[method] and allResultsInvalid[method]:
+                ignoredLists[method].append(file)
 
-        containsRICIResults = ('descriptors' in fileContents and 'qsi' in fileContents[
-            'descriptors']) or 'QSIhistograms' in fileContents
-        containsSIResults = ('descriptors' in fileContents and 'si' in fileContents[
-            'descriptors']) or 'SIhistograms' in fileContents
-        contains3DSCResults = ('descriptors' in fileContents and '3dsc' in fileContents[
-            'descriptors']) or '3DSChistograms' in fileContents
-        containsQuicciResults = ('descriptors' in fileContents and 'quicci' in fileContents[
-            'descriptors']) or 'QUICCIhistograms' in fileContents
+            containsResultsForMethod = ('descriptors' in fileContents and methods[method]['nameInJSONFile']
+                                        in fileContents['descriptors']) or methods[method]['namePrefixInJSONFile'] + 'histograms' in fileContents
 
-        # Sanity checks are done. We can now add any remaining valid entries to the result lists
-        if not file in ignoredListRICI and not allRICIResultsInvalid and containsRICIResults:
-            results['results']['QSI'][str(fileContents['seed'])] = fileContents
-        if not file in ignoredListSI and not allSIResultsInvalid and containsSIResults:
-            results['results']['SI'][str(fileContents['seed'])] = fileContents
-        if not file in ignoredList3DSC and not all3DSCResultsInvalid and contains3DSCResults:
-            results['results']['3DSC'][str(fileContents['seed'])] = fileContents
-        if not file in ignoredListQUICCI and not allQuicciResultsInvalid and containsQuicciResults:
-            results['results']['QUICCI'][str(fileContents['seed'])] = fileContents
+            # Sanity checks are done. We can now add any remaining valid entries to the result lists
+            if not file in ignoredLists[method] and not allResultsInvalid[method] and containsResultsForMethod:
+                results['results'][methods[method]['namePrefixInJSONFile']][str(fileContents['seed'])] = fileContents
 
     print()
-    # print('%i/%i RICI files had discrepancies and had to be ignored.' % (len(ignoredListRICI), len(originalFiles)))
-    # print('%i/%i SI files had discrepancies and had to be ignored.' % (len(ignoredListSI), len(originalFiles)))
-    # print('%i/%i 3DSC files had discrepancies and had to be ignored.' % (len(ignoredList3DSC), len(originalFiles)))
 
     results['settings'] = previousExperimentSettings
-    pp = pprint.PrettyPrinter(indent=4)
-    # print(pp.pformat(results['settings']))
 
     return results
 
@@ -284,7 +293,10 @@ def objects(count):
 
 
 print('Loading raw data files..')
-loadedRawResults = {'QSI': {}, 'SI': {}, '3DSC': {}, 'QUICCI': {}}
+loadedRawResults = {}
+for method in methods:
+    loadedRawResults[methods[method]['namePrefixInJSONFile']] = {}
+
 for algorithm in rawInputDirectories:
     for path in rawInputDirectories[algorithm]:
         print('Loading raw directory:', path)
@@ -316,59 +328,28 @@ for directory in inputDirectories.keys():
 def filterResultSet(resultSet, index):
     out = copy.deepcopy(resultSet)
 
-    if 'QSISampleGeneration' in out['runtimes']:
-        out['runtimes']['QSISampleGeneration']['total'] = [out['runtimes']['QSISampleGeneration']['total'][index]]
-        out['runtimes']['QSISampleGeneration']['meshScale'] = [out['runtimes']['QSISampleGeneration']['meshScale'][index]]
-        out['runtimes']['QSISampleGeneration']['redistribution'] = [out['runtimes']['QSISampleGeneration']['redistribution'][index]]
-        out['runtimes']['QSISampleGeneration']['generation'] = [out['runtimes']['QSISampleGeneration']['generation'][index]]
+    for method in methods:
+        sampleGenerationString = methods[method]['namePrefixInJSONFile'] + 'SampleGeneration'
+        searchString = methods[method]['namePrefixInJSONFile'] + 'Search'
+        histogramsString = methods[method]['namePrefixInJSONFile'] + 'histograms'
 
-    if 'QSISearch' in out['runtimes']:
-        out['runtimes']['QSISearch']['total'] = [out['runtimes']['QSISearch']['total'][index]]
-        out['runtimes']['QSISearch']['search'] = [out['runtimes']['QSISearch']['search'][index]]
+        if sampleGenerationString in out['runtimes']:
+            for timingMeasurement in methods[method]['generationTimings']:
+                out['runtimes'][sampleGenerationString][timingMeasurement] \
+                    = [out['runtimes'][sampleGenerationString][timingMeasurement][index]]
 
-    if 'SISampleGeneration' in out['runtimes']:
-        out['runtimes']['SISampleGeneration']['total'] = [out['runtimes']['SISampleGeneration']['total'][index]]
-        out['runtimes']['SISampleGeneration']['initialisation'] = [out['runtimes']['SISampleGeneration']['initialisation'][index]]
-        out['runtimes']['SISampleGeneration']['sampling'] = [out['runtimes']['SISampleGeneration']['sampling'][index]]
-        out['runtimes']['SISampleGeneration']['generation'] = [out['runtimes']['SISampleGeneration']['generation'][index]]
+        if searchString in out['runtimes']:
+            for timingMeasurement in methods[method]['searchTimings']:
+                out['runtimes'][searchString][timingMeasurement] = [out['runtimes'][searchString][timingMeasurement][index]]
 
-    if 'SISearch' in out['runtimes']:
-        out['runtimes']['SISearch']['total'] = [out['runtimes']['SISearch']['total'][index]]
-        out['runtimes']['SISearch']['averaging'] = [out['runtimes']['SISearch']['averaging'][index]]
-        out['runtimes']['SISearch']['search'] = [out['runtimes']['SISearch']['search'][index]]
-
-    if '3DSCSampleGeneration' in out['runtimes']:
-        out['runtimes']['3DSCSampleGeneration']['total'] = [out['runtimes']['3DSCSampleGeneration']['total'][index]]
-        out['runtimes']['3DSCSampleGeneration']['initialisation'] = [out['runtimes']['3DSCSampleGeneration']['initialisation'][index]]
-        out['runtimes']['3DSCSampleGeneration']['sampling'] = [out['runtimes']['3DSCSampleGeneration']['sampling'][index]]
-        out['runtimes']['3DSCSampleGeneration']['pointCounting'] = [out['runtimes']['3DSCSampleGeneration']['pointCounting'][index]]
-        out['runtimes']['3DSCSampleGeneration']['generation'] = [out['runtimes']['3DSCSampleGeneration']['generation'][index]]
-
-    if '3DSCSearch' in out['runtimes']:
-        out['runtimes']['3DSCSearch']['total'] = [out['runtimes']['3DSCSearch']['total'][index]]
-        out['runtimes']['3DSCSearch']['search'] = [out['runtimes']['3DSCSearch']['search'][index]]
-
-    if 'QUICCISampleGeneration' in out['runtimes']:
-        out['runtimes']['QUICCISampleGeneration']['total'] = [out['runtimes']['QUICCISampleGeneration']['total'][index]]
-        out['runtimes']['QUICCISampleGeneration']['meshScale'] = [out['runtimes']['QUICCISampleGeneration']['meshScale'][index]]
-        out['runtimes']['QUICCISampleGeneration']['redistribution'] = [out['runtimes']['QUICCISampleGeneration']['redistribution'][index]]
-        out['runtimes']['QUICCISampleGeneration']['generation'] = [out['runtimes']['QUICCISampleGeneration']['generation'][index]]
-
-    if 'QUICCISearch' in out['runtimes']:
-        out['runtimes']['QUICCISearch']['total'] = [out['runtimes']['QUICCISearch']['total'][index]]
-        out['runtimes']['QUICCISearch']['search'] = [out['runtimes']['QUICCISearch']['search'][index]]
-
-    if 'QSIhistograms' in out:
-        out['QSIhistograms'] = {'0': out['QSIhistograms'][str(index)]}
-
-    if 'SIhistograms' in out:
-        out['SIhistograms'] = {'0': out['SIhistograms'][str(index)]}
-
-    if '3DSChistograms' in out:
-        out['3DSChistograms'] = {'0': out['3DSChistograms'][str(index)]}
-
-    if 'QUICCIhistograms' in out:
-        out['QUICCIhistograms'] = {'0': out['QUICCIhistograms'][str(out['sampleObjectCounts'][index]) + ' objects']}
+        if histogramsString in out:
+            # Older result dump files use an integer index as a way to specify which object count the results belong to
+            # Newer dump files use the latter format, where it specifically lists the object count used
+            # This if statement automatically switches between these variants
+            if str(index) in out[histogramsString]:
+                out[histogramsString] = {'0': out[histogramsString][str(index)]}
+            else:
+                out[histogramsString] = {'0': out[histogramsString][str(out['sampleObjectCounts'][index]) + ' objects']}
 
     return out
 
@@ -384,23 +365,17 @@ def split(directory):
     del inputDirectories[directory]
 
     for itemCountIndex, itemCount in enumerate(result['settings']['sampleObjectCounts']):
-        out = {
-            'results': {'QSI': {}, 'SI': {}, '3DSC': {}, 'QUICCI': {}},
-            'settings': {}}
+        out = {'results': {}, 'settings': {}}
+        for method in methods:
+            out['results'][methods[method]['namePrefixInJSONFile']] = {}
+
         out['settings'] = result['settings'].copy()
         out['settings']['sampleObjectCounts'] = [itemCount]
 
-        for qsiSeed in result['results']['QSI']:
-            out['results']['QSI'][qsiSeed] = filterResultSet(result['results']['QSI'][qsiSeed], itemCountIndex)
-
-        for siSeed in result['results']['SI']:
-            out['results']['SI'][siSeed] = filterResultSet(result['results']['SI'][siSeed], itemCountIndex)
-
-        for scSeed in result['results']['3DSC']:
-            out['results']['3DSC'][scSeed] = filterResultSet(result['results']['3DSC'][scSeed], itemCountIndex)
-
-        for scSeed in result['results']['QUICCI']:
-            out['results']['QUICCI'][scSeed] = filterResultSet(result['results']['QUICCI'][scSeed], itemCountIndex)
+        for method in methods:
+            for seed in result['results'][methods[method]['namePrefixInJSONFile']]:
+                out['results'][methods[method]['namePrefixInJSONFile']][seed] = \
+                    filterResultSet(result['results'][methods[method]['namePrefixInJSONFile']][seed], itemCountIndex)
 
         newDirectoryName = directory + ' (' + str(itemCount) + ' objects)'
 
@@ -429,13 +404,14 @@ def merge(directory1, directory2, newdirectoryName, newDirectoryClusterName):
         print('Directory 1:', directory1_contents['settings'])
         print('Directory 2:', directory2_contents['settings'])
 
-    combinedResults = {'results': {'QSI': {}, 'SI': {}, '3DSC': {}, 'QUICCI': {}}, 'settings': directory1_contents['settings']}
+    combinedResults = {'results': {}, 'settings': directory1_contents['settings']}
+    for method in methods:
+        combinedResults['results'][methods[method]['namePrefixInJSONFile']] = {}
 
     # Initialising with the original results
-    combinedResults['results']['QSI'] = directory1_contents['results']['QSI']
-    combinedResults['results']['SI'] = directory1_contents['results']['SI']
-    combinedResults['results']['3DSC'] = directory1_contents['results']['3DSC']
-    combinedResults['results']['QUICCI'] = directory1_contents['results']['QUICCI']
+    for method in methods:
+        combinedResults['results'][methods[method]['namePrefixInJSONFile']] = \
+            directory1_contents['results'][methods[method]['namePrefixInJSONFile']]
 
     additionCount = 0
 
@@ -519,14 +495,9 @@ print('\nProcessing..\n')
 
 seedSet = set()
 for directory in inputDirectories.keys():
-    for seed in loadedResults[directory]['results']['QSI'].keys():
-        seedSet.add(seed)
-    for seed in loadedResults[directory]['results']['SI'].keys():
-        seedSet.add(seed)
-    for seed in loadedResults[directory]['results']['3DSC'].keys():
-        seedSet.add(seed)
-    for seed in loadedResults[directory]['results']['QUICCI'].keys():
-        seedSet.add(seed)
+    for method in methods:
+        for seed in loadedResults[directory]['results'][methods[method]['namePrefixInJSONFile']].keys():
+            seedSet.add(seed)
 seedList = [x for x in seedSet]
 
 print('Found', len(seedSet), 'seeds in result sets')
@@ -540,36 +511,20 @@ if removeSeedsWithMissingEntries:
     for directory in loadedResults:
         cutCount = 0
         for seed in seedList:
-            if len(loadedResults[directory]['results']['QSI']) > 0:
-                if not seed in loadedResults[directory]['results']['QSI']:
-                    missingSeeds.append(seed)
-                    cutCount += 1
-            if len(loadedResults[directory]['results']['SI']) > 0:
-                if not seed in loadedResults[directory]['results']['SI']:
-                    missingSeeds.append(seed)
-                    cutCount += 1
-            if len(loadedResults[directory]['results']['3DSC']) > 0:
-                if not seed in loadedResults[directory]['results']['3DSC']:
-                    missingSeeds.append(seed)
-                    cutCount += 1
-            if len(loadedResults[directory]['results']['QUICCI']) > 0:
-                if not seed in loadedResults[directory]['results']['QUICCI']:
-                    missingSeeds.append(seed)
-                    cutCount += 1
+            for method in methods:
+                if len(loadedResults[directory]['results'][methods[method]['namePrefixInJSONFile']]) > 0:
+                    if not seed in loadedResults[directory]['results'][methods[method]['namePrefixInJSONFile']]:
+                        missingSeeds.append(seed)
+                        cutCount += 1
         print(directory, '- removed seed count:', cutCount)
 
     print('Detected', len(set(missingSeeds)), 'unique seeds with missing entries. Removing..')
 
     for missingSeed in missingSeeds:
         for directory in loadedResults:
-            if missingSeed in loadedResults[directory]['results']['QSI']:
-                del loadedResults[directory]['results']['QSI'][missingSeed]
-            if missingSeed in loadedResults[directory]['results']['SI']:
-                del loadedResults[directory]['results']['SI'][missingSeed]
-            if missingSeed in loadedResults[directory]['results']['3DSC']:
-                del loadedResults[directory]['results']['3DSC'][missingSeed]
-            if missingSeed in loadedResults[directory]['results']['QUICCI']:
-                del loadedResults[directory]['results']['QUICCI'][missingSeed]
+            for method in methods:
+                if missingSeed in loadedResults[directory]['results'][methods[method]['namePrefixInJSONFile']]:
+                    del loadedResults[directory]['results'][methods[method]['namePrefixInJSONFile']][missingSeed]
         if missingSeed in seedList:
             del seedList[seedList.index(missingSeed)]
 
@@ -594,13 +549,11 @@ for clutterFileDirectory in clutterFileDirectories:
 
 # Find the seeds for which all input sets have data
 print('\nComputing condensed seed set')
-print('Starting raw QSI seed set size:', len(loadedRawResults['QSI'].keys()))
-rawSeedList = [x for x in loadedRawResults['QSI'].keys() if x in loadedRawResults['SI'].keys()]
-print('Merged with SI:', len(rawSeedList))
-rawSeedList = [x for x in rawSeedList if x in loadedRawResults['3DSC'].keys()]
-print('Merged with 3DSC:', len(rawSeedList))
-rawSeedList = [x for x in rawSeedList if x in loadedRawResults['QUICCI'].keys()]
-print('Merged with QUICCI:', len(rawSeedList))
+rawSeedList = loadedRawResults['QSI'].keys()
+print('Starting raw RICI seed set size:', len(rawSeedList))
+for method in methods:
+    rawSeedList = [x for x in rawSeedList if x in loadedRawResults[methods[method]['namePrefixInJSONFile']].keys()]
+    print('Merged with ' + method + ':', len(rawSeedList))
 rawSeedList = [x for x in rawSeedList if x in seedList]
 print('Merged with seedList:', len(rawSeedList))
 rawSeedList = [x for x in rawSeedList if x in clutterFileMap.keys()]
@@ -619,10 +572,9 @@ print()
 
 
 # Create heatmap histograms
-hist_rici = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
-hist_si = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
-hist_3dsc = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
-hist_quicci = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
+histograms = {}
+for method in methods:
+    histograms[method] = np.zeros(shape=(heatmapSize, heatmapSize), dtype=np.int64)
 
 print('Computing histograms..')
 histogramEntryCount = 0
@@ -630,55 +582,37 @@ for rawSeedIndex, rawSeed in enumerate(rawSeedList):
     print(str(rawSeedIndex + 1) + '/' + str(len(rawSeedList)) + " processed", end='\r', flush=True)
 
     clutterValues = clutterFileMap[rawSeed]['clutterValues']
-    riciRanks = loadedRawResults['QSI'][rawSeed]
-    siRanks = loadedRawResults['SI'][rawSeed]
-    scRanks = loadedRawResults['3DSC'][rawSeed]
-    quicciRanks = loadedRawResults['QUICCI'][rawSeed]
-
-    if not(len(clutterValues) == len(riciRanks) == len(siRanks) == len(scRanks) == len(quicciRanks)):
-        print('WARNING: batch size mismatch at seed', rawSeed , '!', [len(clutterValues), len(riciRanks), len(siRanks), len(scRanks), len(quicciRanks)])
 
     histogramEntryCount += len(clutterValues)
 
-    for i in range(0, len(clutterValues)):
-        clutterValue = clutterValues[i]
-        index_rici = riciRanks[i]
-        index_si = siRanks[i]
-        index_3dsc = scRanks[i]
-        index_quicci = quicciRanks[i]
+    for method in methods:
+        ranks = loadedRawResults[methods[method]['namePrefixInJSONFile']][rawSeed]
 
-        # Apparently some NaN in there
-        if clutterValue is None:
-            continue
+        if not(len(clutterValues) == len(ranks)):
+            print('WARNING: batch size mismatch at seed', rawSeed , '!', 'method ' + method, [len(clutterValues), len(ranks)])
 
-        xBin = int((1.0 - clutterValue) * heatmapSize)
-        if xBin >= heatmapSize:
-            continue
+        for i in range(0, len(clutterValues)):
+            clutterValue = clutterValues[i]
+            index = ranks[i]
 
-        yBin_rici = index_rici
-        if yBin_rici < heatmapSize:
-            hist_rici[heatmapSize - 1 - yBin_rici, xBin] += 1
+            # Apparently some NaN in there
+            if clutterValue is None:
+                continue
 
-        yBin_si = index_si
-        if yBin_si < heatmapSize:
-            hist_si[heatmapSize - 1 - yBin_si, xBin] += 1
+            xBin = int((1.0 - clutterValue) * heatmapSize)
+            if xBin >= heatmapSize:
+                continue
 
-        yBin_3dsc = index_3dsc
-        if yBin_3dsc < heatmapSize:
-            hist_3dsc[heatmapSize - 1 - yBin_3dsc, xBin] += 1
-
-        yBin_quicci = index_quicci
-        if yBin_quicci < heatmapSize:
-                hist_quicci[heatmapSize - 1 - yBin_quicci, xBin] += 1
+            yBin = index
+            if yBin < heatmapSize:
+                histograms[method][heatmapSize - 1 - yBin, xBin] += 1
 
 print('Histogram computed over', histogramEntryCount, 'values')
 
+for method in methods:
+    histograms[method] = np.log10(np.maximum(histograms[method], 0.1))
 
 
-hist_rici = np.log10(np.maximum(hist_rici,0.1))
-hist_si = np.log10(np.maximum(hist_si,0.1))
-hist_3dsc = np.log10(np.maximum(hist_3dsc,0.1))
-hist_quicci = np.log10(np.maximum(hist_quicci,0.1))
 
 extent = [0, heatmapSize, 0, heatmapSize]
 
@@ -686,54 +620,34 @@ extent = [0, heatmapSize, 0, heatmapSize]
 plt.clf()
 
 colorbar_ticks = np.arange(0, 8, 1)
-total_minimum_value = min(np.amin(hist_rici), np.amin(hist_si), np.amin(hist_3dsc), np.amin(hist_quicci))
-total_maximum_value = max(np.amax(hist_rici), np.amax(hist_si), np.amax(hist_3dsc), np.amax(hist_quicci))
+total_minimum_value = min([np.amin(histograms[x]) for x in histograms])
+total_maximum_value = max([np.amax(histograms[x]) for x in histograms])
 print('range:', total_minimum_value, total_maximum_value)
 normalisation = colors.Normalize(vmin=total_minimum_value,vmax=total_maximum_value)
 
 horizontal_ticks_real_coords = np.arange(0,256,25.599*2.0)
 horizontal_ticks_labels = [("%.1f" % x) for x in np.arange(0,1.1,0.2)]
 
-riciplt = plt.figure(1)
-plt.title('')
-plt.ylabel('rank')
-plt.xlabel('clutter percentage')
-rici_im = plt.imshow(hist_rici, extent=extent, cmap='nipy_spectral', norm=normalisation)
-plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+for figureIndex, method in enumerate(methods):
+    plot = plt.figure(figureIndex + 1)
+    plt.title('')
+    plt.ylabel('rank')
+    plt.xlabel('clutter percentage')
+    image = plt.imshow(histograms[method], extent=extent, cmap='nipy_spectral', norm=normalisation)
+    plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
 
-scplot = plt.figure(2)
-plt.title('')
-plt.ylabel('rank')
-plt.xlabel('clutter percentage')
-scim_im = plt.imshow(hist_3dsc, extent=extent, cmap='nipy_spectral', norm=normalisation)
-plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+    # Final chart gets the legend
+    if figureIndex + 1 == len(methods.keys()):
+        cbar = plt.colorbar(image, ticks=colorbar_ticks)
+        cbar.ax.set_yticklabels(["{:.0E}".format(x) for x in np.power(10, colorbar_ticks)])
+        cbar.set_label('Sample count', rotation=90)
 
-quicciplot = plt.figure(3)
-plt.title('')
-plt.ylabel('rank')
-plt.xlabel('clutter percentage')
-quicci_im = plt.imshow(hist_quicci, extent=extent, cmap='nipy_spectral', norm=normalisation)
-plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
-
-siplt = plt.figure(4)
-plt.title('')
-plt.ylabel('rank')
-plt.xlabel('clutter percentage')
-si_im = plt.imshow(hist_si, extent=extent, cmap='nipy_spectral', norm=normalisation)
-plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
-si_cbar = plt.colorbar(si_im, ticks=colorbar_ticks)
-si_cbar.ax.set_yticklabels(["{:.0E}".format(x) for x in np.power(10, colorbar_ticks)])
-si_cbar.set_label('Sample count', rotation=90)
-
-riciplt.show()
-scplot.show()
-quicciplot.show()
-siplt.show()
+    plot.show()
 
 input()
 
 # -- Dump to spreadsheet --
-
+#methods[method]['namePrefixInJSONFile']
 print('Dumping spreadsheet..')
 
 book = xlwt.Workbook(encoding="utf-8")
@@ -749,10 +663,8 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
 for keyIndex, key in enumerate(allColumns):
     experimentSheet.write(0, keyIndex + 1, str(key))
 experimentSheet.write(0, len(allColumns) + 1, 'Cluster')
-experimentSheet.write(0, len(allColumns) + 2, 'RICI Count')
-experimentSheet.write(0, len(allColumns) + 3, 'SI Count')
-experimentSheet.write(0, len(allColumns) + 4, '3DSC Count')
-experimentSheet.write(0, len(allColumns) + 5, 'QUICCI Count')
+for index, method in enumerate(methods):
+    experimentSheet.write(0, len(allColumns) + index + 2, method + ' Count')
 
 # Overview table contents
 for directoryIndex, directory in enumerate(inputDirectories.keys()):
@@ -766,302 +678,128 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
             experimentSheet.write(directoryIndex + 1, keyIndex + 1, ' ')
 
     experimentSheet.write(directoryIndex + 1, len(allColumns) + 1, cluster)
-    experimentSheet.write(directoryIndex + 1, len(allColumns) + 2, len([x for x in result['results']['QSI'] if x in seedList]))
-    experimentSheet.write(directoryIndex + 1, len(allColumns) + 3, len([x for x in result['results']['SI'] if x in seedList]))
-    experimentSheet.write(directoryIndex + 1, len(allColumns) + 4, len([x for x in result['results']['3DSC'] if x in seedList]))
-    experimentSheet.write(directoryIndex + 1, len(allColumns) + 5, len([x for x in result['results']['QUICCI'] if x in seedList]))
+    for columnIndex, method in enumerate(methods):
+        experimentSheet.write(directoryIndex + 1, len(allColumns) + columnIndex + 2,
+              len([x for x in result['results'][methods[method]['namePrefixInJSONFile']] if x in seedList]))
 
 # Sheets
-top0sheetRICI = book.add_sheet("Rank 0 RICI results")
-top0sheetSI = book.add_sheet("Rank 0 SI results")
-top0sheet3DSC = book.add_sheet("Rank 0 3DSC results")
-top0sheetQUICCI = book.add_sheet("Rank 0 QUICCI results")
-
-top10sheetRICI = book.add_sheet("Top 10 RICI results")
-top10sheetSI = book.add_sheet("Top 10 SI results")
-top10sheet3DSC = book.add_sheet("Top 10 3DSC results")
-top10sheetQUICCI = book.add_sheet("Top 10 QUICCI results")
-
-generationSpeedSheetRICI = book.add_sheet("RICI Generation Times")
-generationSpeedSheetSI = book.add_sheet("SI Generation Times")
-generationSpeedSheet3DSC = book.add_sheet("3DSC Generation Times")
-generationSpeedSheetQUICCI = book.add_sheet("QUICCI Generation Times")
-
-comparisonSpeedSheetRICI = book.add_sheet("RICI Comparison Times")
-comparisonSpeedSheetSI = book.add_sheet("SI Comparison Times")
-comparisonSpeedSheet3DSC = book.add_sheet("3DSC Comparison Times")
-comparisonSpeedSheetQUICCI = book.add_sheet("QUICCI Comparison Times")
+sheets = {}
+for method in methods:
+    sheets[method] = {}
+for method in methods:
+    sheets[method]['top0'] = book.add_sheet("Rank 0 " + method + " results")
+for method in methods:
+    sheets[method]['top10'] = book.add_sheet("Top 10 " + method + " results")
+for method in methods:
+    sheets[method]['generationSpeed'] = book.add_sheet(method + " Generation Times")
+for method in methods:
+    sheets[method]['comparisonSpeed'] = book.add_sheet(method + " Comparison Times")
 
 vertexCountSheet = book.add_sheet("Reference Image Count")
 totalVertexCountSheet = book.add_sheet("Total Image Count")
 totalTriangleCountSheet = book.add_sheet("Total Triangle Count")
 
+
+# Write initial columns
+
+sheets[method]['top0'].write(0, 0, 'seed')
+sheets[method]['top10'].write(0, 0, 'seed')
+sheets[method]['generationSpeed'].write(0, 0, 'seed')
+sheets[method]['comparisonSpeed'].write(0, 0, 'seed')
+
+vertexCountSheet.write(0, 0, 'seed')
+totalVertexCountSheet.write(0, 0, 'seed')
+totalTriangleCountSheet.write(0, 0, 'seed')
+
+for seedIndex, seed in enumerate(seedList):
+    sheets[method]['top0'].write(seedIndex + 1, 0, seed)
+    sheets[method]['top10'].write(seedIndex + 1, 0, seed)
+    sheets[method]['generationSpeed'].write(seedIndex + 1, 0, seed)
+    sheets[method]['comparisonSpeed'].write(seedIndex + 1, 0, seed)
+
+    vertexCountSheet.write(seedIndex + 1, 0, seed)
+    totalVertexCountSheet.write(seedIndex + 1, 0, seed)
+    totalTriangleCountSheet.write(seedIndex + 1, 0, seed)
+
+
 # seed column is 0, data starts at column 1
 currentColumn = 1
 
 for directoryIndex, directory in enumerate(inputDirectories.keys()):
+    for methodIndex, method in enumerate(methods):
+        resultSet = loadedResults[directory]
+        directoryName, _ = inputDirectories[directory]
 
-    # Writing seed column
-    if directoryIndex == 0:
-        top0sheetRICI.write(0, 0, 'seed')
-        top0sheetSI.write(0, 0, 'seed')
-        top0sheet3DSC.write(0, 0, 'seed')
-        top0sheetQUICCI.write(0, 0, 'seed')
+        sampleGenerationString = methods[method]['namePrefixInJSONFile'] + 'SampleGeneration'
+        searchString = methods[method]['namePrefixInJSONFile'] + 'Search'
+        histogramsString = methods[method]['namePrefixInJSONFile'] + 'histograms'
 
-        top10sheetRICI.write(0, 0, 'seed')
-        top10sheetSI.write(0, 0, 'seed')
-        top10sheet3DSC.write(0, 0, 'seed')
-        top10sheetQUICCI.write(0, 0, 'seed')
+        # Writing column headers
+        for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
+            columnHeader = directoryName + ' (' + str(sampleObjectCount) + ' ' + objects(
+                len(resultSet['settings']['sampleObjectCounts'])) + ')'
 
-        generationSpeedSheetRICI.write(0, 0, 'seed')
-        generationSpeedSheetSI.write(0, 0, 'seed')
-        generationSpeedSheet3DSC.write(0, 0, 'seed')
-        generationSpeedSheetQUICCI.write(0, 0, 'seed')
+            sheets[method]['top0'].write(0, currentColumn + sampleCountIndex, columnHeader)
+            sheets[method]['top10'].write(0, currentColumn + sampleCountIndex, columnHeader)
+            sheets[method]['generationSpeed'].write(0, currentColumn + sampleCountIndex, columnHeader)
+            sheets[method]['comparisonSpeed'].write(0, currentColumn + sampleCountIndex, columnHeader)
 
-        comparisonSpeedSheetRICI.write(0, 0, 'seed')
-        comparisonSpeedSheetSI.write(0, 0, 'seed')
-        comparisonSpeedSheet3DSC.write(0, 0, 'seed')
-        comparisonSpeedSheetQUICCI.write(0, 0, 'seed')
-
-        vertexCountSheet.write(0, 0, 'seed')
-        totalVertexCountSheet.write(0, 0, 'seed')
-        totalTriangleCountSheet.write(0, 0, 'seed')
+            if methodIndex == 0:
+                vertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
+                totalVertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
+                totalTriangleCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
 
         for seedIndex, seed in enumerate(seedList):
-            top0sheetRICI.write(seedIndex + 1, 0, seed)
-            top0sheetSI.write(seedIndex + 1, 0, seed)
-            top0sheet3DSC.write(seedIndex + 1, 0, seed)
-            top0sheetQUICCI.write(seedIndex + 1, 0, seed)
+            if seed in resultSet['results'][methods[method]['namePrefixInJSONFile']]:
+                for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
 
-            top10sheetRICI.write(seedIndex + 1, 0, seed)
-            top10sheetSI.write(seedIndex + 1, 0, seed)
-            top10sheet3DSC.write(seedIndex + 1, 0, seed)
-            top10sheetQUICCI.write(seedIndex + 1, 0, seed)
+                    # Top 1 performance
+                    entry = resultSet['results'][methods[method]['namePrefixInJSONFile']][seed]
+                    totalImageCount = entry['imageCounts'][0]
+                    experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
+                    percentageAtPlace0 = 0
+                    if '0' in entry[histogramsString][str(sampleCountIndex)]:
+                        percentageAtPlace0 = float(entry[histogramsString][str(sampleCountIndex)]['0']) / float(totalImageCount)
+                    sheets[method]['top0'].write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
 
-            generationSpeedSheetRICI.write(seedIndex + 1, 0, seed)
-            generationSpeedSheetSI.write(seedIndex + 1, 0, seed)
-            generationSpeedSheet3DSC.write(seedIndex + 1, 0, seed)
-            generationSpeedSheetQUICCI.write(seedIndex + 1, 0, seed)
+                    # Top 10 performance
+                    totalImageCountInTop10 = sum(
+                        [entry[histogramsString][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
+                         str(x) in entry[histogramsString][str(sampleCountIndex)]])
+                    percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
+                    sheets[method]['top10'].write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
 
-            comparisonSpeedSheetRICI.write(seedIndex + 1, 0, seed)
-            comparisonSpeedSheetSI.write(seedIndex + 1, 0, seed)
-            comparisonSpeedSheet3DSC.write(seedIndex + 1, 0, seed)
-            comparisonSpeedSheetQUICCI.write(seedIndex + 1, 0, seed)
+                    # generation execution time
+                    generationTime = entry['runtimes'][sampleGenerationString]['total'][sampleCountIndex]
+                    sheets[method]['generationSpeed'].write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
 
-            vertexCountSheet.write(seedIndex + 1, 0, seed)
-            totalVertexCountSheet.write(seedIndex + 1, 0, seed)
-            totalTriangleCountSheet.write(seedIndex + 1, 0, seed)
+                    # search execution time
+                    comparisonTime = entry['runtimes'][searchString]['total'][sampleCountIndex]
+                    sheets[method]['comparisonSpeed'].write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
 
-    resultSet = loadedResults[directory]
-    directoryName, _ = inputDirectories[directory]
-
-    # Writing column headers
-    for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
-        columnHeader = directoryName + ' (' + str(sampleObjectCount) + ' ' + objects(
-            len(resultSet['settings']['sampleObjectCounts'])) + ')'
-
-        top0sheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
-        top0sheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
-        top0sheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
-        top0sheetQUICCI.write(0, currentColumn + sampleCountIndex, columnHeader)
-
-        top10sheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
-        top10sheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
-        top10sheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
-        top10sheetQUICCI.write(0, currentColumn + sampleCountIndex, columnHeader)
-
-        generationSpeedSheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
-        generationSpeedSheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
-        generationSpeedSheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
-        generationSpeedSheetQUICCI.write(0, currentColumn + sampleCountIndex, columnHeader)
-
-        comparisonSpeedSheetRICI.write(0, currentColumn + sampleCountIndex, columnHeader)
-        comparisonSpeedSheetSI.write(0, currentColumn + sampleCountIndex, columnHeader)
-        comparisonSpeedSheet3DSC.write(0, currentColumn + sampleCountIndex, columnHeader)
-        comparisonSpeedSheetQUICCI.write(0, currentColumn + sampleCountIndex, columnHeader)
-
-        vertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
-        totalVertexCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
-        totalTriangleCountSheet.write(0, currentColumn + sampleCountIndex, columnHeader)
-
-    for seedIndex, seed in enumerate(seedList):
-        if seed in resultSet['results']['QSI']:
-            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
-                # Top 1 performance
-                entry = resultSet['results']['QSI'][seed]
-                totalImageCount = entry['imageCounts'][0]
-                experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
-                percentageAtPlace0 = float(entry['QSIhistograms'][str(sampleCountIndex)]['0']) / float(totalImageCount)
-                top0sheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
-
-                # Top 10 performance
-                totalImageCountInTop10 = sum(
-                    [entry['QSIhistograms'][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
-                     str(x) in entry['QSIhistograms'][str(sampleCountIndex)]])
-                percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
-                top10sheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
-
-                # generation execution time
-                generationTime = entry['runtimes']['QSISampleGeneration']['total'][sampleCountIndex]
-                generationSpeedSheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
-
-                # search execution time
-                comparisonTime = entry['runtimes']['QSISearch']['total'][sampleCountIndex]
-                comparisonSpeedSheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
-
-                # Vertex count sanity check
-                vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
-                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
-                                            sum(entry['imageCounts'][0:sampleObjectCount]))
-                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
-                                              sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
-        else:
-            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
-                top0sheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                top10sheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                generationSpeedSheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                comparisonSpeedSheetRICI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-
-        if seed in resultSet['results']['SI']:
-            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
-                # Top 1 performance
-                entry = resultSet['results']['SI'][seed]
-                totalImageCount = entry['imageCounts'][0]
-                experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
-                percentageAtPlace0 = float(entry['SIhistograms'][str(sampleCountIndex)]['0']) / float(totalImageCount)
-                top0sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
-
-                # Top 10 performance
-                totalImageCountInTop10 = sum(
-                    [entry['SIhistograms'][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
-                     str(x) in entry['SIhistograms'][str(sampleCountIndex)]])
-                percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
-                top10sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
-
-                # generation execution time
-                generationTime = entry['runtimes']['SISampleGeneration']['total'][sampleCountIndex]
-                generationSpeedSheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
-
-                # search execution time
-                comparisonTime = entry['runtimes']['SISearch']['total'][sampleCountIndex]
-                comparisonSpeedSheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
-
-                # Vertex count sanity check
-                vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
-                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
-                                            sum(entry['imageCounts'][0:sampleObjectCount]))
-                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
-                                              sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
-        else:
-            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
-                top0sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                top10sheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                generationSpeedSheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                comparisonSpeedSheetSI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-
-        if seed in resultSet['results']['3DSC']:
-            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
-                # Top 1 performance
-                entry = resultSet['results']['3DSC'][seed]
-                totalImageCount = entry['imageCounts'][0]
-                experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
-                percentageAtPlace0 = 0
-                if '0' in entry['3DSChistograms'][str(sampleCountIndex)]:
-                    percentageAtPlace0 = float(entry['3DSChistograms'][str(sampleCountIndex)]['0']) / float(totalImageCount)
-                top0sheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
-
-                # Top 10 performance
-                totalImageCountInTop10 = sum(
-                    [entry['3DSChistograms'][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
-                     str(x) in entry['3DSChistograms'][str(sampleCountIndex)]])
-                percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
-                top10sheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
-
-                # generation execution time
-                generationTime = entry['runtimes']['3DSCSampleGeneration']['total'][sampleCountIndex]
-                generationSpeedSheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
-
-                # search execution time
-                comparisonTime = entry['runtimes']['3DSCSearch']['total'][sampleCountIndex]
-                comparisonSpeedSheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
-
-                # Vertex count sanity check
-                vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
-                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
-                                            sum(entry['imageCounts'][0:sampleObjectCount]))
-                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
-                                              sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
-        else:
-            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
-                top0sheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                top10sheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                generationSpeedSheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                comparisonSpeedSheet3DSC.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-
-        if seed in resultSet['results']['QUICCI']:
-            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
-                # Top 1 performance
-                entry = resultSet['results']['QUICCI'][seed]
-                totalImageCount = entry['imageCounts'][0]
-                experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
-                percentageAtPlace0 = 0
-                indexNameString = str(resultSet['settings']['sampleObjectCounts'][sampleCountIndex]) + ' objects'
-                if '0' in entry['QUICCIhistograms'][str(sampleCountIndex)]:
-                    percentageAtPlace0 = float(entry['QUICCIhistograms'][str(sampleCountIndex)]['0']) / float(totalImageCount)
-                top0sheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
-
-                # Top 10 performance
-                totalImageCountInTop10 = sum(
-                    [entry['QUICCIhistograms'][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
-                     str(x) in entry['QUICCIhistograms'][str(sampleCountIndex)]])
-                percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
-                top10sheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
-
-                # generation execution time
-                generationTime = entry['runtimes']['QUICCISampleGeneration']['total'][sampleCountIndex]
-                generationSpeedSheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, generationTime)
-
-                # search execution time
-                comparisonTime = entry['runtimes']['QUICCISearch']['total'][sampleCountIndex]
-                comparisonSpeedSheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, comparisonTime)
-
-                # Vertex count sanity check
-                vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
-                totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
-                                            sum(entry['imageCounts'][0:sampleObjectCount]))
-                totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
-                                              sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
-        else:
-            for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
-                top0sheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                top10sheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                generationSpeedSheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
-                comparisonSpeedSheetQUICCI.write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                    # Vertex count sanity check
+                    vertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex, entry['imageCounts'][0])
+                    totalVertexCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
+                                                sum(entry['imageCounts'][0:sampleObjectCount]))
+                    totalTriangleCountSheet.write(seedIndex + 1, currentColumn + sampleCountIndex,
+                                                  sum(entry['vertexCounts'][0:sampleObjectCount]) / 3)
+            else:
+                for sampleCountIndex, sampleObjectCount in enumerate(resultSet['settings']['sampleObjectCounts']):
+                    sheets[method]['top0'].write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                    sheets[method]['top10'].write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                    sheets[method]['generationSpeed'].write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
+                    sheets[method]['comparisonSpeed'].write(seedIndex + 1, currentColumn + sampleCountIndex, ' ')
 
     # Moving on to the next column
     currentColumn += len(resultSet['settings']['sampleObjectCounts'])
 
 # beauty addition.. Cuts off final column
 for seedIndex, seed in enumerate(seedList + ['dummy entry for final row']):
-    top0sheetRICI.write(seedIndex, currentColumn, ' ')
-    top10sheetRICI.write(seedIndex, currentColumn, ' ')
-    generationSpeedSheetRICI.write(seedIndex, currentColumn, ' ')
-    comparisonSpeedSheetRICI.write(seedIndex, currentColumn, ' ')
-
-    top0sheetSI.write(seedIndex, currentColumn, ' ')
-    top10sheetSI.write(seedIndex, currentColumn, ' ')
-    generationSpeedSheetSI.write(seedIndex, currentColumn, ' ')
-    comparisonSpeedSheetSI.write(seedIndex, currentColumn, ' ')
-
-    top0sheet3DSC.write(seedIndex, currentColumn, ' ')
-    top10sheet3DSC.write(seedIndex, currentColumn, ' ')
-    generationSpeedSheet3DSC.write(seedIndex, currentColumn, ' ')
-    comparisonSpeedSheet3DSC.write(seedIndex, currentColumn, ' ')
-
-    top0sheetQUICCI.write(seedIndex, currentColumn, ' ')
-    top10sheetQUICCI.write(seedIndex, currentColumn, ' ')
-    generationSpeedSheetQUICCI.write(seedIndex, currentColumn, ' ')
-    comparisonSpeedSheetQUICCI.write(seedIndex, currentColumn, ' ')
+    for method in methods:
+        sheets[method]['top0'].write(seedIndex, currentColumn, ' ')
+        sheets[method]['top10'].write(seedIndex, currentColumn, ' ')
+        sheets[method]['generationSpeed'].write(seedIndex, currentColumn, ' ')
+        sheets[method]['comparisonSpeed'].write(seedIndex, currentColumn, ' ')
 
     vertexCountSheet.write(seedIndex, currentColumn, ' ')
     totalVertexCountSheet.write(seedIndex, currentColumn, ' ')
