@@ -208,6 +208,13 @@ void dumpResultsFile(
     outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
     outJson["3dscMinSupportRadius"] = minSupportRadius3dsc;
     outJson["3dscPointDensityRadius"] = pointDensityRadius3dsc;
+#if QUICCI_DISTANCE_FUNCTION == CLUTTER_RESISTANT_DISTANCE
+    outJson["quicciDistanceFunction"] = "clutterResistant";
+#elif QUICCI_DISTANCE_FUNCTION == WEIGHTED_HAMMING_DISTANCE
+    outJson["quicciDistanceFunction"] = "weightedHamming";
+#elif QUICCI_DISTANCE_FUNCTION == HAMMING_DISTANCE
+    outJson["quicciDistanceFunction"] = "hamming";
+#endif
     outJson["gpuInfo"] = {};
     outJson["gpuInfo"]["name"] = gpuMetaData.name;
     outJson["gpuInfo"]["clockrate"] = gpuMetaData.clockRate;
