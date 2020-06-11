@@ -190,6 +190,10 @@ def extractExperimentSettings(loadedJson):
             if methods[method]['namePrefixInJSONFile'] + 'histograms' in loadedJson:
                 descriptors.append(methods[method]['nameInJSONFile'])
         settings['descriptors'] = descriptors
+    if 'quicciDistanceFunction' in loadedJson:
+        settings['quicciDistanceFunction'] = loadedJson['quicciDistanceFunction']
+    else:
+        settings['quicciDistanceFunction'] = 'clutterResistant_old'
     settings['version'] = loadedJson['version']
     return settings
 
@@ -702,21 +706,24 @@ totalTriangleCountSheet = book.add_sheet("Total Triangle Count")
 
 # Write initial columns
 
-sheets[method]['top0'].write(0, 0, 'seed')
-sheets[method]['top10'].write(0, 0, 'seed')
-sheets[method]['generationSpeed'].write(0, 0, 'seed')
-sheets[method]['comparisonSpeed'].write(0, 0, 'seed')
+for method in methods:
+    sheets[method]['top0'].write(0, 0, 'seed')
+    sheets[method]['top10'].write(0, 0, 'seed')
+    sheets[method]['generationSpeed'].write(0, 0, 'seed')
+    sheets[method]['comparisonSpeed'].write(0, 0, 'seed')
 
 vertexCountSheet.write(0, 0, 'seed')
 totalVertexCountSheet.write(0, 0, 'seed')
 totalTriangleCountSheet.write(0, 0, 'seed')
 
-for seedIndex, seed in enumerate(seedList):
-    sheets[method]['top0'].write(seedIndex + 1, 0, seed)
-    sheets[method]['top10'].write(seedIndex + 1, 0, seed)
-    sheets[method]['generationSpeed'].write(seedIndex + 1, 0, seed)
-    sheets[method]['comparisonSpeed'].write(seedIndex + 1, 0, seed)
+for method in methods:
+    for seedIndex, seed in enumerate(seedList):
+        sheets[method]['top0'].write(seedIndex + 1, 0, seed)
+        sheets[method]['top10'].write(seedIndex + 1, 0, seed)
+        sheets[method]['generationSpeed'].write(seedIndex + 1, 0, seed)
+        sheets[method]['comparisonSpeed'].write(seedIndex + 1, 0, seed)
 
+for seedIndex, seed in enumerate(seedList):
     vertexCountSheet.write(seedIndex + 1, 0, seed)
     totalVertexCountSheet.write(seedIndex + 1, 0, seed)
     totalTriangleCountSheet.write(seedIndex + 1, 0, seed)
@@ -758,14 +765,25 @@ for directoryIndex, directory in enumerate(inputDirectories.keys()):
                     totalImageCount = entry['imageCounts'][0]
                     experimentIterationCount = len(resultSet['settings']['sampleObjectCounts'])
                     percentageAtPlace0 = 0
-                    if '0' in entry[histogramsString][str(sampleCountIndex)]:
-                        percentageAtPlace0 = float(entry[histogramsString][str(sampleCountIndex)]['0']) / float(totalImageCount)
+                    totalImageCountInTop10 = 0
+                    indexNameString = str(resultSet['settings']['sampleObjectCounts'][sampleCountIndex]) + ' objects'
+                    if str(sampleCountIndex) in entry[histogramsString]:
+                        if '0' in entry[histogramsString][str(sampleCountIndex)]:
+                            percentageAtPlace0 = float(entry[histogramsString][str(sampleCountIndex)]['0']) / float(totalImageCount)
+                        totalImageCountInTop10 = sum(
+                            [entry[histogramsString][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
+                             str(x) in entry[histogramsString][str(sampleCountIndex)]])
+                    else:
+                        if '0' in entry[histogramsString][indexNameString]:
+                            percentageAtPlace0 = float(entry[histogramsString][indexNameString]['0']) / float(
+                                totalImageCount)
+                        totalImageCountInTop10 = sum(
+                            [entry[histogramsString][indexNameString][str(x)] for x in range(0, 10) if
+                             str(x) in entry[histogramsString][indexNameString]])
                     sheets[method]['top0'].write(seedIndex + 1, currentColumn + sampleCountIndex, percentageAtPlace0)
 
                     # Top 10 performance
-                    totalImageCountInTop10 = sum(
-                        [entry[histogramsString][str(sampleCountIndex)][str(x)] for x in range(0, 10) if
-                         str(x) in entry[histogramsString][str(sampleCountIndex)]])
+
                     percentInTop10 = float(totalImageCountInTop10) / float(totalImageCount)
                     sheets[method]['top10'].write(seedIndex + 1, currentColumn + sampleCountIndex, percentInTop10)
 
