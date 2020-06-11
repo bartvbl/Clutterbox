@@ -814,6 +814,10 @@ void runClutterBoxExperiment(
         std::cout << "\tTesting for sufficient memory capacity on GPU.. ";
         int* device_largestNecessaryImageBuffer;
         size_t largestImageBufferSize = totalUniqueVertexCount * spinImageWidthPixels * spinImageWidthPixels * sizeof(int);
+        if(quicciDescriptorActive && !riciDescriptorActive && !siDescriptorActive && !shapeContextDescriptorActive) {
+            // QUICCI only needs one bit per pixel, thus way less memory
+            largestImageBufferSize /= 8;
+        }
         checkCudaErrors(cudaMalloc((void**) &device_largestNecessaryImageBuffer, largestImageBufferSize));
         checkCudaErrors(cudaFree(device_largestNecessaryImageBuffer));
         std::cout << "Success." << std::endl;
