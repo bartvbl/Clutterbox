@@ -23,6 +23,7 @@ find_package (Eigen3 3.3.4 REQUIRED NO_MODULE)
 
 # PCL
 
+# included in libSpinImage
 find_package(PCL 1.8.1 REQUIRED COMPONENTS common io)
 
 # Compiler Flags

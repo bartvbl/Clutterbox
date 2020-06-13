@@ -82,9 +82,12 @@ inputDirectories = {
     '../HEIDRUNS/run1_3dsc_main/output/': ('3DSC', 'HEID'),
 
     '../HEIDRUNS/run2_quicci_main/output/': ('QUICCI', 'HEID'),
-    '../HEIDRUNS/run3_output_quicci_distance_functions_weightedHamming/output/': ('QUICCI', 'HEID'),
-    '../HEIDRUNS/run4_output_quicci_distance_functions_clutterResistant/output/': ('QUICCI', 'HEID'),
-    '../HEIDRUNS/run5_output_quicci_distance_functions_hamming/output/': ('QUICCI', 'HEID'),
+    #'../HEIDRUNS/run3_output_quicci_distance_functions_weightedHamming/output/': ('QUICCI', 'HEID'),
+    #'../HEIDRUNS/run4_output_quicci_distance_functions_clutterResistant/output/': ('QUICCI', 'HEID'),
+    #'../HEIDRUNS/run5_output_quicci_distance_functions_hamming/output/': ('QUICCI', 'HEID'),
+    '../HEIDRUNS/run6_output_quicci_distance_functions_clutterResistant_rerun/output/': ('QUICCI', 'HEID'),
+    '../HEIDRUNS/run7_output_quicci_distance_functions_weightedHamming_rerun/output/': ('QUICCI', 'HEID'),
+    '../HEIDRUNS/run8_output_quicci_distance_functions_hamming_rerun/output/': ('QUICCI', 'HEID'),
     #'../IDUNRUNS/output_run4_3dsc_main/run1/': ('3DSC, 1, 5, 10 objects', 'IDUN'),
 }
 
