@@ -22,6 +22,8 @@
 #include <spinImage/gpu/spinImageSearcher.cuh>
 #include <spinImage/gpu/3dShapeContextGenerator.cuh>
 #include <spinImage/gpu/3dShapeContextSearcher.cuh>
+#include <spinImage/gpu/fastPointFeatureHistogramGenerator.cuh>
+#include <spinImage/gpu/fastPointFeatureHistogramSearcher.cuh>
 #include <spinImage/utilities/OBJLoader.h>
 #include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/utilities/copy/deviceDescriptorsToHost.h>
@@ -606,22 +608,26 @@ void runClutterBoxExperiment(
     bool quicciDescriptorActive = false;
     bool siDescriptorActive = false;
     bool shapeContextDescriptorActive = false;
+    bool fastPointFeatureHistogramActive = false;
 
     std::cout << "Running clutterbox experiment for the following descriptors: ";
 
     for(const auto& descriptor : descriptorList) {
         if(descriptor == "rici") {
             riciDescriptorActive = true;
-            std::cout << (quicciDescriptorActive || siDescriptorActive || shapeContextDescriptorActive ? ", " : "") << "Radial Intersection Count Image";
+            std::cout << (quicciDescriptorActive || siDescriptorActive || shapeContextDescriptorActive || fastPointFeatureHistogramActive ? ", " : "") << "Radial Intersection Count Image";
         } else if(descriptor == "si") {
             siDescriptorActive = true;
-            std::cout << (quicciDescriptorActive || riciDescriptorActive || shapeContextDescriptorActive ? ", " : "") << "Spin Image";
+            std::cout << (quicciDescriptorActive || riciDescriptorActive || shapeContextDescriptorActive || fastPointFeatureHistogramActive ? ", " : "") << "Spin Image";
         } else if(descriptor == "quicci") {
             quicciDescriptorActive = true;
-            std::cout << (riciDescriptorActive || siDescriptorActive || shapeContextDescriptorActive ? ", " : "") << "Quick Intersection Count Change Image";
+            std::cout << (riciDescriptorActive || siDescriptorActive || shapeContextDescriptorActive || fastPointFeatureHistogramActive ? ", " : "") << "Quick Intersection Count Change Image";
         } else if(descriptor == "3dsc") {
             shapeContextDescriptorActive = true;
-            std::cout << (quicciDescriptorActive || riciDescriptorActive || siDescriptorActive ? ", " : "") << "3D Shape Context";
+            std::cout << (quicciDescriptorActive || riciDescriptorActive || siDescriptorActive || fastPointFeatureHistogramActive ? ", " : "") << "3D Shape Context";
+        } else if(descriptor == "fpfh") {
+            fastPointFeatureHistogramActive = true;
+            std::cout << (quicciDescriptorActive || riciDescriptorActive || siDescriptorActive || shapeContextDescriptorActive ? ", " : "") << "3D Shape Context";
         }
     }
     std::cout << std::endl;
@@ -645,16 +651,19 @@ void runClutterBoxExperiment(
     std::vector<Histogram> spinImageHistograms;
     std::vector<Histogram> shapeContextHistograms;
     std::vector<Histogram> QUICCIHistograms;
+    std::vector<Histogram> FPFHHistograms;
 
     std::vector<SpinImage::debug::RICIRunInfo> RICIRuns;
     std::vector<SpinImage::debug::SIRunInfo> SIRuns;
     std::vector<SpinImage::debug::SCRunInfo> ShapeContextRuns;
     std::vector<SpinImage::debug::QUICCIRunInfo> QUICCIRuns;
+    std::vector<SpinImage::debug::FPFHRunInfo> FPFHRuns;
 
     std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns;
     std::vector<SpinImage::debug::RICISearchRunInfo> RICISearchRuns;
     std::vector<SpinImage::debug::SCSearchRunInfo> ShapeContextSearchRuns;
     std::vector<SpinImage::debug::QUICCISearchRunInfo> QUICCISearchRuns;
+    std::vector<SpinImage::debug::FPFHSearchRunInfo> FPFHSearchRuns;
 
     // The number of sample objects that need to be loaded depends on the largest number of objects required in the list
     int sampleObjectCount = *std::max_element(objectCountList.begin(), objectCountList.end());
@@ -723,6 +732,7 @@ void runClutterBoxExperiment(
     SpinImage::array<spinImagePixelType> device_referenceSpinImages;
     SpinImage::array<shapeContextBinType> device_referenceShapeContextDescriptors;
     SpinImage::gpu::QUICCIImages device_referenceQuiccImages;
+    SpinImage::gpu::FPFHHistograms device_referenceFPFHHistograms;
 
     if(riciDescriptorActive) {
         std::cout << "\tGenerating reference RICI images.. (" << referenceImageCount << " images)" << std::endl;
@@ -783,6 +793,22 @@ void runClutterBoxExperiment(
 
         ShapeContextRuns.push_back(scReferenceRunInfo);
         std::cout << "\t\tExecution time: " << scReferenceRunInfo.generationTimeSeconds << std::endl;
+    }
+
+    if(fastPointFeatureHistogramActive) {
+        std::cout << "\tGenerating reference FPFH descriptors.." << std::endl;
+        SpinImage::debug::FPFHRunInfo fpfhReferenceRunInfo;
+        device_referenceFPFHHistograms = SpinImage::gpu::generateFPFHHistograms(
+                scaledMeshesOnGPU.at(0),
+                spinOrigins_reference,
+                supportRadius,
+                50,
+                spinImageSampleCount,
+                referenceGenerationRandomSeed,
+                &fpfhReferenceRunInfo);
+
+        FPFHRuns.push_back(fpfhReferenceRunInfo);
+        std::cout << "\t\tExecution time: " << fpfhReferenceRunInfo.totalExecutionTimeSeconds << std::endl;
     }
 
     checkCudaErrors(cudaFree(spinOrigins_reference.content));
