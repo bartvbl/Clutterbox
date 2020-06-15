@@ -194,7 +194,7 @@ void dumpResultsFile(
 
     json outJson;
 
-    outJson["version"] = "v11";
+    outJson["version"] = "v12";
     outJson["seed"] = seed;
     outJson["descriptors"] = descriptorList;
     outJson["sampleSetSize"] = sampleObjectCount;
@@ -430,6 +430,7 @@ void dumpRawSearchResultFile(
         std::vector<SpinImage::array<unsigned int>> rawRICISearchResults,
         std::vector<SpinImage::array<unsigned int>> rawQUICCISearchResults,
         std::vector<SpinImage::array<unsigned int>> rawSISearchResults,
+        std::vector<SpinImage::array<unsigned int>> rawFPFHSearchResults,
         std::vector<SpinImage::array<unsigned int>> rawSCSearchResults,
         size_t seed) {
 
@@ -852,6 +853,7 @@ void runClutterBoxExperiment(
     std::vector<SpinImage::array<unsigned int>> rawRICISearchResults;
     std::vector<SpinImage::array<unsigned int>> rawQUICCISearchResults;
     std::vector<SpinImage::array<unsigned int>> rawSISearchResults;
+    std::vector<SpinImage::array<unsigned int>> rawFPFHSearchResults;
     std::vector<SpinImage::array<unsigned int>> raw3DSCSearchResults;
     std::vector<size_t> spinImageSampleCounts;
 
@@ -967,14 +969,15 @@ void runClutterBoxExperiment(
             QUICCIHistograms.push_back(QUICCIHistogram);
         }
 
-        // Computing common settings for SI and 3DSC
+        // Computing common settings for SI, FPFH, and 3DSC
         size_t meshSamplingSeed = generator();
         size_t currentReferenceObjectSampleCount = 0;
-        if(siDescriptorActive || shapeContextDescriptorActive) {
+        if(siDescriptorActive || shapeContextDescriptorActive || fastPointFeatureHistogramActive) {
             spinImageSampleCount = computeSpinImageSampleCount(imageCount);
             spinImageSampleCounts.push_back(spinImageSampleCount);
 
             // wasteful solution, but I don't want to do ugly hacks that destroy the function API's
+            // Computes number of samples used for the reference object
             SpinImage::internal::MeshSamplingBuffers sampleBuffers;
             SpinImage::gpu::PointCloud device_pointCloud = SpinImage::utilities::sampleMesh(boxScene, spinImageSampleCount, meshSamplingSeed, &sampleBuffers);
             float totalArea;
@@ -1097,6 +1100,52 @@ void runClutterBoxExperiment(
         }
 
 
+        // Generating Fast Point Feature Histograms
+        if(fastPointFeatureHistogramActive) {
+            std::cout << "\tGenerating Fast Point Feature Histograms.. (" << imageCount << " images, " << spinImageSampleCount << " samples)" << std::endl;
+            SpinImage::debug::FPFHRunInfo fpfhSampleRunInfo;
+            SpinImage::gpu::FPFHHistograms device_sampleFPFHHistograms = SpinImage::gpu::generateFPFHHistograms(
+                    boxScene,
+                    device_uniqueSpinOrigins,
+                    supportRadius,
+                    50,
+                    spinImageSampleCount,
+                    meshSamplingSeed,
+                    &fpfhSampleRunInfo);
+
+            FPFHRuns.push_back(fpfhSampleRunInfo);
+            std::cout << "\t\tTimings: (total " << fpfhSampleRunInfo.totalExecutionTimeSeconds << ")" << std::endl;
+
+            std::cout << "\tSearching in FPFH descriptors.." << std::endl;
+            SpinImage::debug::FPFHSearchRunInfo fpfhSearchRun;
+            SpinImage::array<unsigned int> FPFHSearchResults = SpinImage::gpu::computeFPFHSearchResultRanks(
+                    device_referenceFPFHHistograms,
+                    referenceMeshImageCount,
+                    device_sampleFPFHHistograms,
+                    imageCount,
+                    &fpfhSearchRun);
+            FPFHSearchRuns.push_back(fpfhSearchRun);
+            rawFPFHSearchResults.push_back(FPFHSearchResults);
+            std::cout << "\t\tTimings: (total " << fpfhSearchRun.totalExecutionTimeSeconds << ")" << std::endl;
+            Histogram FPFHHistogram = computeSearchResultHistogram(referenceMeshImageCount, FPFHSearchResults);
+            cudaFree(device_sampleFPFHHistograms.histograms);
+
+            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), "fpfh") != matchVisualisationDescriptorList.end()) {
+                std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
+                std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
+                outFilePath = outFilePath / (std::to_string(randomSeed) + "_fpfh_" + std::to_string(objectCount + 1) + ".obj");
+                dumpSearchResultVisualisationMesh(FPFHSearchResults, scaledMeshesOnGPU.at(0), outFilePath);
+            }
+
+            if(!dumpRawSearchResults) {
+                delete[] FPFHSearchResults.content;
+            }
+
+            // Storing results
+            spinImageHistograms.push_back(FPFHHistogram);
+        }
+
+
         // Dumping OBJ file of current scene, if enabled
         if(dumpSceneOBJFiles) {
             SpinImage::cpu::Mesh hostMesh = SpinImage::copy::deviceMeshToHost(boxScene);
@@ -1157,6 +1206,7 @@ void runClutterBoxExperiment(
                 rawRICISearchResults,
                 rawQUICCISearchResults,
                 rawSISearchResults,
+                rawFPFHSearchResults,
                 raw3DSCSearchResults,
                 randomSeed);
 
@@ -1169,6 +1219,9 @@ void runClutterBoxExperiment(
             delete[] results.content;
         }
         for(auto results : rawSISearchResults) {
+            delete[] results.content;
+        }
+        for(auto results : rawFPFHSearchResults) {
             delete[] results.content;
         }
         for(auto results : raw3DSCSearchResults) {
