@@ -803,7 +803,7 @@ void runClutterBoxExperiment(
                 scaledMeshesOnGPU.at(0),
                 spinOrigins_reference,
                 supportRadius,
-                50,
+                20,
                 spinImageSampleCount,
                 referenceGenerationRandomSeed,
                 &fpfhReferenceRunInfo);
@@ -1108,7 +1108,7 @@ void runClutterBoxExperiment(
                     boxScene,
                     device_uniqueSpinOrigins,
                     supportRadius,
-                    50,
+                    20,
                     spinImageSampleCount,
                     meshSamplingSeed,
                     &fpfhSampleRunInfo);
