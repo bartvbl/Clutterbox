@@ -100,6 +100,7 @@ void dumpResultsFile(
         std::vector<Histogram> QUICCIHistograms,
         std::vector<Histogram> SIHistograms,
         std::vector<Histogram> SCHistograms,
+        std::vector<Histogram> FPFHHistograms,
         const std::string &sourceFileDirectory,
         std::vector<int> objectCountList,
         int overrideObjectCount,
@@ -107,15 +108,18 @@ void dumpResultsFile(
         float spinImageWidth,
         float pointDensityRadius3dsc,
         float minSupportRadius3dsc,
+        unsigned int fpfhBinCount,
         size_t assertionRandomToken,
         std::vector<SpinImage::debug::RICIRunInfo> RICIRuns,
         std::vector<SpinImage::debug::QUICCIRunInfo> QUICCIRuns,
         std::vector<SpinImage::debug::SIRunInfo> SIRuns,
         std::vector<SpinImage::debug::SCRunInfo> SCRuns,
+        std::vector<SpinImage::debug::FPFHRunInfo> FPFHRuns,
         std::vector<SpinImage::debug::RICISearchRunInfo> RICISearchRuns,
         std::vector<SpinImage::debug::QUICCISearchRunInfo> QUICCISearchRuns,
         std::vector<SpinImage::debug::SISearchRunInfo> SISearchRuns,
         std::vector<SpinImage::debug::SCSearchRunInfo> SCSearchRuns,
+        std::vector<SpinImage::debug::FPFHSearchRunInfo> FPFHSearchRuns,
         float spinImageSupportAngleDegrees,
         std::vector<size_t> uniqueVertexCounts,
         std::vector<size_t> spinImageSampleCounts,
@@ -179,6 +183,7 @@ void dumpResultsFile(
     bool quicciDescriptorActive = false;
     bool siDescriptorActive = false;
     bool scDescriptorActive = false;
+    bool fpfhDescriptorActive = false;
 
     for(const auto& descriptor : descriptorList) {
         if(descriptor == "rici") {
@@ -188,6 +193,8 @@ void dumpResultsFile(
         } else if(descriptor == "si") {
             siDescriptorActive = true;
         } else if(descriptor == "3dsc") {
+            scDescriptorActive = true;
+        } else if(descriptor == "fpfh") {
             scDescriptorActive = true;
         }
     }
@@ -208,6 +215,7 @@ void dumpResultsFile(
     outJson["spinImageSupportAngle"] = spinImageSupportAngleDegrees;
     outJson["spinImageSampleCounts"] = spinImageSampleCounts;
     outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
+    outJson["fpfhBinCount"] = fpfhBinCount;
     outJson["3dscMinSupportRadius"] = minSupportRadius3dsc;
     outJson["3dscPointDensityRadius"] = pointDensityRadius3dsc;
 #if QUICCI_DISTANCE_FUNCTION == CLUTTER_RESISTANT_DISTANCE
@@ -312,6 +320,27 @@ void dumpResultsFile(
         }
     }
 
+    if(fpfhDescriptorActive) {
+        outJson["runtimes"]["FPFHReferenceGeneration"]["total"] = FPFHRuns.at(0).totalExecutionTimeSeconds;
+        outJson["runtimes"]["FPFHReferenceGeneration"]["reformat"] = FPFHRuns.at(0).originReformatExecutionTimeSeconds;
+        outJson["runtimes"]["FPFHReferenceGeneration"]["spfh_origins"] = FPFHRuns.at(0).originSPFHGenerationExecutionTimeSeconds;
+        outJson["runtimes"]["FPFHReferenceGeneration"]["spfh_pointCloud"] = FPFHRuns.at(0).pointCloudSPFHGenerationExecutionTimeSeconds;
+        outJson["runtimes"]["FPFHReferenceGeneration"]["generation"] = FPFHRuns.at(0).fpfhGenerationExecutionTimeSeconds;
+
+        outJson["runtimes"]["FPFHSampleGeneration"]["total"] = {};
+        outJson["runtimes"]["FPFHSampleGeneration"]["reformat"] = {};
+        outJson["runtimes"]["FPFHSampleGeneration"]["spfh_origins"] = {};
+        outJson["runtimes"]["FPFHSampleGeneration"]["spfh_pointCloud"] = {};
+        outJson["runtimes"]["FPFHSampleGeneration"]["generation"] = {};
+        for(unsigned int i = 1; i < FPFHRuns.size(); i++) {
+            outJson["runtimes"]["FPFHSampleGeneration"]["total"].push_back(FPFHRuns.at(i).totalExecutionTimeSeconds);
+            outJson["runtimes"]["FPFHSampleGeneration"]["reformat"].push_back(FPFHRuns.at(i).originReformatExecutionTimeSeconds);
+            outJson["runtimes"]["FPFHSampleGeneration"]["spfh_origins"].push_back(FPFHRuns.at(i).originSPFHGenerationExecutionTimeSeconds);
+            outJson["runtimes"]["FPFHSampleGeneration"]["spfh_pointCloud"].push_back(FPFHRuns.at(i).pointCloudSPFHGenerationExecutionTimeSeconds);
+            outJson["runtimes"]["FPFHSampleGeneration"]["generation"].push_back(FPFHRuns.at(i).fpfhGenerationExecutionTimeSeconds);
+        }
+    }
+
     if(riciDescriptorActive) {
         outJson["runtimes"]["RICISearch"]["total"] = {};
         outJson["runtimes"]["RICISearch"]["search"] = {};
@@ -347,6 +376,15 @@ void dumpResultsFile(
         for (auto &SCSearchRun : SCSearchRuns) {
             outJson["runtimes"]["3DSCSearch"]["total"].push_back(SCSearchRun.totalExecutionTimeSeconds);
             outJson["runtimes"]["3DSCSearch"]["search"].push_back(SCSearchRun.searchExecutionTimeSeconds);
+        }
+    }
+
+    if(fpfhDescriptorActive) {
+        outJson["runtimes"]["FPFHSearch"]["total"] = {};
+        outJson["runtimes"]["FPFHSearch"]["search"] = {};
+        for (auto &FPFHSearchRun : FPFHSearchRuns) {
+            outJson["runtimes"]["FPFHSearch"]["total"].push_back(FPFHSearchRun.totalExecutionTimeSeconds);
+            outJson["runtimes"]["FPFHSearch"]["search"].push_back(FPFHSearchRun.searchExecutionTimeSeconds);
         }
     }
 
@@ -414,6 +452,22 @@ void dumpResultsFile(
         }
     }
 
+    if(scDescriptorActive) {
+        outJson["FPFHhistograms"] = {};
+        for(unsigned int i = 0; i < objectCountList.size(); i++) {
+            std::map<unsigned int, size_t> fpfhMap = FPFHHistograms.at(i).getMap();
+            std::vector<unsigned int> keys;
+            for (auto &content : fpfhMap) {
+                keys.push_back(content.first);
+            }
+            std::sort(keys.begin(), keys.end());
+
+            for(auto &key : keys) {
+                outJson["FPFHhistograms"][std::to_string(objectCountList.at(i)) + " objects"][std::to_string(key)] = fpfhMap[key];
+            }
+        }
+    }
+
     std::ofstream outFile(outputFile);
     outFile << outJson.dump(4);
     outFile.close();
@@ -430,8 +484,8 @@ void dumpRawSearchResultFile(
         std::vector<SpinImage::array<unsigned int>> rawRICISearchResults,
         std::vector<SpinImage::array<unsigned int>> rawQUICCISearchResults,
         std::vector<SpinImage::array<unsigned int>> rawSISearchResults,
-        std::vector<SpinImage::array<unsigned int>> rawFPFHSearchResults,
         std::vector<SpinImage::array<unsigned int>> rawSCSearchResults,
+        std::vector<SpinImage::array<unsigned int>> rawFPFHSearchResults,
         size_t seed) {
 
     json outJson;
@@ -453,6 +507,8 @@ void dumpRawSearchResultFile(
         } else if(descriptor == "si") {
             siDescriptorActive = true;
         } else if(descriptor == "3dsc") {
+            scDescriptorActive = true;
+        } else if(descriptor == "fpfh") {
             scDescriptorActive = true;
         }
     }
@@ -501,6 +557,18 @@ void dumpRawSearchResultFile(
             outJson["3DSC"][indexString] = {};
             for(int j = 0; j < rawSCSearchResults.at(i).length; j++) {
                 outJson["3DSC"][indexString].push_back(rawSCSearchResults.at(i).content[j]);
+            }
+        }
+    }
+
+    // FPFH block
+    if(scDescriptorActive) {
+        outJson["FPFH"] = {};
+        for(int i = 0; i < rawFPFHSearchResults.size(); i++) {
+            std::string indexString = std::to_string(objectCountList.at(i));
+            outJson["FPFH"][indexString] = {};
+            for(int j = 0; j < rawFPFHSearchResults.at(i).length; j++) {
+                outJson["FPFH"][indexString].push_back(rawFPFHSearchResults.at(i).content[j]);
             }
         }
     }
@@ -594,6 +662,7 @@ void runClutterBoxExperiment(
         float minSupportRadius3dsc,
         float supportRadius,
         float spinImageSupportAngleDegrees,
+        unsigned int fpfhBinCount,
         bool dumpRawSearchResults,
         std::string outputDirectory,
         bool dumpSceneOBJFiles,
@@ -803,7 +872,7 @@ void runClutterBoxExperiment(
                 scaledMeshesOnGPU.at(0),
                 spinOrigins_reference,
                 supportRadius,
-                20,
+                fpfhBinCount,
                 spinImageSampleCount,
                 referenceGenerationRandomSeed,
                 &fpfhReferenceRunInfo);
@@ -1108,7 +1177,7 @@ void runClutterBoxExperiment(
                     boxScene,
                     device_uniqueSpinOrigins,
                     supportRadius,
-                    20,
+                    fpfhBinCount,
                     spinImageSampleCount,
                     meshSamplingSeed,
                     &fpfhSampleRunInfo);
@@ -1177,6 +1246,7 @@ void runClutterBoxExperiment(
             QUICCIHistograms,
             spinImageHistograms,
             shapeContextHistograms,
+            FPFHHistograms,
             objectDirectory,
             objectCountList,
             overrideObjectCount,
@@ -1184,15 +1254,18 @@ void runClutterBoxExperiment(
             supportRadius,
             minSupportRadius3dsc,
             pointDensityRadius3dsc,
+            fpfhBinCount,
             generator(),
             RICIRuns,
             QUICCIRuns,
             SIRuns,
             ShapeContextRuns,
+            FPFHRuns,
             RICISearchRuns,
             QUICCISearchRuns,
             SISearchRuns,
             ShapeContextSearchRuns,
+            FPFHSearchRuns,
             spinImageSupportAngleDegrees,
             uniqueVertexCounts,
             spinImageSampleCounts,
@@ -1206,8 +1279,8 @@ void runClutterBoxExperiment(
                 rawRICISearchResults,
                 rawQUICCISearchResults,
                 rawSISearchResults,
-                rawFPFHSearchResults,
                 raw3DSCSearchResults,
+                rawFPFHSearchResults,
                 randomSeed);
 
         // Cleanup
