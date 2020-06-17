@@ -195,7 +195,7 @@ void dumpResultsFile(
         } else if(descriptor == "3dsc") {
             scDescriptorActive = true;
         } else if(descriptor == "fpfh") {
-            scDescriptorActive = true;
+            fpfhDescriptorActive = true;
         }
     }
 
@@ -452,7 +452,7 @@ void dumpResultsFile(
         }
     }
 
-    if(scDescriptorActive) {
+    if(fpfhDescriptorActive) {
         outJson["FPFHhistograms"] = {};
         for(unsigned int i = 0; i < objectCountList.size(); i++) {
             std::map<unsigned int, size_t> fpfhMap = FPFHHistograms.at(i).getMap();
@@ -498,6 +498,7 @@ void dumpRawSearchResultFile(
     bool quicciDescriptorActive = false;
     bool siDescriptorActive = false;
     bool scDescriptorActive = false;
+    bool fpfhDescriptorActive = false;
 
     for(const auto& descriptor : descriptorList) {
         if(descriptor == "rici") {
@@ -509,7 +510,7 @@ void dumpRawSearchResultFile(
         } else if(descriptor == "3dsc") {
             scDescriptorActive = true;
         } else if(descriptor == "fpfh") {
-            scDescriptorActive = true;
+            fpfhDescriptorActive = true;
         }
     }
 
@@ -562,7 +563,7 @@ void dumpRawSearchResultFile(
     }
 
     // FPFH block
-    if(scDescriptorActive) {
+    if(fpfhDescriptorActive) {
         outJson["FPFH"] = {};
         for(int i = 0; i < rawFPFHSearchResults.size(); i++) {
             std::string indexString = std::to_string(objectCountList.at(i));
@@ -1211,7 +1212,7 @@ void runClutterBoxExperiment(
             }
 
             // Storing results
-            spinImageHistograms.push_back(FPFHHistogram);
+            FPFHHistograms.push_back(FPFHHistogram);
         }
 
 
