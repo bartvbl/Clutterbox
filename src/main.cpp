@@ -34,7 +34,7 @@ int main(int argc, const char **argv)
 	const auto& supportRadius = parser.add<float>("support-radius", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
     const auto& minSupportRadius3dsc = parser.add<float>("3dsc-min-support-radius", "The 3DSC descriptor also requires a minimum support radius to be set", '\0', arrrgh::Optional, 0.1);
     const auto& pointDensityRadius3dsc = parser.add<float>("3dsc-point-density-radius", "The 3DSC descriptor requires a set radius for its point density computation pre-processing step", '\0', arrrgh::Optional, 0.05);
-    const auto& fpfhBinCount = parser.add<int>("fpfh-bin-count", "The number of bins per feature to use for FPFH generation", '\0', arrrgh::Optional, 20);
+    const auto& fpfhBinCount = parser.add<int>("fpfh-bin-count", "The number of bins per feature to use for FPFH generation", '\0', arrrgh::Optional, 11);
 	const auto& spinImageSupportAngle = parser.add<float>("spin-image-support-angle-degrees", "The support angle to use for filtering spin image point samples", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_SUPPORT_ANGLE_DEGREES);
     const auto& forcedSeed = parser.add<std::string>("force-seed", "Specify the seed to use for random generation. Used for reproducing results.", '\0', arrrgh::Optional, "0");
 	const auto& dumpRawResults = parser.add<bool>("dump-raw-search-results", "Enable dumping of raw search result index values", '\0', arrrgh::Optional, false);
