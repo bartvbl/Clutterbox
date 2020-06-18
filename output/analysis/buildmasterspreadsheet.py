@@ -44,7 +44,8 @@ def is3dscResultValid(fileCreationTime, resultJson):
 def isQuicciResultValid(fileCreationTime, resultJson):
     return True
 
-
+def isFPFHResultValid(fileCreationTime, resultJson):
+    return True
 
 
 
@@ -88,6 +89,8 @@ inputDirectories = {
     '../HEIDRUNS/run6_output_quicci_distance_functions_clutterResistant_rerun/output/': ('QUICCI', 'HEID'),
     '../HEIDRUNS/run7_output_quicci_distance_functions_weightedHamming_rerun/output/': ('QUICCI', 'HEID'),
     '../HEIDRUNS/run8_output_quicci_distance_functions_hamming_rerun/output/': ('QUICCI', 'HEID'),
+
+    '../HEIDRUNS/run9_output_fpfh_test_run/output/': ('FPFH', 'HEID'),
     #'../IDUNRUNS/output_run4_3dsc_main/run1/': ('3DSC, 1, 5, 10 objects', 'IDUN'),
 }
 
@@ -123,6 +126,13 @@ methods = {
         'namePrefixInJSONFile': '3DSC',
         'generationTimings': ['total', 'initialisation', 'sampling', 'pointCounting', 'generation'],
         'searchTimings': ['total', 'search']
+    },
+    'FPFH': {
+        'isValid': isFPFHResultValid,
+        'nameInJSONFile': 'fpfh',
+        'namePrefixInJSONFile': 'FPFH',
+        'generationTimings': ['total', 'reformat', 'spfh_origins', 'spfh_pointCloud', 'generation'],
+        'searchTimings': ['total', 'search']
     }
 }
 
@@ -136,6 +146,7 @@ rawInputDirectories = {
     'SI': ['../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output/raw', '../IDUNRUNS/output_mainchart_si_v4_15/raw'],
     '3DSC': ['../HEIDRUNS/run1_3dsc_main/output/raw'],
     'QUICCI': ['../HEIDRUNS/run2_quicci_main/output/raw'],
+    'FPFH': ['../HEIDRUNS/run9_output_fpfh_test_run/output/raw'],
 }
 rawInputObjectCount = 5
 
