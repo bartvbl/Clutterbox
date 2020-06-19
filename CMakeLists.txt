@@ -123,5 +123,10 @@ target_link_libraries(projectionBenchmark ${PCL_LIBRARIES} Eigen3::Eigen)
 
 add_executable(quicciDistanceFunctionBenchmark
         tools/quicciDistanceFunctionComparison/main.cpp
-        tools/quicciDistanceFunctionComparison/quicciDistanceFunctionBenchmark.cpp)
+        tools/quicciDistanceFunctionComparison/quicciDistanceFunctionBenchmark.cpp
+        tools/quicciDistanceFunctionComparison/clutterSphereMeshAugmenter.cpp
+        src/utilities/randomFileSelector.cpp
+        src/utilities/listDir.cpp
+        src/utilities/stringUtils.cpp
+        src/experiments/clutterBox/clutterBoxUtilities.cpp)
 target_link_libraries(quicciDistanceFunctionBenchmark SpinImage)
