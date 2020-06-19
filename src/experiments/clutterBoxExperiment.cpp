@@ -750,7 +750,7 @@ void runClutterBoxExperiment(
     }
 
     // 1 Seeding the random number generator
-    std::random_device rd;
+    std::random_device rd("/dev/urandom");
     size_t randomSeed = overrideSeed != 0 ? overrideSeed : rd();
     std::cout << "Random seed: " << randomSeed << std::endl;
     std::minstd_rand0 generator{randomSeed};

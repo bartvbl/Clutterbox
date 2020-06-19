@@ -121,5 +121,7 @@ target_link_libraries(clutterEstimator ${CUDA_LIBRARY} cuda cudart SpinImage cud
 add_executable(projectionBenchmark tools/projectionBenchmark/compare.cpp)
 target_link_libraries(projectionBenchmark ${PCL_LIBRARIES} Eigen3::Eigen)
 
-add_executable(quicciDistanceFunctionBenchmark tools/quicciDistanceFunctionComparison/main.cpp)
+add_executable(quicciDistanceFunctionBenchmark
+        tools/quicciDistanceFunctionComparison/main.cpp
+        tools/quicciDistanceFunctionComparison/quicciDistanceFunctionBenchmark.cpp)
 target_link_libraries(quicciDistanceFunctionBenchmark SpinImage)
