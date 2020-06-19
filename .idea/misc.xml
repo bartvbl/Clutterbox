@@ -4,6 +4,7 @@
   <component name="CidrRootsConfiguration">
     <excludeRoots>
       <file path="$PROJECT_DIR$/output" />
+      <file path="$PROJECT_DIR$/../libSpinImage/PIXEL_COUNTS" />
     </excludeRoots>
   </component>
 </project>

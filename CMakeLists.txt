@@ -5,10 +5,10 @@ cmake_minimum_required (VERSION 3.0)
 
 set(CUDAHOSTCXX /usr/bin/g++-7)
 set(CMAKE_CUDA_HOST_COMPILER /usr/bin/g++-7)
-set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
+#set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
 set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda")
 
-project (riciverification CXX CUDA)
+project (clutterbox CXX CUDA)
 
 OPTION (USE_OpenMP "Use OpenMP" ON)
 
@@ -53,7 +53,7 @@ set(CUDA_NVCC_FLAGS -arch=sm_61 -gencode arch=compute_61,code=\"sm_61,compute_61
 set(CUDA_VERBOSE_BUILD ON)
 
 # libShapeSearch
-add_subdirectory(../libShapeSearch ${CMAKE_CURRENT_BINARY_DIR}/libSpinImage)
+add_subdirectory(../libSpinImage ${CMAKE_CURRENT_BINARY_DIR}/libSpinImage)
 
 
 #
@@ -61,7 +61,7 @@ add_subdirectory(../libShapeSearch ${CMAKE_CURRENT_BINARY_DIR}/libSpinImage)
 #
 include_directories (
         src/
-        ../libShapeSearch/src
+        ../libSpinImage/src
         tools/clutterEstimator
         lib/glm
         lib/json
