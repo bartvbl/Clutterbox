@@ -19,7 +19,7 @@
 
 using json = nlohmann::json;
 
-#include "experimentUtilities/listDir.h"
+#include "utilities/listDir.h"
 #include "experiments/clutterBox/clutterBoxKernels.cuh"
 #include "spinImage/utilities/modelScaler.h"
 #include "clutterKernel.cuh"

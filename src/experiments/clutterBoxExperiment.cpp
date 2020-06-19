@@ -44,6 +44,7 @@
 #include <spinImage/gpu/types/PointCloud.h>
 #include <spinImage/utilities/dumpers/meshDumper.h>
 #include <spinImage/utilities/copy/deviceMeshToHost.h>
+#include <utilities/randomFileSelector.h>
 
 template<class Key, class T, class Ignore, class Allocator,
         class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
@@ -55,7 +56,7 @@ using json = nlohmann::basic_json<ordered_map>;
 
 #include "clutterBox/clutterBoxKernels.cuh"
 
-#include "experimentUtilities/listDir.h"
+#include "utilities/listDir.h"
 #include "nvidia/helper_cuda.h"
 
 
@@ -66,31 +67,7 @@ using json = nlohmann::basic_json<ordered_map>;
 // - In order to limit VRAM usage, as well as get a better signal to noise ratio (due to aliasing) on the images, we should only use models with less than a certain number of vertices.
 // -
 
-
-
 Histogram computeSearchResultHistogram(size_t vertexCount, const SpinImage::array<unsigned int> &searchResults);
-
-std::vector<std::string> generateRandomFileList(const std::string &objectDirectory, unsigned int sampleSetSize,
-                                                std::default_random_engine &generator) {
-
-    std::vector<std::string> filePaths(sampleSetSize);
-
-    std::cout << "\tListing object directory..";
-    std::vector<std::string> fileList = listDir(objectDirectory);
-    std::cout << " (found " << fileList.size() << " files)" << std::endl;
-
-    // Sort the file list to avoid the effects of operating systems ordering files inconsistently.
-    std::sort(fileList.begin(), fileList.end());
-
-    std::shuffle(std::begin(fileList), std::end(fileList), generator);
-
-    for (unsigned int i = 0; i < sampleSetSize; i++) {
-        filePaths[i] = objectDirectory + (endsWith(objectDirectory, "/") ? "" : "/") + fileList.at(i);
-        std::cout << "\t\tSample " << i << ": " << filePaths.at(i) << std::endl;
-    }
-
-    return filePaths;
-}
 
 void dumpResultsFile(
         std::string outputFile,
