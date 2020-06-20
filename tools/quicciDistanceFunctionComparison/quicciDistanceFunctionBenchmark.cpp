@@ -13,6 +13,7 @@
 #include <cuda_runtime_api.h>
 #include <nvidia/helper_cuda.h>
 #include <experiments/clutterBox/clutterBoxUtilities.h>
+#include <spinImage/utilities/dumpers/meshDumper.h>
 
 void runQuicciDistanceFunctionBenchmark(
         std::string sourceDirectory,
@@ -43,8 +44,12 @@ void runQuicciDistanceFunctionBenchmark(
     SpinImage::cpu::freeMesh(sampleMesh);
 
     // 6 Add clutter spheres to the mesh
+    std::cout << "\tAugmenting mesh with spheres.." << std::endl;
     SpinImage::cpu::Mesh augmentedMesh = applyClutterSpheres(scaledMesh, sceneSphereCount, clutterSphereRadius, generator());
     SpinImage::cpu::freeMesh(scaledMesh);
+
+    std::cout << "DUMPING MESH "<< std::endl;
+    SpinImage::dump::mesh(augmentedMesh, "sphereClutter.obj");
 
     // 6 Copy meshes to GPU
     std::cout << "\tCopying meshes to device.." << std::endl;
@@ -57,7 +62,7 @@ void runQuicciDistanceFunctionBenchmark(
     std::cout << "\t\tReduced " << scaledMeshOnGPU.vertexCount << " vertices to " << referenceImageCount << "." << std::endl;
 
     std::cout << "\tGenerating QUICCI images.." << std::endl;
-
+/*
     SpinImage::debug::QUICCIRunInfo quicciReferenceRunInfo;
     device_referenceQuiccImages = SpinImage::gpu::generateQUICCImages(
             scaledMeshesOnGPU.at(0),
@@ -493,5 +498,5 @@ void runQuicciDistanceFunctionBenchmark(
         SpinImage::gpu::freeMesh(deviceMesh);
     }
 
-    std::cout << std::endl << "Complete." << std::endl;
+    std::cout << std::endl << "Complete." << std::endl;*/
 }

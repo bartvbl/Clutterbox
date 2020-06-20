@@ -33,6 +33,7 @@ int main(int argc, const char **argv)
 	const auto& objectDirectory = parser.add<std::string>("source-directory", "Defines the directory from which input objects are read", '\0', arrrgh::Optional, "");
     const auto& forcedSeed = parser.add<std::string>("force-seed", "Specify the seed to use for random generation. Used for reproducing results.", '\0', arrrgh::Optional, "0");
     const auto& waitOnCompletion = parser.add<bool>("wait-for-input-on-completion", "I needed the program to wait before exiting after completing the experiment. This does that job perfectly. Don't judge.", '\0', arrrgh::Optional, false);
+    const auto& supportRadius = parser.add<float>("support-radius", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, 0.3);
 	const auto& outputDirectory = parser.add<std::string>("output-directory", "Specify the location where output files should be dumped", '\0', arrrgh::Optional, "../output/");
     const auto& sphereCounts = parser.add<std::string>("sphere-counts", "Specify the number of clutter spheres that should be added into the scene and for which results should be generated, as a comma separated list WITHOUT spaces (e.g. --sphere-counts=1,2,5)", '\0', arrrgh::Optional, "NONE");
     const auto& sceneSphereCount = parser.add<int>("scene-sphere-count", "If you want a specified number of objects to be used for the experiment (for ensuring consistency between seeds)", '\0', arrrgh::Optional, -1);
