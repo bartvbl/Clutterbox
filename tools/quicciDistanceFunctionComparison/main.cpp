@@ -104,7 +104,8 @@ int main(int argc, const char **argv)
             randomSeed,
             sphereCountList,
             sceneSphereCount.value(),
-            clutterSphereRadius.value());
+            clutterSphereRadius.value(),
+            gpuMetaData);
 
 
     if(waitOnCompletion.value()) {

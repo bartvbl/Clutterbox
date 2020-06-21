@@ -98,12 +98,9 @@ SpinImage::cpu::Mesh applyClutterSpheres(SpinImage::cpu::Mesh inputMesh, int cou
     std::vector<SpinImage::cpu::float3> sphereNormals;
     std::cout << "Input mesh has " << inputMesh.vertexCount << " vertices." << std::endl;
 
-    const unsigned int sphereTriangleCount = SPHERE_RESOLUTION_X * SPHERE_RESOLUTION_Y * 2;
-    const unsigned int sphereVertexCount = 3 * sphereTriangleCount;
-
     generateSphere(sphereVertices, sphereNormals, radius, SPHERE_RESOLUTION_X, SPHERE_RESOLUTION_Y);
 
-    size_t combinedVertexCount = inputMesh.vertexCount + count * sphereVertexCount;
+    size_t combinedVertexCount = inputMesh.vertexCount + count * SPHERE_VERTEX_COUNT;
 
     // Indices are ignored on the GPU
     SpinImage::cpu::Mesh outputMesh(combinedVertexCount, 0);
@@ -139,8 +136,8 @@ SpinImage::cpu::Mesh applyClutterSpheres(SpinImage::cpu::Mesh inputMesh, int cou
 
         SpinImage::cpu::float3 sphereOrigin = sampleVertex + radius * sampleNormal;
 
-        unsigned int startIndex = inputMesh.vertexCount + i * sphereVertexCount;
-        for(int j = 0; j < sphereVertexCount; j++) {
+        unsigned int startIndex = inputMesh.vertexCount + i * SPHERE_VERTEX_COUNT;
+        for(int j = 0; j < SPHERE_VERTEX_COUNT; j++) {
             outputMesh.vertices[startIndex + j] = sphereVertices.at(j) + sphereOrigin;
             outputMesh.normals[startIndex + j] = sphereNormals.at(j);
         }
@@ -149,7 +146,7 @@ SpinImage::cpu::Mesh applyClutterSpheres(SpinImage::cpu::Mesh inputMesh, int cou
     delete[] sampleVertices.content;
     delete[] sampleNormals.content;
 
-    outputMesh.vertexCount = inputMesh.vertexCount + 100 * sphereVertexCount;
+    outputMesh.vertexCount = inputMesh.vertexCount + count * SPHERE_VERTEX_COUNT;
 
     return outputMesh;
 }

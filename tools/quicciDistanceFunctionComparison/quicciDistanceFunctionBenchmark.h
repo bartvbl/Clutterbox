@@ -2,11 +2,14 @@
 
 #include <vector>
 #include <string>
+#include <experiments/clutterBoxExperiment.hpp>
+#include <experimental/filesystem>
 
 void runQuicciDistanceFunctionBenchmark(
-        std::string sourceDirectory,
-        std::string outputDirectory,
+        std::experimental::filesystem::path sourceDirectory,
+        std::experimental::filesystem::path outputDirectory,
         size_t seed,
         std::vector<int> sphereCountList,
         int sceneSphereCount,
-        float clutterSphereRadius);
+        float clutterSphereRadius,
+        GPUMetaData gpuMetaData);
