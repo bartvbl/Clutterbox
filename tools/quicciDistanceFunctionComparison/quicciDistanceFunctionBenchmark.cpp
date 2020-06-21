@@ -145,6 +145,7 @@ void runQuicciDistanceFunctionBenchmark(
     outJson["measuredDistances"]["clutterResistant"] = {};
     outJson["measuredDistances"]["weightedHamming"] = {};
     outJson["measuredDistances"]["hamming"] = {};
+    outJson["imageBitCounts"] = {};
     for(unsigned int sphereCountIndex = 0; sphereCountIndex < sphereCountList.size(); sphereCountIndex++) {
         std::string keyName = std::to_string(sphereCountList.at(sphereCountIndex)) + " spheres";
         outJson["measuredDistances"]["clutterResistant"][keyName] = {};
@@ -158,7 +159,10 @@ void runQuicciDistanceFunctionBenchmark(
                     measuredDistances.at(sphereCountIndex).content[image].weightedHammingDistance);
             outJson["measuredDistances"]["hamming"][keyName].push_back(
                     measuredDistances.at(sphereCountIndex).content[image].hammingDistance);
-
+            if(sphereCountIndex == 0) {
+                outJson["imageBitCounts"].push_back(
+                    measuredDistances.at(sphereCountIndex).content[image].needleImageBitCount);
+            }
         }
     }
 

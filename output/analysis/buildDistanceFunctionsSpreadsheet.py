@@ -18,8 +18,6 @@ outfile = 'final_results/distance_functions_results.xls'
 
 resultMap = {}
 
-clutterResistantMax = 4096.0
-weightedHammingMax = 
 
 sphereCounts = None
 
