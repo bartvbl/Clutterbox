@@ -20,6 +20,7 @@
 #include <utilities/stringUtils.h>
 #include <json.hpp>
 #include <tsl/ordered_map.h>
+#include <spinImage/utilities/copy/deviceMeshToHost.h>
 
 template<class Key, class T, class Ignore, class Allocator,
         class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
@@ -63,9 +64,6 @@ void runQuicciDistanceFunctionBenchmark(
     // 6 Add clutter spheres to the mesh
     std::cout << "\tAugmenting mesh with spheres.." << std::endl;
     SpinImage::cpu::Mesh augmentedHostMesh = applyClutterSpheres(scaledMesh, sceneSphereCount, clutterSphereRadius, generator());
-
-    //std::cout << "DUMPING MESH "<< std::endl;
-    //SpinImage::dump::mesh(augmentedMesh, "sphereClutter.obj");
 
     // 6 Copy meshes to GPU
     std::cout << "\tCopying meshes to device.." << std::endl;
