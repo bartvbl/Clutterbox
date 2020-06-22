@@ -5,6 +5,11 @@
 #include <experiments/clutterBoxExperiment.hpp>
 #include <experimental/filesystem>
 
+enum class BenchmarkMode {
+    BASELINE,
+    SPHERE_CLUTTER
+};
+
 void runQuicciDistanceFunctionBenchmark(
         std::experimental::filesystem::path sourceDirectory,
         std::experimental::filesystem::path outputDirectory,
@@ -12,4 +17,5 @@ void runQuicciDistanceFunctionBenchmark(
         std::vector<int> sphereCountList,
         int sceneSphereCount,
         float clutterSphereRadius,
-        GPUMetaData gpuMetaData);
+        GPUMetaData gpuMetaData,
+        BenchmarkMode mode);

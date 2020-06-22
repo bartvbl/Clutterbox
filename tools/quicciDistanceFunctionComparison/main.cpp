@@ -36,6 +36,7 @@ int main(int argc, const char **argv)
     const auto& supportRadius = parser.add<float>("support-radius", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, 0.3);
 	const auto& outputDirectory = parser.add<std::string>("output-directory", "Specify the location where output files should be dumped", '\0', arrrgh::Optional, "../output/");
     const auto& sphereCounts = parser.add<std::string>("sphere-counts", "Specify the number of clutter spheres that should be added into the scene and for which results should be generated, as a comma separated list WITHOUT spaces (e.g. --sphere-counts=1,2,5)", '\0', arrrgh::Optional, "NONE");
+    const auto& mode = parser.add<std::string>("experiment-mode", "Determines whether baseline or similar geometry results should be generated. Can be either \"baseline\" or \"similar\"", '\0', arrrgh::Optional, "NOT SPECIFIED");
     const auto& sceneSphereCount = parser.add<int>("scene-sphere-count", "If you want a specified number of objects to be used for the experiment (for ensuring consistency between seeds)", '\0', arrrgh::Optional, -1);
     const auto& clutterSphereRadius = parser.add<float>("clutter-sphere-radius", "Specifies the radius of spheres that should be added into the scene (note: the sample object is first fit inside a unit sphere, so this radius is relative to a unit sphere).", '\0', arrrgh::Optional, 0.05);
 
@@ -79,6 +80,11 @@ int main(int argc, const char **argv)
 		exit(0);
 	}
 
+	if(mode.value() == "NOT SPECIFIED") {
+        std::cout << "Experiment requires the --experiment-mode parameter to be set" << std::endl;
+        exit(0);
+	}
+
 	// Interpret seed value
     std::stringstream sstr(forcedSeed.value());
     size_t randomSeed;
@@ -95,7 +101,22 @@ int main(int argc, const char **argv)
         sphereCountList.push_back(std::stoi(objectCountPart));
     }
 
+    BenchmarkMode benchmarkMode;
+    if(mode.value() == "baseline") {
+        benchmarkMode = BenchmarkMode::BASELINE;
+    } else if (mode.value() == "similar") {
+        benchmarkMode = BenchmarkMode::SPHERE_CLUTTER;
+    } else {
+        std::cout << "The mode specified by the --experiment-mode parameter was set to \"" + mode.value() + "\", but was not recognised. Valid values for this parameter are \"baseline\" and \"similar\"." << std::endl;
+        exit(0);
+    }
+
     std::sort(sphereCountList.begin(), sphereCountList.end());
+
+    if(benchmarkMode == BenchmarkMode::BASELINE) {
+        sphereCountList = {0};
+    }
+
 
     // Run benchmark
     runQuicciDistanceFunctionBenchmark(
@@ -105,7 +126,8 @@ int main(int argc, const char **argv)
             sphereCountList,
             sceneSphereCount.value(),
             clutterSphereRadius.value(),
-            gpuMetaData);
+            gpuMetaData,
+            benchmarkMode);
 
 
     if(waitOnCompletion.value()) {

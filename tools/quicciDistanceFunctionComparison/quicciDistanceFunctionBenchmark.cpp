@@ -39,7 +39,8 @@ void runQuicciDistanceFunctionBenchmark(
         std::vector<int> sphereCountList,
         int sceneSphereCount,
         float clutterSphereRadius,
-        GPUMetaData gpuMetaData) {
+        GPUMetaData gpuMetaData,
+        BenchmarkMode mode) {
     // 1 Seeding the random number generator
     std::random_device rd("/dev/urandom");
     size_t randomSeed = seed != 0 ? seed : rd();
@@ -50,32 +51,65 @@ void runQuicciDistanceFunctionBenchmark(
 
     // 2 Search SHREC directory for files
     // 3 Make a sample set of n sample objects
-    std::vector<std::string> filePaths = generateRandomFileList(sourceDirectory, 1, generator);
+    unsigned int sampleSetSize = 0;
+    if(mode == BenchmarkMode::SPHERE_CLUTTER) {
+        sampleSetSize = 1;
+    } else if(mode == BenchmarkMode::BASELINE) {
+        sampleSetSize = 2;
+    }
+    std::vector<std::string> filePaths = generateRandomFileList(sourceDirectory, sampleSetSize, generator);
 
     // 4 Load the models in the sample set
     std::cout << "\tLoading sample model.." << std::endl;
     SpinImage::cpu::Mesh sampleMesh = SpinImage::utilities::loadOBJ(filePaths.at(0), true);
+    SpinImage::cpu::Mesh otherSampleMesh;
+    if(mode == BenchmarkMode::BASELINE) {
+        otherSampleMesh = SpinImage::utilities::loadOBJ(filePaths.at(1), true);
+    }
 
     // 5 Scale all models to fit in a 1x1x1 sphere
     std::cout << "\tScaling meshes.." << std::endl;
     SpinImage::cpu::Mesh scaledMesh = SpinImage::utilities::fitMeshInsideSphereOfRadius(sampleMesh, 1);
     SpinImage::cpu::freeMesh(sampleMesh);
+    SpinImage::cpu::Mesh scaledOtherSampleMesh;
+    if(mode == BenchmarkMode::BASELINE) {
+        scaledOtherSampleMesh = SpinImage::utilities::fitMeshInsideSphereOfRadius(otherSampleMesh, 1);
+        SpinImage::cpu::freeMesh(otherSampleMesh);
+    }
 
     // 6 Add clutter spheres to the mesh
     std::cout << "\tAugmenting mesh with spheres.." << std::endl;
-    SpinImage::cpu::Mesh augmentedHostMesh = applyClutterSpheres(scaledMesh, sceneSphereCount, clutterSphereRadius, generator());
+    SpinImage::cpu::Mesh augmentedHostMesh;
+    if(mode == BenchmarkMode::SPHERE_CLUTTER) {
+        augmentedHostMesh = applyClutterSpheres(scaledMesh, sceneSphereCount, clutterSphereRadius, generator());
+    }
 
     // 6 Copy meshes to GPU
     std::cout << "\tCopying meshes to device.." << std::endl;
     SpinImage::gpu::Mesh unmodifiedMesh = SpinImage::copy::hostMeshToDevice(scaledMesh);
-    SpinImage::gpu::Mesh augmentedMesh = SpinImage::copy::hostMeshToDevice(augmentedHostMesh);
     SpinImage::cpu::freeMesh(scaledMesh);
+    SpinImage::gpu::Mesh augmentedMesh;
+    if(mode == BenchmarkMode::SPHERE_CLUTTER) {
+        augmentedMesh = SpinImage::copy::hostMeshToDevice(augmentedHostMesh);
+    }
+    SpinImage::gpu::Mesh otherSampleUnmodifiedMesh;
+    if(mode == BenchmarkMode::BASELINE) {
+        otherSampleUnmodifiedMesh = SpinImage::copy::hostMeshToDevice(scaledOtherSampleMesh);
+        SpinImage::cpu::freeMesh(scaledOtherSampleMesh);
+    }
 
     // 8 Remove duplicate vertices
     std::cout << "\tRemoving duplicate vertices.." << std::endl;
     SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> imageOrigins = SpinImage::utilities::computeUniqueVertices(unmodifiedMesh);
     size_t imageCount = imageOrigins.length;
+    size_t referenceImageCount = imageCount;
+    size_t sampleImageCount = 0;
     std::cout << "\t\tReduced " << unmodifiedMesh.vertexCount << " vertices to " << imageCount << "." << std::endl;
+    SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> baselineOrigins;
+    if(mode == BenchmarkMode::BASELINE) {
+        baselineOrigins = SpinImage::utilities::computeUniqueVertices(otherSampleUnmodifiedMesh);
+        sampleImageCount = baselineOrigins.length;
+    }
 
     std::cout << "\tGenerating reference QUICCI images.." << std::endl;
     SpinImage::gpu::QUICCIImages device_unmodifiedQuiccImages = SpinImage::gpu::generateQUICCImages(
@@ -88,16 +122,42 @@ void runQuicciDistanceFunctionBenchmark(
 
     std::vector<SpinImage::array<SpinImage::gpu::QUICCIDistances>> measuredDistances;
 
-    for(unsigned int sphereCountIndex = 0; sphereCountIndex < sphereCountList.size(); sphereCountIndex++) {
-        unsigned int sphereCount = sphereCountList.at(sphereCountIndex);
-        augmentedMesh.vertexCount = unmodifiedVertexCount + sphereCount * verticesPerSphere;
-        assert(sphereCount <= sceneSphereCount);
-        std::cout << "\tComputing distances for a scene with " << sphereCount << " spheres.." << std::endl;
+    if(mode == BenchmarkMode::SPHERE_CLUTTER) {
+        for (unsigned int sphereCountIndex = 0; sphereCountIndex < sphereCountList.size(); sphereCountIndex++) {
+            unsigned int sphereCount = sphereCountList.at(sphereCountIndex);
+            augmentedMesh.vertexCount = unmodifiedVertexCount + sphereCount * verticesPerSphere;
+            assert(sphereCount <= sceneSphereCount);
+            std::cout << "\tComputing distances for a scene with " << sphereCount << " spheres.." << std::endl;
+            std::cout << "\t\tGenerating QUICCI images.." << std::endl;
+            SpinImage::debug::QUICCIRunInfo runInfo;
+            SpinImage::gpu::QUICCIImages device_augmentedQuiccImages = SpinImage::gpu::generateQUICCImages(
+                    augmentedMesh,
+                    imageOrigins,
+                    SUPPORT_RADIUS,
+                    &runInfo);
+
+            std::cout << "\t\t\tTook " << runInfo.totalExecutionTimeSeconds << " seconds." << std::endl;
+
+            std::cout << "\t\tComputing QUICCI distances.." << std::endl;
+            SpinImage::array<SpinImage::gpu::QUICCIDistances> sampleDistances = SpinImage::gpu::computeQUICCIElementWiseDistances(
+                    device_unmodifiedQuiccImages,
+                    device_augmentedQuiccImages,
+                    imageCount);
+
+            cudaFree(device_augmentedQuiccImages.images);
+
+            measuredDistances.push_back(sampleDistances);
+        }
+    } else if(mode == BenchmarkMode::BASELINE) {
+        imageCount = std::min<unsigned int>(imageCount, baselineOrigins.length);
+        baselineOrigins.length = imageCount;
+
+        std::cout << "\tComputing distances.." << std::endl;
         std::cout << "\t\tGenerating QUICCI images.." << std::endl;
         SpinImage::debug::QUICCIRunInfo runInfo;
-        SpinImage::gpu::QUICCIImages device_augmentedQuiccImages = SpinImage::gpu::generateQUICCImages(
-                augmentedMesh,
-                imageOrigins,
+        SpinImage::gpu::QUICCIImages device_sampleImages = SpinImage::gpu::generateQUICCImages(
+                otherSampleUnmodifiedMesh,
+                baselineOrigins,
                 SUPPORT_RADIUS,
                 &runInfo);
 
@@ -106,10 +166,10 @@ void runQuicciDistanceFunctionBenchmark(
         std::cout << "\t\tComputing QUICCI distances.." << std::endl;
         SpinImage::array<SpinImage::gpu::QUICCIDistances> sampleDistances = SpinImage::gpu::computeQUICCIElementWiseDistances(
                 device_unmodifiedQuiccImages,
-                device_augmentedQuiccImages,
+                device_sampleImages,
                 imageCount);
 
-        cudaFree(device_augmentedQuiccImages.images);
+        cudaFree(device_sampleImages.images);
 
         measuredDistances.push_back(sampleDistances);
     }
@@ -122,7 +182,7 @@ void runQuicciDistanceFunctionBenchmark(
 
     json outJson;
 
-    outJson["version"] = "v1";
+    outJson["version"] = "v2";
     outJson["seed"] = seed;
     outJson["spinImageWidthPixels"] = spinImageWidthPixels;
     outJson["sphereCounts"] = sphereCountList;
@@ -140,6 +200,14 @@ void runQuicciDistanceFunctionBenchmark(
     outJson["gpuInfo"]["name"] = gpuMetaData.name;
     outJson["gpuInfo"]["clockrate"] = gpuMetaData.clockRate;
     outJson["gpuInfo"]["memoryCapacityInMB"] = gpuMetaData.memorySizeMB;
+    if(mode == BenchmarkMode::BASELINE) {
+        outJson["mode"] = "baseline";
+        outJson["primaryObjectImageCount"] = referenceImageCount;
+        outJson["secondaryObjectImageCount"] = sampleImageCount;
+        outJson["secondaryObjectPath"] = filePaths.at(1);
+    } else if(mode == BenchmarkMode::SPHERE_CLUTTER) {
+        outJson["mode"] = "similar";
+    }
 
     outJson["measuredDistances"] = {};
     outJson["measuredDistances"]["clutterResistant"] = {};
