@@ -38,6 +38,7 @@ baselineClutterResistantHistogram = np.zeros(shape=(maxDistance, imageSize), dty
 baselineWeightedHammingHistogram = np.zeros(shape=(2 * maxDistance, imageSize), dtype=np.int64)
 baselineHammingHistogram = np.zeros(shape=(maxDistance, imageSize), dtype=np.int64)
 
+baselineTotalImageCount = 0
 
 baselineFileToRead = os.listdir(baselineDirectory)
 for fileindex, file in enumerate(baselineFileToRead):
@@ -51,6 +52,7 @@ for fileindex, file in enumerate(baselineFileToRead):
             print(e)
             continue
 
+    baselineTotalImageCount += fileContents['imageCount']
     for imageIndex, imageBitCount in enumerate(fileContents['imageBitCounts']):
         baselineClutterResistantHistogram[
             maxDistance - 1 - fileContents['measuredDistances']['clutterResistant']['0 spheres'][imageIndex],
@@ -63,6 +65,9 @@ for fileindex, file in enumerate(baselineFileToRead):
         baselineHammingHistogram[
             maxDistance - 1 - fileContents['measuredDistances']['hamming']['0 spheres'][imageIndex],
             imageBitCount] += 1
+
+print()
+print('Total number of baseline images:', baselineTotalImageCount)
 
 baselineClutterResistantHistogram = np.log10(np.maximum(baselineClutterResistantHistogram, 0.1))
 baselineWeightedHammingHistogram = np.log10(np.maximum(baselineWeightedHammingHistogram, 0.1))
@@ -125,6 +130,7 @@ plot.show()
 
 input()
 
+sphereClutterTotalImageCount = 0
 
 filesToRead = os.listdir(inputDirectory)
 for fileindex, file in enumerate(filesToRead):
@@ -156,6 +162,7 @@ for fileindex, file in enumerate(filesToRead):
     # Add contents of file to result set
     seedList.append(fileContents['seed'])
     imageCountList.append(fileContents['imageCount'])
+    sphereClutterTotalImageCount += fileContents['imageCount']
 
     for sphereIndex, sphereCount in enumerate(sphereCounts):
         averageClutterResistantScore = statistics.mean(
@@ -186,6 +193,7 @@ for fileindex, file in enumerate(filesToRead):
         resultMap['hamming'][str(sphereCount)].append(averageHammingScore)
 
 print()
+print('Sphere clutter total image count:', sphereClutterTotalImageCount)
 
 similarSurfaceClutterResistantHistogram = np.log10(np.maximum(similarSurfaceClutterResistantHistogram, 0.1))
 similarSurfaceWeightedHammingHistogram = np.log10(np.maximum(similarSurfaceWeightedHammingHistogram, 0.1))
@@ -194,10 +202,24 @@ similarSurfaceHammingHistogram = np.log10(np.maximum(similarSurfaceHammingHistog
 extent = [0, numSphereClutterLevels, 0, maxDistance]
 
 plot = plt.figure(1)
-plt.title('')
+plt.title('Clutter Resistant')
+plt.ylabel('rank')
+plt.xlabel('clutter percentage')
+image = plt.imshow(similarSurfaceClutterResistantHistogram, extent=extent, cmap='hot')#, norm=normalisation)
+#plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+
+plot = plt.figure(2)
+plt.title('Weighted Hamming')
 plt.ylabel('rank')
 plt.xlabel('clutter percentage')
 image = plt.imshow(similarSurfaceWeightedHammingHistogram, extent=extent, cmap='hot')#, norm=normalisation)
+#plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+
+plot = plt.figure(3)
+plt.title('Hamming')
+plt.ylabel('rank')
+plt.xlabel('clutter percentage')
+image = plt.imshow(similarSurfaceHammingHistogram, extent=extent, cmap='hot')#, norm=normalisation)
 #plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
 
 plot.show()
