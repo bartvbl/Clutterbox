@@ -79,6 +79,20 @@ normalisation = colors.Normalize(vmin=total_minimum_value,vmax=total_maximum_val
 extent = [0, imageSize, 0, maxDistance]
 weightedHammingExtent = [0, imageSize, 0, 2 * maxDistance]
 
+
+SMALL_SIZE = 12
+MEDIUM_SIZE = 15
+BIGGER_SIZE = 18
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=SMALL_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+
 plt.clf()
 
 plot = plt.figure(1)
