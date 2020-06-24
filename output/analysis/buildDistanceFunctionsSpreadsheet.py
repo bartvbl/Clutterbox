@@ -102,7 +102,7 @@ plt.xlabel('Number of set pixels in query image')
 image = plt.imshow(baselineHammingHistogram, extent=extent, cmap='hot', norm=normalisation)
 
 halfway = math.log10(5)
-colorbar_ticks = [-1.0, -1.0 + halfway, 0, halfway, 1, 1 + halfway, 2, 2 + halfway, 3, 3 + halfway, 4, 4 + halfway]
+colorbar_ticks = [-1.0, 0, halfway, 1, 1 + halfway, 2, 2 + halfway, 3, 3 + halfway, 4, 4 + halfway]
 cbar = plt.colorbar(image, ticks=colorbar_ticks)
 cbar.ax.set_yticklabels([str(int(round(pow(10, x)))) for x in colorbar_ticks])
 cbar.set_label('Sample count', rotation=90)
