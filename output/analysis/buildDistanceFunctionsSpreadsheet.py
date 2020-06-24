@@ -207,6 +207,7 @@ plt.ylabel('rank')
 plt.xlabel('clutter percentage')
 image = plt.imshow(similarSurfaceClutterResistantHistogram, extent=extent, cmap='hot')#, norm=normalisation)
 #plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+plot.show()
 
 plot = plt.figure(2)
 plt.title('Weighted Hamming')
@@ -214,6 +215,7 @@ plt.ylabel('rank')
 plt.xlabel('clutter percentage')
 image = plt.imshow(similarSurfaceWeightedHammingHistogram, extent=extent, cmap='hot')#, norm=normalisation)
 #plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+plot.show()
 
 plot = plt.figure(3)
 plt.title('Hamming')
@@ -221,7 +223,6 @@ plt.ylabel('rank')
 plt.xlabel('clutter percentage')
 image = plt.imshow(similarSurfaceHammingHistogram, extent=extent, cmap='hot')#, norm=normalisation)
 #plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
-
 plot.show()
 
 input()
