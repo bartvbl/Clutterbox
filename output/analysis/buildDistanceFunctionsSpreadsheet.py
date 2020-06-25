@@ -19,6 +19,9 @@ inputDirectory = '../HEIDRUNS/run12_quicci_distance_functions_rerun/output/'
 baselineDirectory = '../HEIDRUNS/run14_quicci_distance_functions_baseline/'
 
 outfile = 'final_results/distance_functions_results.xls'
+baselineWeightedHammingDumpFile = 'final_results/weighted_hamming_distance_function_baseline.txt'
+baselineHammingDumpFile = 'final_results/hamming_distance_function_baseline.txt'
+baselineClutterResistantDumpFile = 'final_results/clutter_resistant_distance_function_baseline.txt'
 
 resultMap = {}
 
@@ -36,9 +39,9 @@ similarSurfaceClutterResistantHistogram = np.zeros(shape=(maxDistance, numSphere
 similarSurfaceWeightedHammingHistogram = np.zeros(shape=(maxDistance, numSphereClutterLevels), dtype=np.int64)
 similarSurfaceHammingHistogram = np.zeros(shape=(maxDistance, numSphereClutterLevels), dtype=np.int64)
 
-baselineClutterResistantHistogram = np.zeros(shape=(maxDistance, imageSize), dtype=np.int64)
-baselineWeightedHammingHistogram = np.zeros(shape=(2 * maxDistance, imageSize), dtype=np.int64)
-baselineHammingHistogram = np.zeros(shape=(maxDistance, imageSize), dtype=np.int64)
+baselineClutterResistantHistogram = np.zeros(shape=(maxDistance), dtype=np.int64)
+baselineWeightedHammingHistogram = np.zeros(shape=(2 * maxDistance), dtype=np.int64)
+baselineHammingHistogram = np.zeros(shape=(maxDistance), dtype=np.int64)
 
 baselineTotalImageCount = 0
 
@@ -57,81 +60,23 @@ for fileindex, file in enumerate(baselineFileToRead):
     baselineTotalImageCount += fileContents['imageCount']
     for imageIndex, imageBitCount in enumerate(fileContents['imageBitCounts']):
         baselineClutterResistantHistogram[
-            fileContents['measuredDistances']['clutterResistant']['0 spheres'][imageIndex],
-            imageBitCount] += 1
+            fileContents['measuredDistances']['clutterResistant']['0 spheres'][imageIndex]] += 1
 
         baselineWeightedHammingHistogram[
-            int(fileContents['measuredDistances']['weightedHamming']['0 spheres'][imageIndex]),
-            imageBitCount] += 1
+            int(fileContents['measuredDistances']['weightedHamming']['0 spheres'][imageIndex])] += 1
 
         baselineHammingHistogram[
-            fileContents['measuredDistances']['hamming']['0 spheres'][imageIndex],
-            imageBitCount] += 1
+            fileContents['measuredDistances']['hamming']['0 spheres'][imageIndex]] += 1
 
 print()
 print('Total number of baseline images:', baselineTotalImageCount)
 # 176,225,136
 
-baselineClutterResistantHistogram = np.log10(np.maximum(baselineClutterResistantHistogram, 0.1))
-baselineWeightedHammingHistogram = np.log10(np.maximum(baselineWeightedHammingHistogram, 0.1))
-baselineHammingHistogram = np.log10(np.maximum(baselineHammingHistogram, 0.1))
+np.savetxt(baselineWeightedHammingDumpFile, baselineWeightedHammingHistogram, delimiter=',')
+np.savetxt(baselineClutterResistantDumpFile, baselineClutterResistantHistogram, delimiter=',')
+np.savetxt(baselineHammingDumpFile, baselineHammingHistogram, delimiter=',')
 
-baselineHistograms = [baselineClutterResistantHistogram,
-                      baselineWeightedHammingHistogram,
-                      baselineHammingHistogram]
-
-total_minimum_value = min([np.amin(x) for x in baselineHistograms])
-total_maximum_value = max([np.amax(x) for x in baselineHistograms])
-normalisation = colors.Normalize(vmin=total_minimum_value,vmax=total_maximum_value)
-
-extent = [0, imageSize, 0, maxDistance]
-weightedHammingExtent = [0, imageSize, 0, 2 * maxDistance]
-
-
-SMALL_SIZE = 12
-MEDIUM_SIZE = 15
-BIGGER_SIZE = 18
-
-plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
-plt.rc('axes', labelsize=SMALL_SIZE)    # fontsize of the x and y labels
-plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
-plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
-
-
-plt.clf()
-
-plot = plt.figure(1)
-plt.title('Clutter Resistant')
-plt.ylabel('Distance Value')
-plt.xlabel('Number of set pixels in query image')
-image = plt.imshow(baselineClutterResistantHistogram, extent=extent, cmap='hot', norm=normalisation, origin='lower')
-plot.show()
-
-plot = plt.figure(2)
-plt.title('Weighted Hamming')
-plt.ylabel('Distance Value')
-plt.xlabel('Number of set pixels in query image')
-image = plt.imshow(baselineWeightedHammingHistogram, extent=weightedHammingExtent, cmap='hot', norm=normalisation, origin='lower')
-plot.show()
-
-plot = plt.figure(3)
-plt.title('Hamming')
-plt.ylabel('Distance Value')
-plt.xlabel('Number of set pixels in query image')
-image = plt.imshow(baselineHammingHistogram, extent=extent, cmap='hot', norm=normalisation, origin='lower')
-
-halfway = math.log10(5)
-colorbar_ticks = [-1.0, 0, halfway, 1, 1 + halfway, 2, 2 + halfway, 3, 3 + halfway, 4, 4 + halfway]
-cbar = plt.colorbar(image, ticks=colorbar_ticks)
-cbar.ax.set_yticklabels([str(int(round(pow(10, x)))) for x in colorbar_ticks])
-cbar.set_label('Sample count', rotation=90)
-
-plot.show()
-
-input()
+print('Statistics written to disk.')
 
 sphereClutterTotalImageCount = 0
 
@@ -235,6 +180,20 @@ for outputEntry in sphereClutterOutput:
 
 print()
 print('Sphere clutter total image count:', sphereClutterTotalImageCount)
+
+plt.clf()
+
+SMALL_SIZE = 12
+MEDIUM_SIZE = 15
+BIGGER_SIZE = 18
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=SMALL_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 similarSurfaceClutterResistantHistogram = np.log10(np.maximum(similarSurfaceClutterResistantHistogram, 0.1))
 similarSurfaceWeightedHammingHistogram = np.log10(np.maximum(similarSurfaceWeightedHammingHistogram, 0.1))
