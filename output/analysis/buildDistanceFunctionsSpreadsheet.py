@@ -3,6 +3,8 @@ import math
 import os
 import os.path
 import datetime
+from multiprocessing import Pool, cpu_count
+
 import xlwt
 import pprint
 import statistics
@@ -20,7 +22,7 @@ outfile = 'final_results/distance_functions_results.xls'
 
 resultMap = {}
 
-sphereCounts = None
+sphereCounts = range(0, 510, 10)
 
 seedList = []
 imageCountList = []
@@ -133,72 +135,103 @@ input()
 
 sphereClutterTotalImageCount = 0
 
+def chunkify(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
 filesToRead = os.listdir(inputDirectory)
-for fileindex, file in enumerate(filesToRead):
-    if fileindex == 5:
-        #break
-        pass
-    print(str(fileindex + 1) + '/' + str(len(filesToRead)), file + '        ', end='\r', flush=True)
-    with open(os.path.join(inputDirectory, file), 'r') as openFile:
-        # Read JSON file
-        try:
-            fileContents = json.loads(openFile.read())
-        except Exception as e:
-            print('FAILED TO READ FILE: ' + str(file))
-            print(e)
-            continue
 
-    # Do map initialisation based on output file contents
-    if sphereCounts is None:
-        sphereCounts = fileContents['sphereCounts']
+def process(threadinput):
+    threadMaxDistance, threadSphereCounts, threadInputDirectory, threadFilesToRead = threadinput
+    threadTotalImageCount = 0
+    threadClutterResistantHistogram = np.zeros(shape=(maxDistance, numSphereClutterLevels), dtype=np.int64)
+    threadWeightedHammingHistogram = np.zeros(shape=(maxDistance, numSphereClutterLevels), dtype=np.int64)
+    threadHammingHistogram = np.zeros(shape=(maxDistance, numSphereClutterLevels), dtype=np.int64)
+    for fileindex, file in enumerate(threadFilesToRead):
+        if fileindex == 5:
+            #break
+            pass
+        print(str(fileindex + 1) + '/' + str(len(threadFilesToRead)), file + '        ', end='\r', flush=True)
+        with open(os.path.join(threadInputDirectory, file), 'r') as openFile:
+            # Read JSON file
+            try:
+                fileContents = json.loads(openFile.read())
+            except Exception as e:
+                print('FAILED TO READ FILE: ' + str(file))
+                print(e)
+                continue
 
-        resultMap['clutterResistant'] = {}
-        resultMap['weightedHamming'] = {}
-        resultMap['hamming'] = {}
+        '''# Do map initialisation based on output file contents
+        if sphereCounts is None:
+            sphereCounts = fileContents['sphereCounts']
+    
+            resultMap['clutterResistant'] = {}
+            resultMap['weightedHamming'] = {}
+            resultMap['hamming'] = {}
+    
+            for sphereCount in sphereCounts:
+                resultMap['clutterResistant'][str(sphereCount)] = []
+                resultMap['weightedHamming'][str(sphereCount)] = []
+                resultMap['hamming'][str(sphereCount)] = []'''
 
-        for sphereCount in sphereCounts:
-            resultMap['clutterResistant'][str(sphereCount)] = []
-            resultMap['weightedHamming'][str(sphereCount)] = []
-            resultMap['hamming'][str(sphereCount)] = []
+        # Add contents of file to result set
+        #seedList.append(fileContents['seed'])
+        #imageCountList.append(fileContents['imageCount'])
+        threadTotalImageCount += fileContents['imageCount']
 
-    # Add contents of file to result set
-    seedList.append(fileContents['seed'])
-    imageCountList.append(fileContents['imageCount'])
-    sphereClutterTotalImageCount += fileContents['imageCount']
+        for sphereIndex, sphereCount in enumerate(threadSphereCounts):
+            #averageClutterResistantScore = statistics.mean(
+            #    fileContents['measuredDistances']['clutterResistant'][str(sphereCount) + ' spheres'])
+            #averageWeightedHammingScore = statistics.mean(
+            #    fileContents['measuredDistances']['weightedHamming'][str(sphereCount) + ' spheres'])
+            #averageHammingScore = statistics.mean(
+            #    fileContents['measuredDistances']['hamming'][str(sphereCount) + ' spheres'])
 
-    for sphereIndex, sphereCount in enumerate(sphereCounts):
-        averageClutterResistantScore = statistics.mean(
-            fileContents['measuredDistances']['clutterResistant'][str(sphereCount) + ' spheres'])
-        averageWeightedHammingScore = statistics.mean(
-            fileContents['measuredDistances']['weightedHamming'][str(sphereCount) + ' spheres'])
-        averageHammingScore = statistics.mean(
-            fileContents['measuredDistances']['hamming'][str(sphereCount) + ' spheres'])
+            for imageIndex in range(0, fileContents['imageCount']):
+                clutterResistantDistance = \
+                    fileContents['measuredDistances']['clutterResistant'][str(sphereCount) + ' spheres'][imageIndex]
+                weightedHammingDistance = \
+                    int(fileContents['measuredDistances']['weightedHamming'][str(sphereCount) + ' spheres'][imageIndex])
+                hammingDistance = \
+                    fileContents['measuredDistances']['hamming'][str(sphereCount) + ' spheres'][imageIndex]
 
-        for imageIndex in range(0, fileContents['imageCount']):
-            clutterResistantDistance = \
-                fileContents['measuredDistances']['clutterResistant'][str(sphereCount) + ' spheres'][imageIndex]
-            weightedHammingDistance = \
-                int(fileContents['measuredDistances']['weightedHamming'][str(sphereCount) + ' spheres'][imageIndex])
-            hammingDistance = \
-                fileContents['measuredDistances']['hamming'][str(sphereCount) + ' spheres'][imageIndex]
-
-            if clutterResistantDistance < maxDistance:
-                similarSurfaceClutterResistantHistogram[
-                    clutterResistantDistance,
-                    sphereIndex] += 1
-            if weightedHammingDistance < maxDistance:
-                similarSurfaceWeightedHammingHistogram[
-                    weightedHammingDistance,
-                    sphereIndex] += 1
-            if hammingDistance < maxDistance:
-                similarSurfaceHammingHistogram[
-                    hammingDistance,
-                    sphereIndex] += 1
+                if clutterResistantDistance < threadMaxDistance:
+                    threadClutterResistantHistogram[
+                        clutterResistantDistance,
+                        sphereIndex] += 1
+                if weightedHammingDistance < threadMaxDistance:
+                    threadWeightedHammingHistogram[
+                        weightedHammingDistance,
+                        sphereIndex] += 1
+                if hammingDistance < threadMaxDistance:
+                    threadHammingHistogram[
+                        hammingDistance,
+                        sphereIndex] += 1
 
 
-        resultMap['clutterResistant'][str(sphereCount)].append(averageClutterResistantScore)
-        resultMap['weightedHamming'][str(sphereCount)].append(averageWeightedHammingScore)
-        resultMap['hamming'][str(sphereCount)].append(averageHammingScore)
+            #resultMap['clutterResistant'][str(sphereCount)].append(averageClutterResistantScore)
+            #resultMap['weightedHamming'][str(sphereCount)].append(averageWeightedHammingScore)
+            #resultMap['hamming'][str(sphereCount)].append(averageHammingScore)
+    return (threadTotalImageCount,
+            threadClutterResistantHistogram,
+            threadWeightedHammingHistogram,
+            threadHammingHistogram)
+
+cpuCount = cpu_count()
+print('Processing sphere clutter output using', cpuCount, 'threads..')
+processPool = Pool(cpuCount)
+sphereClutterOutput = processPool.map(process, [(maxDistance, sphereCounts, inputDirectory, x) for x in list(chunkify(filesToRead, int(len(filesToRead) / cpuCount) + 1))])
+processPool.close()
+
+for outputEntry in sphereClutterOutput:
+    threadTotalImageCount, threadClutterResistantHistogram, threadWeightedHammingHistogram, threadHammingHistogram = outputEntry
+    similarSurfaceWeightedHammingHistogram = np.add(similarSurfaceWeightedHammingHistogram,
+                                                    threadWeightedHammingHistogram)
+    similarSurfaceClutterResistantHistogram = np.add(similarSurfaceClutterResistantHistogram,
+                                                    threadClutterResistantHistogram)
+    similarSurfaceHammingHistogram = np.add(similarSurfaceHammingHistogram,
+                                                    threadHammingHistogram)
+    sphereClutterTotalImageCount += threadTotalImageCount
 
 print()
 print('Sphere clutter total image count:', sphereClutterTotalImageCount)
@@ -240,10 +273,9 @@ plt.xlabel('Added Sphere Count')
 image = plt.imshow(similarSurfaceHammingHistogram, extent=extent, cmap='hot', aspect='auto', origin='bottom', norm=normalisation)
 plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
 
-halfway = math.log10(5)
-colorbar_ticks = [-1.0, 0, halfway, 1, 1 + halfway, 2, 2 + halfway, 3, 3 + halfway, 4, 4 + halfway]
+colorbar_ticks = [-1.0, 0, 1, 2, 3, 4, 5, 6, 7]
 cbar = plt.colorbar(image, ticks=colorbar_ticks)
-cbar.ax.set_yticklabels([str(int(round(pow(10, x)))) for x in colorbar_ticks])
+cbar.ax.set_yticklabels(["{:.0E}".format(x) for x in colorbar_ticks])
 cbar.set_label('Sample count', rotation=90)
 
 plot.show()
@@ -278,3 +310,4 @@ for seedIndex, seed in enumerate(seedList):
 book.save(outfile)
 
 print('Complete.')
+
