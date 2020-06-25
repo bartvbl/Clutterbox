@@ -30,9 +30,9 @@ imageSize = 4096
 numSphereClutterLevels = 50 + 1
 maxDistance = 4096
 
-similarSurfaceClutterResistantHistogram = np.zeros(shape=(numSphereClutterLevels, maxDistance), dtype=np.int64)
-similarSurfaceWeightedHammingHistogram = np.zeros(shape=(numSphereClutterLevels, maxDistance), dtype=np.int64)
-similarSurfaceHammingHistogram = np.zeros(shape=(numSphereClutterLevels, maxDistance), dtype=np.int64)
+similarSurfaceClutterResistantHistogram = np.zeros(shape=(maxDistance, numSphereClutterLevels), dtype=np.int64)
+similarSurfaceWeightedHammingHistogram = np.zeros(shape=(maxDistance, numSphereClutterLevels), dtype=np.int64)
+similarSurfaceHammingHistogram = np.zeros(shape=(maxDistance, numSphereClutterLevels), dtype=np.int64)
 
 baselineClutterResistantHistogram = np.zeros(shape=(maxDistance, imageSize), dtype=np.int64)
 baselineWeightedHammingHistogram = np.zeros(shape=(2 * maxDistance, imageSize), dtype=np.int64)
@@ -55,19 +55,20 @@ for fileindex, file in enumerate(baselineFileToRead):
     baselineTotalImageCount += fileContents['imageCount']
     for imageIndex, imageBitCount in enumerate(fileContents['imageBitCounts']):
         baselineClutterResistantHistogram[
-            maxDistance - 1 - fileContents['measuredDistances']['clutterResistant']['0 spheres'][imageIndex],
+            fileContents['measuredDistances']['clutterResistant']['0 spheres'][imageIndex],
             imageBitCount] += 1
-        weightedHammingDistance = int(fileContents['measuredDistances']['weightedHamming']['0 spheres'][imageIndex])
-        if weightedHammingDistance < 2 * maxDistance:
-            baselineWeightedHammingHistogram[
-                2 * maxDistance - 1 - weightedHammingDistance,
-                imageBitCount] += 1
+
+        baselineWeightedHammingHistogram[
+            int(fileContents['measuredDistances']['weightedHamming']['0 spheres'][imageIndex]),
+            imageBitCount] += 1
+
         baselineHammingHistogram[
-            maxDistance - 1 - fileContents['measuredDistances']['hamming']['0 spheres'][imageIndex],
+            fileContents['measuredDistances']['hamming']['0 spheres'][imageIndex],
             imageBitCount] += 1
 
 print()
 print('Total number of baseline images:', baselineTotalImageCount)
+# 176,225,136
 
 baselineClutterResistantHistogram = np.log10(np.maximum(baselineClutterResistantHistogram, 0.1))
 baselineWeightedHammingHistogram = np.log10(np.maximum(baselineWeightedHammingHistogram, 0.1))
@@ -104,21 +105,21 @@ plot = plt.figure(1)
 plt.title('Clutter Resistant')
 plt.ylabel('Computed distance using distance function')
 plt.xlabel('Number of set pixels in query image')
-image = plt.imshow(baselineClutterResistantHistogram, extent=extent, cmap='hot', norm=normalisation)
+image = plt.imshow(baselineClutterResistantHistogram, extent=extent, cmap='hot', norm=normalisation, origin='lower')
 plot.show()
 
 plot = plt.figure(2)
 plt.title('Weighted Hamming')
 plt.ylabel('Computed distance using distance function')
 plt.xlabel('Number of set pixels in query image')
-image = plt.imshow(baselineWeightedHammingHistogram, extent=weightedHammingExtent, cmap='hot', norm=normalisation)
+image = plt.imshow(baselineWeightedHammingHistogram, extent=weightedHammingExtent, cmap='hot', norm=normalisation, origin='lower')
 plot.show()
 
 plot = plt.figure(3)
 plt.title('Hamming')
 plt.ylabel('Computed distance using distance function')
 plt.xlabel('Number of set pixels in query image')
-image = plt.imshow(baselineHammingHistogram, extent=extent, cmap='hot', norm=normalisation)
+image = plt.imshow(baselineHammingHistogram, extent=extent, cmap='hot', norm=normalisation, origin='lower')
 
 halfway = math.log10(5)
 colorbar_ticks = [-1.0, 0, halfway, 1, 1 + halfway, 2, 2 + halfway, 3, 3 + halfway, 4, 4 + halfway]
@@ -134,8 +135,9 @@ sphereClutterTotalImageCount = 0
 
 filesToRead = os.listdir(inputDirectory)
 for fileindex, file in enumerate(filesToRead):
-    if fileindex == 10:
-        break
+    if fileindex == 5:
+        #break
+        pass
     print(str(fileindex + 1) + '/' + str(len(filesToRead)), file + '        ', end='\r', flush=True)
     with open(os.path.join(inputDirectory, file), 'r') as openFile:
         # Read JSON file
@@ -181,11 +183,17 @@ for fileindex, file in enumerate(filesToRead):
                 fileContents['measuredDistances']['hamming'][str(sphereCount) + ' spheres'][imageIndex]
 
             if clutterResistantDistance < maxDistance:
-                similarSurfaceClutterResistantHistogram[sphereIndex, clutterResistantDistance] += 1
+                similarSurfaceClutterResistantHistogram[
+                    clutterResistantDistance,
+                    sphereIndex] += 1
             if weightedHammingDistance < maxDistance:
-                similarSurfaceWeightedHammingHistogram[sphereIndex, weightedHammingDistance] += 1
+                similarSurfaceWeightedHammingHistogram[
+                    weightedHammingDistance,
+                    sphereIndex] += 1
             if hammingDistance < maxDistance:
-                similarSurfaceHammingHistogram[sphereIndex, hammingDistance] += 1
+                similarSurfaceHammingHistogram[
+                    hammingDistance,
+                    sphereIndex] += 1
 
 
         resultMap['clutterResistant'][str(sphereCount)].append(averageClutterResistantScore)
@@ -199,30 +207,45 @@ similarSurfaceClutterResistantHistogram = np.log10(np.maximum(similarSurfaceClut
 similarSurfaceWeightedHammingHistogram = np.log10(np.maximum(similarSurfaceWeightedHammingHistogram, 0.1))
 similarSurfaceHammingHistogram = np.log10(np.maximum(similarSurfaceHammingHistogram, 0.1))
 
+clutterSphereHistograms = [similarSurfaceHammingHistogram, similarSurfaceClutterResistantHistogram, similarSurfaceWeightedHammingHistogram]
+total_minimum_value = min([np.amin(x) for x in clutterSphereHistograms])
+total_maximum_value = max([np.amax(x) for x in clutterSphereHistograms])
+normalisation = colors.Normalize(vmin=total_minimum_value,vmax=total_maximum_value)
+
 extent = [0, numSphereClutterLevels, 0, maxDistance]
+
+horizontal_ticks_real_coords = np.arange(0, 60, 10)
+horizontal_ticks_labels = [("%i" % x) for x in np.arange(0,600,100)]
 
 plot = plt.figure(1)
 plt.title('Clutter Resistant')
-plt.ylabel('rank')
-plt.xlabel('clutter percentage')
-image = plt.imshow(similarSurfaceClutterResistantHistogram, extent=extent, cmap='hot')#, norm=normalisation)
-#plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+plt.ylabel('Distance Function Response')
+plt.xlabel('Added Sphere Count')
+image = plt.imshow(similarSurfaceClutterResistantHistogram, extent=extent, cmap='hot', aspect='auto', origin='bottom', norm=normalisation)
+plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
 plot.show()
 
 plot = plt.figure(2)
 plt.title('Weighted Hamming')
-plt.ylabel('rank')
-plt.xlabel('clutter percentage')
-image = plt.imshow(similarSurfaceWeightedHammingHistogram, extent=extent, cmap='hot')#, norm=normalisation)
-#plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+plt.ylabel('Distance Function Response')
+plt.xlabel('Added Sphere Count')
+image = plt.imshow(similarSurfaceWeightedHammingHistogram, extent=extent, cmap='hot', aspect='auto', origin='bottom', norm=normalisation)
+plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
 plot.show()
 
 plot = plt.figure(3)
 plt.title('Hamming')
-plt.ylabel('rank')
-plt.xlabel('clutter percentage')
-image = plt.imshow(similarSurfaceHammingHistogram, extent=extent, cmap='hot')#, norm=normalisation)
-#plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+plt.ylabel('Distance Function Response')
+plt.xlabel('Added Sphere Count')
+image = plt.imshow(similarSurfaceHammingHistogram, extent=extent, cmap='hot', aspect='auto', origin='bottom', norm=normalisation)
+plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
+
+halfway = math.log10(5)
+colorbar_ticks = [-1.0, 0, halfway, 1, 1 + halfway, 2, 2 + halfway, 3, 3 + halfway, 4, 4 + halfway]
+cbar = plt.colorbar(image, ticks=colorbar_ticks)
+cbar.ax.set_yticklabels([str(int(round(pow(10, x)))) for x in colorbar_ticks])
+cbar.set_label('Sample count', rotation=90)
+
 plot.show()
 
 input()
