@@ -18,4 +18,5 @@ void runQuicciDistanceFunctionBenchmark(
         int sceneSphereCount,
         float clutterSphereRadius,
         GPUMetaData gpuMetaData,
+        float supportRadius,
         BenchmarkMode mode);

@@ -127,6 +127,7 @@ int main(int argc, const char **argv)
             sceneSphereCount.value(),
             clutterSphereRadius.value(),
             gpuMetaData,
+            supportRadius.value(),
             benchmarkMode);
 
 

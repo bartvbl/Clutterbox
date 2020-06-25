@@ -30,8 +30,6 @@ using ordered_map = tsl::ordered_map<Key, T, Hash, KeyEqual, AllocatorPair, Valu
 
 using json = nlohmann::basic_json<ordered_map>;
 
-const float SUPPORT_RADIUS = 0.3;
-
 void runQuicciDistanceFunctionBenchmark(
         std::experimental::filesystem::path sourceDirectory,
         std::experimental::filesystem::path outputDirectory,
@@ -40,6 +38,7 @@ void runQuicciDistanceFunctionBenchmark(
         int sceneSphereCount,
         float clutterSphereRadius,
         GPUMetaData gpuMetaData,
+        float supportRadius,
         BenchmarkMode mode) {
     // 1 Seeding the random number generator
     std::random_device rd("/dev/urandom");
@@ -115,7 +114,7 @@ void runQuicciDistanceFunctionBenchmark(
     SpinImage::gpu::QUICCIImages device_unmodifiedQuiccImages = SpinImage::gpu::generateQUICCImages(
             unmodifiedMesh,
             imageOrigins,
-            SUPPORT_RADIUS);
+            supportRadius);
 
     size_t unmodifiedVertexCount = unmodifiedMesh.vertexCount;
     const size_t verticesPerSphere = SPHERE_VERTEX_COUNT;
@@ -133,7 +132,7 @@ void runQuicciDistanceFunctionBenchmark(
             SpinImage::gpu::QUICCIImages device_augmentedQuiccImages = SpinImage::gpu::generateQUICCImages(
                     augmentedMesh,
                     imageOrigins,
-                    SUPPORT_RADIUS,
+                    supportRadius,
                     &runInfo);
 
             std::cout << "\t\t\tTook " << runInfo.totalExecutionTimeSeconds << " seconds." << std::endl;
@@ -158,7 +157,7 @@ void runQuicciDistanceFunctionBenchmark(
         SpinImage::gpu::QUICCIImages device_sampleImages = SpinImage::gpu::generateQUICCImages(
                 otherSampleUnmodifiedMesh,
                 baselineOrigins,
-                SUPPORT_RADIUS,
+                supportRadius,
                 &runInfo);
 
         std::cout << "\t\t\tTook " << runInfo.totalExecutionTimeSeconds << " seconds." << std::endl;
@@ -192,7 +191,7 @@ void runQuicciDistanceFunctionBenchmark(
     outJson["sphereLayerCount"] = SPHERE_RESOLUTION_Y;
     outJson["trianglesPerSphere"] = SPHERE_TRIANGLE_COUNT;
     outJson["verticesPerSphere"] = SPHERE_VERTEX_COUNT;
-    outJson["supportRadius"] = SUPPORT_RADIUS;
+    outJson["supportRadius"] = supportRadius;
     outJson["chosenObjectPath"] = filePaths.at(0);
     outJson["imageCount"] = imageCount;
     outJson["objectVertexCount"] = unmodifiedVertexCount;
