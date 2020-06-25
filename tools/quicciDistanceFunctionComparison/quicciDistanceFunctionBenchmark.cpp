@@ -81,6 +81,7 @@ void runQuicciDistanceFunctionBenchmark(
     SpinImage::cpu::Mesh augmentedHostMesh;
     if(mode == BenchmarkMode::SPHERE_CLUTTER) {
         augmentedHostMesh = applyClutterSpheres(scaledMesh, sceneSphereCount, clutterSphereRadius, generator());
+        //SpinImage::dump::mesh(augmentedHostMesh, "dumped_sphere_mesh.obj");
     }
 
     // 6 Copy meshes to GPU
