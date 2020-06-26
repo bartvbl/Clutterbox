@@ -155,6 +155,7 @@ removeSeedsWithMissingEntries = True
 
 # Cut down the result set to a specific number of entries
 resultSetSizeLimit = 1500
+#resultSetSizeLimit = 500
 enableResultSetSizeLimit = True
 
 
@@ -163,7 +164,7 @@ enableResultSetSizeLimit = True
 print()
 print(' === Processing of experiment output files into the master spreadsheet ===')
 print('This spreadsheet contains the exact data used to construct the charts in the paper')
-print('Having a machine with 24GB of RAM is probably a necessity for running this')
+print('Having a machine with 32GB of RAM is probably a necessity for running this')
 print()
 
 matplotlib.use('Qt5Agg')
@@ -563,7 +564,7 @@ for clutterFileDirectory in clutterFileDirectories:
 
 # Find the seeds for which all input sets have data
 print('\nComputing condensed seed set')
-rawSeedList = loadedRawResults['QSI'].keys()
+rawSeedList = loadedRawResults[methods[[x for x in methods.keys()][0]]['namePrefixInJSONFile']].keys()
 print('Starting raw RICI seed set size:', len(rawSeedList))
 for method in methods:
     rawSeedList = [x for x in rawSeedList if x in loadedRawResults[methods[method]['namePrefixInJSONFile']].keys()]
