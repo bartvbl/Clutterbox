@@ -638,6 +638,8 @@ colorbar_ticks = np.arange(0, 8, 1)
 total_minimum_value = min([np.amin(histograms[x]) for x in histograms])
 total_maximum_value = max([np.amax(histograms[x]) for x in histograms])
 print('range:', total_minimum_value, total_maximum_value)
+#total_minimum_value = -1.0
+#total_maximum_value = 7.168897592566977
 normalisation = colors.Normalize(vmin=total_minimum_value,vmax=total_maximum_value)
 
 horizontal_ticks_real_coords = np.arange(0,256,25.599*2.0)
