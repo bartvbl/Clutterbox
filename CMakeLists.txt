@@ -19,7 +19,7 @@ set (CMAKE_SUPPRESS_REGENERATION TRUE) # Suppresses ZERO_CHECK
 
 # Eigen
 
-find_package (Eigen3 3.3.4 REQUIRED NO_MODULE)
+#find_package (Eigen3 3.3.4 REQUIRED NO_MODULE)
 
 # PCL
 
@@ -66,6 +66,7 @@ include_directories (
         lib/glm
         lib/json
         lib/arrrgh
+        lib/Eigen
         ${PCL_INCLUDE_DIRS}
         ${CUDA_INCLUDE_DIRS}
 )
@@ -119,7 +120,7 @@ add_executable(clutterEstimator ${CLUTTER_ESTIMATOR_SOURCES} ${CLUTTER_EXPERIMEN
 target_link_libraries(clutterEstimator ${CUDA_LIBRARY} cuda cudart SpinImage cudadevrt)
 
 add_executable(projectionBenchmark tools/projectionBenchmark/compare.cpp)
-target_link_libraries(projectionBenchmark ${PCL_LIBRARIES} Eigen3::Eigen)
+target_link_libraries(projectionBenchmark ${PCL_LIBRARIES})
 
 add_executable(quicciDistanceFunctionBenchmark
         tools/quicciDistanceFunctionComparison/main.cpp
