@@ -11,7 +11,9 @@
 #include <spinImage/gpu/types/DeviceOrientedPoint.h>
 #include <nvidia/helper_cuda.h>
 
-const float PI = 3.14159265358979323846;
+// MUST be a define!!!
+// Defining it as const float invalidates the results!
+#define PI 3.14159265358979323846
 
 __global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMatrices, size_t* endIndices, SpinImage::gpu::Mesh scene) {
     size_t threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
