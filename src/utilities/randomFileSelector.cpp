@@ -6,7 +6,7 @@
 
 
 std::vector<std::string> generateRandomFileList(const std::string &objectDirectory, unsigned int sampleSetSize,
-                                                std::default_random_engine &generator) {
+												std::minstd_rand0 &generator) {
 
     std::vector<std::string> filePaths(sampleSetSize);
 
