@@ -19,7 +19,6 @@ void runClutterBoxExperiment(
         float minSupportRadius3dsc,
         float supportRadius,
         float spinImageSupportAngleDegrees,
-        unsigned int fpfhBinCount,
         bool dumpRawSearchResults,
         std::string outputDirectory,
         bool dumpSceneOBJFiles,

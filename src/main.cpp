@@ -25,7 +25,7 @@ void splitByCharacter(std::vector<std::string>* parts, const std::string &s, cha
 
 int main(int argc, const char **argv)
 {
-	arrrgh::parser parser("riciverification", "Generates and compares both radial intersection count and spin images on the GPU");
+	arrrgh::parser parser("clutterbox", "Generates and compares radial intersection count images, spin images, and 3D shape context descriptors on the GPU");
 	const auto& showHelp = parser.add<bool>("help", "Show this help message.", 'h', arrrgh::Optional, false);
 	const auto& listGPUs = parser.add<bool>("list-gpus", "List all GPU's, used for the --force-gpu parameter.", 'a', arrrgh::Optional, false);
 	const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", 'b', arrrgh::Optional, -1);
@@ -34,7 +34,6 @@ int main(int argc, const char **argv)
 	const auto& supportRadius = parser.add<float>("support-radius", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
     const auto& minSupportRadius3dsc = parser.add<float>("3dsc-min-support-radius", "The 3DSC descriptor also requires a minimum support radius to be set", '\0', arrrgh::Optional, 0.1);
     const auto& pointDensityRadius3dsc = parser.add<float>("3dsc-point-density-radius", "The 3DSC descriptor requires a set radius for its point density computation pre-processing step", '\0', arrrgh::Optional, 0.05);
-    const auto& fpfhBinCount = parser.add<int>("fpfh-bin-count", "The number of bins per feature to use for FPFH generation", '\0', arrrgh::Optional, 11);
 	const auto& spinImageSupportAngle = parser.add<float>("spin-image-support-angle-degrees", "The support angle to use for filtering spin image point samples", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_SUPPORT_ANGLE_DEGREES);
     const auto& forcedSeed = parser.add<std::string>("force-seed", "Specify the seed to use for random generation. Used for reproducing results.", '\0', arrrgh::Optional, "0");
 	const auto& dumpRawResults = parser.add<bool>("dump-raw-search-results", "Enable dumping of raw search result index values", '\0', arrrgh::Optional, false);
@@ -42,7 +41,7 @@ int main(int argc, const char **argv)
 	const auto& outputDirectory = parser.add<std::string>("output-directory", "Specify the location where output files should be dumped", '\0', arrrgh::Optional, "../output/");
     const auto& objectCounts = parser.add<std::string>("object-counts", "Specify the number of objects the experiment should be performed with, as a comma separated list WITHOUT spaces (e.g. --object-counts=1,2,5)", '\0', arrrgh::Optional, "NONE");
     const auto& overrideObjectCount = parser.add<int>("override-total-object-count", "If you want a specified number of objects to be used for the experiment (for ensuring consistency between seeds)", '\0', arrrgh::Optional, -1);
-    const auto& descriptors = parser.add<std::string>("descriptors", "Specify the descriptors that should be used in the experiment, with as valid options \"rici\", \"quicci\", \"fpfh\", \"si\", \"3dsc\", and \"all\", as a comma separated list WITHOUT spaces (e.g. --object-counts=rici,si). Use value \"all\" for using all supported descriptors", '\0', arrrgh::Optional, "all");
+    const auto& descriptors = parser.add<std::string>("descriptors", "Specify the descriptors that should be used in the experiment, with as valid options \"rici\", \"si\", \"3dsc\", and \"all\", as a comma separated list WITHOUT spaces (e.g. --object-counts=rici,si). Use value \"all\" for using all supported descriptors", '\0', arrrgh::Optional, "all");
     const auto& dumpSceneOBJFiles = parser.add<std::string>("scene-obj-file-dump-directory", "Specifying a directory path will dump OBJ files at each specified object count", '\0', arrrgh::Optional, "NONE_SELECTED");
     const auto& visualiseMatchesDirectory = parser.add<std::string>("dump-matches-visualisation-obj-directory", "Directory where OBJ files indicating top search results should be dumped. Requires --dump-raw-search-results to be enabled.", '\0', arrrgh::Optional, "NONE_SELECTED");
     const auto& visualiseMatchesDescriptors = parser.add<std::string>("dump-matches-visualisation-obj-descriptors", "Specifies for which descriptors the search results should be visualised. Requires --dump-matches-visualisation-obj-directory to be enabled.", '\0', arrrgh::Optional, "NONE_SELECTED");
@@ -120,14 +119,14 @@ int main(int argc, const char **argv)
     for (const auto &descriptorPart : descriptorListParts) {
         if(descriptorPart == "all") {
             containsAll = true;
-        } else if(descriptorPart != "rici" && descriptorPart != "quicci" && descriptorPart != "si" && descriptorPart != "3dsc" && descriptorPart != "fpfh") {
+        } else if(descriptorPart != "rici" && descriptorPart != "si" && descriptorPart != "3dsc") {
             std::cout << "Error: Unknown descriptor name detected: \"" + descriptorPart + "\". Ignoring." << std::endl;
         } else {
             descriptorList.push_back(descriptorPart);
         }
     }
     if(containsAll /*|| descriptorList.size() == 0 feature, not a bug*/) {
-        descriptorList = {"rici", "si", "quicci", "3dsc", "fpfh"};
+        descriptorList = {"rici", "si", "3dsc"};
     }
 
     std::sort(objectCountList.begin(), objectCountList.end());
@@ -142,7 +141,6 @@ int main(int argc, const char **argv)
             minSupportRadius3dsc.value(),
             supportRadius.value(),
             spinImageSupportAngle.value(),
-            fpfhBinCount.value(),
             dumpRawResults.value(),
             outputDirectory.value(),
             enableOBJDump,

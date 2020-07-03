@@ -19,10 +19,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set (CMAKE_VERBOSE_MAKEFILE 0) # 1 should be used for debugging
 set (CMAKE_SUPPRESS_REGENERATION TRUE) # Suppresses ZERO_CHECK
 
-# Eigen
-
-#find_package (Eigen3 3.3.4 REQUIRED NO_MODULE)
-
 # PCL
 
 find_package(PCL 1.8.1 REQUIRED COMPONENTS common io)
@@ -124,13 +120,3 @@ target_link_libraries(clutterEstimator ${CUDA_LIBRARY} cuda cudart SpinImage cud
 
 add_executable(projectionBenchmark tools/projectionBenchmark/compare.cpp)
 target_link_libraries(projectionBenchmark ${PCL_LIBRARIES})
-
-add_executable(quicciDistanceFunctionBenchmark
-        tools/quicciDistanceFunctionComparison/main.cpp
-        tools/quicciDistanceFunctionComparison/quicciDistanceFunctionBenchmark.cpp
-        tools/quicciDistanceFunctionComparison/clutterSphereMeshAugmenter.cpp
-        src/utilities/randomFileSelector.cpp
-        src/utilities/listDir.cpp
-        src/utilities/stringUtils.cpp
-        src/experiments/clutterBox/clutterBoxUtilities.cpp)
-target_link_libraries(quicciDistanceFunctionBenchmark SpinImage)
