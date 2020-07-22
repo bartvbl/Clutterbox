@@ -11,7 +11,9 @@
 #include <spinImage/gpu/types/DeviceOrientedPoint.h>
 #include <nvidia/helper_cuda.h>
 
-
+// MUST be a define!!!
+// Defining it as const float invalidates the results!
+#define PI 3.14159265358979323846
 
 __global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMatrices, size_t* endIndices, SpinImage::gpu::Mesh scene) {
     size_t threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
@@ -120,9 +122,9 @@ void randomlyTransformMeshes(SpinImage::gpu::Mesh scene, float maxDistance, std:
     for(unsigned int i = 0; i < device_meshList.size(); i++) {
         Transformation trans{};
 
-        trans.rotation.y = float(distribution(randomGenerator) * 2.0 * M_PI);
-        trans.rotation.x = float((distribution(randomGenerator) - 0.5) * M_PI);
-        trans.rotation.z = float(distribution(randomGenerator) * 2.0 * M_PI);
+        trans.rotation.y = float(distribution(randomGenerator) * 2.0 * PI);
+        trans.rotation.x = float((distribution(randomGenerator) - 0.5) * PI);
+        trans.rotation.z = float(distribution(randomGenerator) * 2.0 * PI);
 
         trans.position.x = maxDistance * distribution(randomGenerator);
         trans.position.y = maxDistance * distribution(randomGenerator);

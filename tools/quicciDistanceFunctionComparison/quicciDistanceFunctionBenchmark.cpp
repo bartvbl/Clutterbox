@@ -56,7 +56,7 @@ void runQuicciDistanceFunctionBenchmark(
     } else if(mode == BenchmarkMode::BASELINE) {
         sampleSetSize = 2;
     }
-    std::vector<std::string> filePaths = generateRandomFileList(sourceDirectory, sampleSetSize, generator);
+    std::vector<std::string> filePaths = generateRandomFileList(sourceDirectory.string(), sampleSetSize, generator);
 
     // 4 Load the models in the sample set
     std::cout << "\tLoading sample model.." << std::endl;

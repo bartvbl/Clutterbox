@@ -103,7 +103,7 @@ void dumpResultsFile(
         GPUMetaData gpuMetaData) {
     std::cout << std::endl << "Dumping results file.." << std::endl;
 
-    std::default_random_engine generator{seed};
+	std::minstd_rand0 generator{seed};
 
     int sampleObjectCount = *std::max_element(objectCountList.begin(), objectCountList.end());
     int originalObjectCount = sampleObjectCount;

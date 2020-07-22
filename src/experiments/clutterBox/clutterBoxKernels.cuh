@@ -11,4 +11,4 @@ struct Transformation {
 };
 
 void randomlyTransformMeshes(SpinImage::gpu::Mesh scene, std::vector<SpinImage::gpu::Mesh> meshList, std::vector<Transformation> transformations);
-void randomlyTransformMeshes(SpinImage::gpu::Mesh scene, float maxDistance, std::vector<SpinImage::gpu::Mesh> meshList, std::default_random_engine &randomGenerator);
+void randomlyTransformMeshes(SpinImage::gpu::Mesh scene, float maxDistance, std::vector<SpinImage::gpu::Mesh> meshList, std::minstd_rand0 &randomGenerator);

@@ -3,10 +3,12 @@
 #
 cmake_minimum_required (VERSION 3.0)
 
+if(!MSVC)
 set(CUDAHOSTCXX /usr/bin/g++-7)
 set(CMAKE_CUDA_HOST_COMPILER /usr/bin/g++-7)
 #set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
 set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda")
+endif()
 
 project (clutterbox CXX CUDA)
 
@@ -19,7 +21,7 @@ set (CMAKE_SUPPRESS_REGENERATION TRUE) # Suppresses ZERO_CHECK
 
 # Eigen
 
-find_package (Eigen3 3.3.4 REQUIRED NO_MODULE)
+#find_package (Eigen3 3.3.4 REQUIRED NO_MODULE)
 
 # PCL
 
@@ -28,7 +30,8 @@ find_package(PCL 1.8.1 REQUIRED COMPONENTS common io)
 # Compiler Flags
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+    add_definitions("-D_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /openmp")
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -march=native -frounding-math") #  -g -pg -pg -no-pie
 endif()
@@ -66,6 +69,7 @@ include_directories (
         lib/glm
         lib/json
         lib/arrrgh
+        lib/Eigen
         ${PCL_INCLUDE_DIRS}
         ${CUDA_INCLUDE_DIRS}
 )
@@ -119,7 +123,7 @@ add_executable(clutterEstimator ${CLUTTER_ESTIMATOR_SOURCES} ${CLUTTER_EXPERIMEN
 target_link_libraries(clutterEstimator ${CUDA_LIBRARY} cuda cudart SpinImage cudadevrt)
 
 add_executable(projectionBenchmark tools/projectionBenchmark/compare.cpp)
-target_link_libraries(projectionBenchmark ${PCL_LIBRARIES} Eigen3::Eigen)
+target_link_libraries(projectionBenchmark ${PCL_LIBRARIES})
 
 add_executable(quicciDistanceFunctionBenchmark
         tools/quicciDistanceFunctionComparison/main.cpp
