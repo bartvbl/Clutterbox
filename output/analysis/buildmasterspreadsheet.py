@@ -82,12 +82,12 @@ inputDirectories = {
 
     '../HEIDRUNS/run1_3dsc_main/output/': ('3DSC', 'HEID'),
 
-    '../HEIDRUNS/run2_quicci_main/output/': ('QUICCI', 'HEID'),
-    '../HEIDRUNS/run6_output_quicci_distance_functions_clutterResistant_rerun/output/': ('QUICCI', 'HEID'),
-    '../HEIDRUNS/run11_quicci_weighted_hamming_whammingcomputationfix/output/': ('QUICCI', 'HEID'),
-    '../HEIDRUNS/run8_output_quicci_distance_functions_hamming_rerun/output/': ('QUICCI', 'HEID'),
+    #'../HEIDRUNS/run2_quicci_main/output/': ('QUICCI', 'HEID'),
+    #'../HEIDRUNS/run6_output_quicci_distance_functions_clutterResistant_rerun/output/': ('QUICCI', 'HEID'),
+    #'../HEIDRUNS/run11_quicci_weighted_hamming_whammingcomputationfix/output/': ('QUICCI', 'HEID'),
+    #'../HEIDRUNS/run8_output_quicci_distance_functions_hamming_rerun/output/': ('QUICCI', 'HEID'),
 
-    '../HEIDRUNS/run9_output_fpfh_test_run/output/': ('FPFH', 'HEID'),
+    #'../HEIDRUNS/run9_output_fpfh_test_run/output/': ('FPFH', 'HEID'),
 }
 
 # The location where the master spreadsheet should be written to
@@ -102,13 +102,13 @@ methods = {
         'generationTimings': ['total', 'meshScale', 'redistribution', 'generation'],
         'searchTimings': ['total', 'search']
     },
-    'QUICCI': {
-        'isValid': isQuicciResultValid,
-        'nameInJSONFile': 'quicci',
-        'namePrefixInJSONFile': 'QUICCI',
-        'generationTimings': ['total', 'meshScale', 'redistribution', 'generation'],
-        'searchTimings': ['total', 'search']
-    },
+    #'QUICCI': {
+    #    'isValid': isQuicciResultValid,
+    #    'nameInJSONFile': 'quicci',
+    #    'namePrefixInJSONFile': 'QUICCI',
+    #    'generationTimings': ['total', 'meshScale', 'redistribution', 'generation'],
+    #    'searchTimings': ['total', 'search']
+    #},
     'SI': {
         'isValid': isSiResultValid,
         'nameInJSONFile': 'si',
@@ -123,13 +123,13 @@ methods = {
         'generationTimings': ['total', 'initialisation', 'sampling', 'pointCounting', 'generation'],
         'searchTimings': ['total', 'search']
     },
-    'FPFH': {
-        'isValid': isFPFHResultValid,
-        'nameInJSONFile': 'fpfh',
-        'namePrefixInJSONFile': 'FPFH',
-        'generationTimings': ['total', 'reformat', 'spfh_origins', 'spfh_pointCloud', 'generation'],
-        'searchTimings': ['total', 'search']
-    }
+    #'FPFH': {
+    #    'isValid': isFPFHResultValid,
+    #    'nameInJSONFile': 'fpfh',
+    #    'namePrefixInJSONFile': 'FPFH',
+    #    'generationTimings': ['total', 'reformat', 'spfh_origins', 'spfh_pointCloud', 'generation'],
+    #    'searchTimings': ['total', 'search']
+    #}
 }
 
 
@@ -141,8 +141,8 @@ rawInputDirectories = {
     'QSI': ['../HEIDRUNS/output_seeds_qsi_v4_5objects_missing/output/raw', '../IDUNRUNS/output_lotsofobjects_v4/raw'],
     'SI': ['../HEIDRUNS/output_qsifix_v4_lotsofobjects_5_objects_only/output/raw', '../IDUNRUNS/output_mainchart_si_v4_15/raw'],
     '3DSC': ['../HEIDRUNS/run1_3dsc_main/output/raw'],
-    'QUICCI': ['../HEIDRUNS/run2_quicci_main/output/raw'],
-    'FPFH': ['../HEIDRUNS/run9_output_fpfh_test_run/output/raw'],
+    #'QUICCI': ['../HEIDRUNS/run2_quicci_main/output/raw'],
+    #'FPFH': ['../HEIDRUNS/run9_output_fpfh_test_run/output/raw'],
 }
 rawInputObjectCount = 5
 
@@ -504,7 +504,7 @@ merge('SI 60 deg 10 objects intermediate', '../IDUNRUNS/output_qsifix_smallsuppo
 
 print()
 split('../HEIDRUNS/run1_3dsc_main/output/')
-split('../HEIDRUNS/run2_quicci_main/output/')
+#split('../HEIDRUNS/run2_quicci_main/output/')
 
 print('\nProcessing..\n')
 
@@ -584,7 +584,8 @@ print()
 print('Reduced result set to size', len(seedList))
 print()
 
-
+for seed in seedList:
+	print(seed)
 
 # Create heatmap histograms
 histograms = {}

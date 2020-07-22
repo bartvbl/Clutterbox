@@ -179,6 +179,7 @@ for outputEntry in sphereClutterOutput:
     sphereClutterTotalImageCount += threadTotalImageCount
 
 print()
+# 26,791,988
 print('Sphere clutter total image count:', sphereClutterTotalImageCount)
 
 plt.clf()
@@ -211,30 +212,32 @@ horizontal_ticks_labels = [("%i" % x) for x in np.arange(0,600,100)]
 
 plot = plt.figure(1)
 plt.title('Clutter Resistant')
-plt.ylabel('Distance Value')
-plt.xlabel('Added Sphere Count')
-image = plt.imshow(similarSurfaceClutterResistantHistogram, extent=extent, cmap='hot', aspect='auto', origin='bottom', norm=normalisation)
+plt.ylabel('Distance value')
+plt.xlabel('Added sphere count')
+image = plt.imshow(similarSurfaceClutterResistantHistogram, interpolation='nearest', extent=extent, cmap='hot', aspect='auto', origin='bottom', norm=normalisation)
 plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
 plot.show()
 
 plot = plt.figure(2)
 plt.title('Weighted Hamming')
-plt.ylabel('Distance Value')
-plt.xlabel('Added Sphere Count')
-image = plt.imshow(similarSurfaceWeightedHammingHistogram, extent=extent, cmap='hot', aspect='auto', origin='bottom', norm=normalisation)
+plt.ylabel('Distance value')
+plt.xlabel('Added sphere count')
+image = plt.imshow(similarSurfaceWeightedHammingHistogram, interpolation='nearest', extent=extent, cmap='hot', aspect='auto', origin='bottom', norm=normalisation)
 plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
 plot.show()
 
 plot = plt.figure(3)
 plt.title('Hamming')
-plt.ylabel('Distance Value')
-plt.xlabel('Added Sphere Count')
-image = plt.imshow(similarSurfaceHammingHistogram, extent=extent, cmap='hot', aspect='auto', origin='bottom', norm=normalisation)
+plt.ylabel('Distance value')
+plt.xlabel('Added sphere count')
+image = plt.imshow(similarSurfaceHammingHistogram, interpolation='nearest', extent=extent, cmap='hot', aspect='auto', origin='bottom', norm=normalisation)
+
 plt.xticks(horizontal_ticks_real_coords, horizontal_ticks_labels)
 
 colorbar_ticks = [-1.0, 0, 1, 2, 3, 4, 5, 6, 7]
+colorbar_ticks_strings = ['0', '1E+00', '1E+01', '1E+02', '1E+03', '1E+04', '1E+05', '1E+06', '1E+07']
 cbar = plt.colorbar(image, ticks=colorbar_ticks)
-cbar.ax.set_yticklabels(["{:.0E}".format(x) for x in colorbar_ticks])
+cbar.ax.set_yticklabels(colorbar_ticks_strings)
 cbar.set_label('Sample count', rotation=90)
 
 plot.show()
