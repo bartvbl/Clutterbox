@@ -12,7 +12,7 @@
 #include <utilities/randomFileSelector.h>
 #include <cuda_runtime_api.h>
 #include <nvidia/helper_cuda.h>
-#include <experiments/clutterBox/clutterBoxUtilities.h>
+#include <clutterbox/clutterBoxUtilities.h>
 #include <spinImage/utilities/dumpers/meshDumper.h>
 #include <spinImage/gpu/quickIntersectionCountImageGenerator.cuh>
 #include <spinImage/gpu/quickIntersectionCountImageSearcher.cuh>

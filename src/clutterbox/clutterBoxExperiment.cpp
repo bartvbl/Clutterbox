@@ -33,7 +33,7 @@
 #include <spinImage/utilities/modelScaler.h>
 #include <spinImage/utilities/meshSampler.cuh>
 
-#include <experiments/clutterBox/clutterBoxUtilities.h>
+#include <clutterbox/clutterBoxUtilities.h>
 #include <fstream>
 #include <glm/vec3.hpp>
 #include <map>
@@ -54,7 +54,7 @@ using ordered_map = tsl::ordered_map<Key, T, Hash, KeyEqual, AllocatorPair, Valu
 
 using json = nlohmann::basic_json<ordered_map>;
 
-#include "clutterBox/clutterBoxKernels.cuh"
+#include "clutterBoxKernels.cuh"
 
 #include "utilities/listDir.h"
 #include "nvidia/helper_cuda.h"

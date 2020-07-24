@@ -10,7 +10,7 @@
 #include <spinImage/gpu/types/Mesh.h>
 #include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/gpu/types/DeviceOrientedPoint.h>
-#include <experiments/clutterBox/clutterBoxUtilities.h>
+#include <clutterbox/clutterBoxUtilities.h>
 #include <spinImage/gpu/types/PointCloud.h>
 #include <spinImage/utilities/meshSampler.cuh>
 #include <spinImage/utilities/duplicateRemoval.cuh>
@@ -20,7 +20,7 @@
 using json = nlohmann::json;
 
 #include "utilities/listDir.h"
-#include "experiments/clutterBox/clutterBoxKernels.cuh"
+#include "clutterbox/clutterBoxKernels.cuh"
 #include "spinImage/utilities/modelScaler.h"
 #include "clutterKernel.cuh"
 #include "nvidia/helper_cuda.h"

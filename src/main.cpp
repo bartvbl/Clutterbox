@@ -3,7 +3,7 @@
 #include "cuda_runtime.h"
 #include "nvidia/helper_cuda.h"
 
-#include "experiments/clutterBoxExperiment.hpp"
+#include "clutterbox/clutterBoxExperiment.hpp"
 
 
 #include <stdexcept>

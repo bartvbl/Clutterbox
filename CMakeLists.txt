@@ -70,6 +70,7 @@ include_directories (
         lib/json
         lib/arrrgh
         lib/Eigen
+        lib/nvidia
         ${PCL_INCLUDE_DIRS}
         ${CUDA_INCLUDE_DIRS}
 )
@@ -98,9 +99,8 @@ file (GLOB_RECURSE CLUTTER_ESTIMATOR_SOURCES    tools/clutterEstimator/*.cpp
         tools/clutterEstimator/*.cu
         tools/clutterEstimator/*.cuh)
 file (GLOB_RECURSE CLUTTER_EXPERIMENT_SOURCES
-        src/experimentUtilities/*.cpp
-        src/experiments/*.cpp
-        src/experiments/*.cu
+        src/clutterbox/*.cpp
+        src/clutterbox/*.cu
         src/utilities/*.cpp)
 
 #
@@ -132,5 +132,5 @@ add_executable(quicciDistanceFunctionBenchmark
         src/utilities/randomFileSelector.cpp
         src/utilities/listDir.cpp
         src/utilities/stringUtils.cpp
-        src/experiments/clutterBox/clutterBoxUtilities.cpp)
+        src/clutterbox/clutterBoxUtilities.cpp)
 target_link_libraries(quicciDistanceFunctionBenchmark SpinImage)
