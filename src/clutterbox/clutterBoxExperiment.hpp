@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <clutterbox/methods/types/ClutterboxMethod.h>
 
 struct GPUMetaData {
     std::string name;
@@ -11,7 +12,7 @@ struct GPUMetaData {
 
 void runClutterBoxExperiment(
         std::string objectDirectory,
-        std::vector<std::string> descriptorList,
+        std::vector<ClutterboxMethod*> descriptorList,
         std::vector<int> objectCountList,
         int overrideObjectCount,
         float boxSize,

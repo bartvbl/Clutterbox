@@ -1023,7 +1023,7 @@ void runClutterBoxExperiment(
             spinImageSampleCount = computeSpinImageSampleCount(imageCount);
             spinImageSampleCounts.push_back(spinImageSampleCount);
 
-            // wasteful solution, but I don't want to do ugly hacks that destroy the function API's
+            // wasteful solution, but I don't want to do ugly hacks that destroy the function APIs
             // Computes number of samples used for the reference object
             SpinImage::internal::MeshSamplingBuffers sampleBuffers;
             SpinImage::gpu::PointCloud device_pointCloud = SpinImage::utilities::sampleMesh(boxScene, spinImageSampleCount, meshSamplingSeed, &sampleBuffers);
