@@ -26,7 +26,7 @@
 #include <spinImage/gpu/fastPointFeatureHistogramSearcher.cuh>
 #include <spinImage/utilities/OBJLoader.h>
 #include <spinImage/utilities/copy/hostMeshToDevice.h>
-#include <spinImage/utilities/copy/deviceDescriptorsToHost.h>
+#include <spinImage/utilities/copy/descriptors.h>
 #include <spinImage/utilities/dumpers/spinImageDumper.h>
 #include <spinImage/utilities/dumpers/searchResultDumper.h>
 #include <spinImage/utilities/duplicateRemoval.cuh>
@@ -43,7 +43,7 @@
 #include <tsl/ordered_map.h>
 #include <spinImage/gpu/types/PointCloud.h>
 #include <spinImage/utilities/dumpers/meshDumper.h>
-#include <spinImage/utilities/copy/deviceMeshToHost.h>
+#include <spinImage/utilities/copy/mesh.h>
 #include <utilities/randomFileSelector.h>
 
 template<class Key, class T, class Ignore, class Allocator,

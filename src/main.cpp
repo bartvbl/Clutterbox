@@ -25,7 +25,7 @@ void splitByCharacter(std::vector<std::string>* parts, const std::string &s, cha
 
 int main(int argc, const char **argv)
 {
-	arrrgh::parser parser("riciverification", "Generates and compares both radial intersection count and spin images on the GPU");
+	arrrgh::parser parser("clutterbox", "Generates and compares both radial intersection count and spin images on the GPU");
 	const auto& showHelp = parser.add<bool>("help", "Show this help message.", 'h', arrrgh::Optional, false);
 	const auto& listGPUs = parser.add<bool>("list-gpus", "List all GPU's, used for the --force-gpu parameter.", 'a', arrrgh::Optional, false);
 	const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", 'b', arrrgh::Optional, -1);

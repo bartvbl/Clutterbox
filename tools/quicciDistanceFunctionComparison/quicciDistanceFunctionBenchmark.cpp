@@ -20,7 +20,7 @@
 #include <utilities/stringUtils.h>
 #include <json.hpp>
 #include <tsl/ordered_map.h>
-#include <spinImage/utilities/copy/deviceMeshToHost.h>
+#include <spinImage/utilities/copy/mesh.h>
 
 template<class Key, class T, class Ignore, class Allocator,
         class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
