@@ -4,7 +4,7 @@
 #include <spinImage/gpu/types/DeviceOrientedPoint.h>
 #include <spinImage/gpu/types/PointCloud.h>
 #include <spinImage/gpu/types/Mesh.h>
-#include <spinImage/utilities/meshSampler.cuh>
+#include <spinImage/utilities/kernels/meshSampler.cuh>
 #include <vector>
 
 SpinImage::array<float> computeClutter(

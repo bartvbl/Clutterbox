@@ -9,7 +9,7 @@
 #include <algorithm>
 
 #include <utilities/stringUtils.h>
-#include <spinImage/utilities/modelScaler.h>
+#include <spinImage/utilities/mesh/modelScaler.h>
 #include <utilities/Histogram.h>
 
 #include <spinImage/cpu/types/Mesh.h>
@@ -24,14 +24,14 @@
 #include <spinImage/gpu/3dShapeContextSearcher.cuh>
 #include <spinImage/gpu/fastPointFeatureHistogramGenerator.cuh>
 #include <spinImage/gpu/fastPointFeatureHistogramSearcher.cuh>
-#include <spinImage/utilities/OBJLoader.h>
+#include <spinImage/utilities/mesh/OBJLoader.h>
 #include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/utilities/copy/descriptors.h>
 #include <spinImage/utilities/dumpers/spinImageDumper.h>
 #include <spinImage/utilities/dumpers/searchResultDumper.h>
-#include <spinImage/utilities/duplicateRemoval.cuh>
-#include <spinImage/utilities/modelScaler.h>
-#include <spinImage/utilities/meshSampler.cuh>
+#include <spinImage/utilities/kernels/duplicateRemoval.cuh>
+#include <spinImage/utilities/mesh/modelScaler.h>
+#include <spinImage/utilities/kernels/meshSampler.cuh>
 
 #include <clutterbox/clutterBoxUtilities.h>
 #include <fstream>
@@ -58,14 +58,6 @@ using json = nlohmann::basic_json<ordered_map>;
 
 #include "utilities/listDir.h"
 #include "nvidia/helper_cuda.h"
-
-
-// TODO list:
-// - The measure's independent variable should not be number of objects, but rather the number of triangles in the scene
-// - How do I manage samples in the scene for spin images? Certain number of samples per triangle?
-// - What is the effect of different spin image sizes?
-// - In order to limit VRAM usage, as well as get a better signal to noise ratio (due to aliasing) on the images, we should only use models with less than a certain number of vertices.
-// -
 
 Histogram computeSearchResultHistogram(size_t vertexCount, const SpinImage::array<unsigned int> &searchResults);
 

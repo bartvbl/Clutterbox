@@ -4,11 +4,11 @@
 #include <algorithm>
 #include <iostream>
 #include <spinImage/cpu/types/Mesh.h>
-#include <spinImage/utilities/modelScaler.h>
-#include <spinImage/utilities/OBJLoader.h>
+#include <spinImage/utilities/mesh/modelScaler.h>
+#include <spinImage/utilities/mesh/OBJLoader.h>
 #include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/gpu/types/DeviceOrientedPoint.h>
-#include <spinImage/utilities/duplicateRemoval.cuh>
+#include <spinImage/utilities/kernels/duplicateRemoval.cuh>
 #include <utilities/randomFileSelector.h>
 #include <cuda_runtime_api.h>
 #include <nvidia/helper_cuda.h>

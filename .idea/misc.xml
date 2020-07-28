@@ -3,8 +3,10 @@
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
   <component name="CidrRootsConfiguration">
     <excludeRoots>
+      <file path="$PROJECT_DIR$/misc" />
       <file path="$PROJECT_DIR$/output" />
       <file path="$PROJECT_DIR$/../libSpinImage/PIXEL_COUNTS" />
+      <file path="$PROJECT_DIR$/../libSpinImage/misc" />
     </excludeRoots>
   </component>
 </project>

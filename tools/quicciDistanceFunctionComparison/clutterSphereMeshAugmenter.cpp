@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include "clutterSphereMeshAugmenter.h"
-#include <spinImage/utilities/meshSampler.cuh>
+#include <spinImage/utilities/kernels/meshSampler.cuh>
 #include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/utilities/copy/DeviceVertexList.h>
 
