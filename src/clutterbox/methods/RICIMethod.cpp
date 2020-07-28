@@ -6,7 +6,7 @@ SpinImage::array<char> RICIMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneMesh,
         SpinImage::gpu::PointCloud device_scenePointCloud,
         SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
-        float supportRadius,
+        Clutterbox::GenerationParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::RICIExecutionTimes riciExecutionTimes{};
@@ -14,7 +14,7 @@ SpinImage::array<char> RICIMethod::generateDescriptors(
     SpinImage::array<SpinImage::gpu::RICIDescriptor> descriptors = SpinImage::gpu::generateRadialIntersectionCountImages(
             device_sceneMesh,
             device_descriptorOrigins,
-            supportRadius,
+            parameters.supportRadius,
             &riciExecutionTimes);
 
     executionTimes->append("total", riciExecutionTimes.totalExecutionTimeSeconds);
@@ -28,6 +28,7 @@ SpinImage::array<char> RICIMethod::generateDescriptors(
 SpinImage::array<unsigned int> RICIMethod::computeSearchResultRanks(
         SpinImage::array<char> device_needleDescriptors,
         SpinImage::array<char> device_haystackDescriptors,
+        Clutterbox::SearchParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::RICISearchExecutionTimes times{};

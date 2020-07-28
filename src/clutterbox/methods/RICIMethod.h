@@ -2,16 +2,17 @@
 
 #include <clutterbox/methods/types/ClutterboxMethod.h>
 
-class RICIMethod : ClutterboxMethod {
+class RICIMethod : Clutterbox::Method {
     SpinImage::array<char>
     generateDescriptors(SpinImage::gpu::Mesh device_sceneMesh,
                         SpinImage::gpu::PointCloud device_scenePointCloud,
                         SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_origins,
-                        float supportRadius,
+                        Clutterbox::GenerationParameters parameters,
                         ExecutionTimes *executionTimes) override;
 
     SpinImage::array<unsigned int> computeSearchResultRanks(SpinImage::array<char> device_needleDescriptors,
                                                             SpinImage::array<char> device_haystackDescriptors,
+                                                            Clutterbox::SearchParameters parameters,
                                                             ExecutionTimes *executionTimes) override;
 
     const std::string getMethodCommandLineParameterName() override;

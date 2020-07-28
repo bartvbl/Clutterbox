@@ -6,7 +6,7 @@ SpinImage::array<char> SCMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneMesh,
         SpinImage::gpu::PointCloud device_scenePointCloud,
         SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
-        float supportRadius,
+        Clutterbox::GenerationParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::SCExecutionTimes scExecutionTimes{};
@@ -16,7 +16,7 @@ SpinImage::array<char> SCMethod::generateDescriptors(
             device_descriptorOrigins,
             pointDensityRadius,
             minSupportRadius,
-            supportRadius,
+            parameters.supportRadius,
             &scExecutionTimes);
 
     executionTimes->append("total", scExecutionTimes.totalExecutionTimeSeconds);
@@ -30,19 +30,20 @@ SpinImage::array<char> SCMethod::generateDescriptors(
 SpinImage::array<unsigned int> SCMethod::computeSearchResultRanks(
         SpinImage::array<char> device_needleDescriptors,
         SpinImage::array<char> device_haystackDescriptors,
+        Clutterbox::SearchParameters parameters,
         ExecutionTimes *executionTimes) {
 
-    SpinImage::debug::RICISearchExecutionTimes times{};
+    SpinImage::debug::SCSearchExecutionTimes times{};
 
-    SpinImage::array<unsigned int> searchResultIndices = SpinImage::gpu::computeRadialIntersectionCountImageSearchResultRanks(
+    SpinImage::array<unsigned int> searchResultIndices = SpinImage::gpu::compute3DSCSearchResultRanks(
             {device_needleDescriptors.length,
-             reinterpret_cast<SpinImage::gpu::RICIDescriptor*>(device_needleDescriptors.content)},
+             reinterpret_cast<SpinImage::gpu::ShapeContextDescriptor*>(device_needleDescriptors.content)},
             {device_haystackDescriptors.length,
-             reinterpret_cast<SpinImage::gpu::RICIDescriptor*>(device_haystackDescriptors.content)},
+             reinterpret_cast<SpinImage::gpu::ShapeContextDescriptor*>(device_haystackDescriptors.content)},
              &times);
 
     executionTimes->append("total", times.totalExecutionTimeSeconds);
-    executionTimes->append("total", times.searchExecutionTimeSeconds);
+    executionTimes->append("search", times.searchExecutionTimeSeconds);
 
     return searchResultIndices;
 }
