@@ -4,8 +4,9 @@
 cmake_minimum_required (VERSION 3.0)
 
 if(!MSVC)
-set(CUDAHOSTCXX /usr/bin/g++-7)
-set(CMAKE_CUDA_HOST_COMPILER /usr/bin/g++-7)
+set(CUDAHOSTCXX "${CMAKE_CXX_COMPILER}")
+set(CMAKE_CUDA_HOST_COMPILER "${CMAKE_CXX_COMPILER}")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -ccbin ${CMAKE_CXX_COMPILER}")
 #set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
 set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda")
 endif()
