@@ -3,8 +3,8 @@
 #include <spinImage/gpu/3dShapeContextSearcher.cuh>
 
 SpinImage::array<char> SCMethod::generateDescriptors(
-        SpinImage::gpu::Mesh device_sceneMesh,
-        SpinImage::gpu::PointCloud device_scenePointCloud,
+        SpinImage::gpu::Mesh device_sceneAsMesh,
+        SpinImage::gpu::PointCloud device_sceneAsPointCloud,
         SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
         Clutterbox::GenerationParameters parameters,
         ExecutionTimes *executionTimes) {
@@ -12,7 +12,7 @@ SpinImage::array<char> SCMethod::generateDescriptors(
     SpinImage::debug::SCExecutionTimes scExecutionTimes{};
 
     SpinImage::array<SpinImage::gpu::ShapeContextDescriptor> descriptors = SpinImage::gpu::generate3DSCDescriptors(
-            device_scenePointCloud,
+            device_sceneAsPointCloud,
             device_descriptorOrigins,
             pointDensityRadius,
             minSupportRadius,

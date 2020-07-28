@@ -23,8 +23,8 @@ namespace Clutterbox {
 
     class Method {
         virtual SpinImage::array<char> generateDescriptors(
-                SpinImage::gpu::Mesh device_sceneMesh,
-                SpinImage::gpu::PointCloud device_scenePointCloud,
+                SpinImage::gpu::Mesh device_sceneAsMesh,
+                SpinImage::gpu::PointCloud device_sceneAsPointCloud,
                 SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
                 Clutterbox::GenerationParameters parameters,
                 ExecutionTimes* executionTimes = nullptr) = 0;

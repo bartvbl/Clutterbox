@@ -7,8 +7,8 @@ class SCMethod : Clutterbox::Method {
     float pointDensityRadius;
 
     SpinImage::array<char>
-    generateDescriptors(SpinImage::gpu::Mesh device_sceneMesh,
-                        SpinImage::gpu::PointCloud device_scenePointCloud,
+    generateDescriptors(SpinImage::gpu::Mesh device_sceneAsMesh,
+                        SpinImage::gpu::PointCloud device_sceneAsPointCloud,
                         SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_origins,
                         Clutterbox::GenerationParameters parameters,
                         ExecutionTimes *executionTimes) override;
