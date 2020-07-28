@@ -51,9 +51,9 @@ SpinImage::array<unsigned int> SCMethod::computeSearchResultRanks(
 }
 
 const std::string SCMethod::getMethodCommandLineParameterName() {
-    return "rici";
+    return "3dsc";
 }
 
 const std::string SCMethod::getMethodDumpFileName() {
-    return "RICI";
+    return "3DSC";
 }
