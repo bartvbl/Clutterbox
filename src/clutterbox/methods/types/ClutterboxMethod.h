@@ -8,23 +8,21 @@
 #include <spinImage/gpu/types/PointCloud.h>
 #include "ExecutionTimes.h"
 
-template<typename DescriptorType>
 class ClutterboxMethod {
-    std::string methodShorthandIdentifier;
-    std::string methodIdentifier;
 
-    ClutterboxMethod(std::string shorthandIdentifier, std::string identifier) :
-            methodShorthandIdentifier(std::move(shorthandIdentifier)),
-            methodIdentifier(std::move(identifier)) {}
-
-    virtual SpinImage::array<DescriptorType> generateDescriptors(
+    virtual SpinImage::array<char> generateDescriptors(
             SpinImage::gpu::Mesh device_sceneMesh,
             SpinImage::gpu::PointCloud device_scenePointCloud,
-            SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_origins,
+            SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
+            float supportRadius,
             ExecutionTimes* executionTimes = nullptr) = 0;
 
     virtual SpinImage::array<unsigned int> computeSearchResultRanks(
-            SpinImage::array<DescriptorType> device_needleDescriptors,
-            SpinImage::array<DescriptorType> device_haystackDescriptors,
+            SpinImage::array<char> device_needleDescriptors,
+            SpinImage::array<char> device_haystackDescriptors,
             ExecutionTimes* executionTimes = nullptr) = 0;
+
+    virtual const std::string getMethodCommandLineParameterName() = 0;
+
+    virtual const std::string getMethodDumpFileName() = 0;
 };

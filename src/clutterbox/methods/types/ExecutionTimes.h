@@ -15,6 +15,7 @@ public:
 class ExecutionTimes {
     std::vector<ExecutionTimeMeasurement> measurements;
 
+public:
     void append(const std::string& name, double timeInSeconds) {
         measurements.emplace_back(name, timeInSeconds);
     }
