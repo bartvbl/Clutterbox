@@ -11,13 +11,14 @@
 namespace Clutterbox {
     // Storing additional parameters in structs allows the addition of more parameters without
     // requiring code changes, and does not needlessly expand function signatures
-    
+
     struct GenerationParameters {
         float supportRadius;
     };
 
     struct SearchParameters {
-
+        size_t needleDescriptorScenePointCloudPointCount;
+        size_t haystackDescriptorScenePointCloudPointCount;
     };
 
     class Method {

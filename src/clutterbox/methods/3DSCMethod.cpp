@@ -38,8 +38,10 @@ SpinImage::array<unsigned int> SCMethod::computeSearchResultRanks(
     SpinImage::array<unsigned int> searchResultIndices = SpinImage::gpu::compute3DSCSearchResultRanks(
             {device_needleDescriptors.length,
              reinterpret_cast<SpinImage::gpu::ShapeContextDescriptor*>(device_needleDescriptors.content)},
+             parameters.needleDescriptorScenePointCloudPointCount,
             {device_haystackDescriptors.length,
              reinterpret_cast<SpinImage::gpu::ShapeContextDescriptor*>(device_haystackDescriptors.content)},
+             parameters.haystackDescriptorScenePointCloudPointCount,
              &times);
 
     executionTimes->append("total", times.totalExecutionTimeSeconds);
