@@ -22,6 +22,7 @@ namespace Clutterbox {
     };
 
     class Method {
+    public:
         virtual SpinImage::array<char> generateDescriptors(
                 SpinImage::gpu::Mesh device_sceneAsMesh,
                 SpinImage::gpu::PointCloud device_sceneAsPointCloud,

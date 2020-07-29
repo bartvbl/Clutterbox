@@ -12,15 +12,11 @@ struct GPUMetaData {
 
 void runClutterBoxExperiment(
         std::string objectDirectory,
-        std::vector<ClutterboxMethod*> descriptorList,
+        std::vector<Clutterbox::Method> descriptorsToEvaluate,
         std::vector<int> objectCountList,
         int overrideObjectCount,
         float boxSize,
-        float pointDensityRadius3dsc,
-        float minSupportRadius3dsc,
         float supportRadius,
-        float spinImageSupportAngleDegrees,
-        unsigned int fpfhBinCount,
         bool dumpRawSearchResults,
         std::string outputDirectory,
         bool dumpSceneOBJFiles,
