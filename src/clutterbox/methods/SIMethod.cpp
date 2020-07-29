@@ -2,16 +2,16 @@
 #include <spinImage/gpu/spinImageSearcher.cuh>
 #include "SIMethod.h"
 
-SpinImage::array<char> SIMethod::generateDescriptors(
+SpinImage::gpu::array<char> SIMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneAsMesh,
         SpinImage::gpu::PointCloud device_sceneAsPointCloud,
-        SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
+        SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
         Clutterbox::GenerationParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::SIExecutionTimes siExecutionTimes{};
 
-    SpinImage::array<SpinImage::gpu::SpinImageDescriptor> descriptors = SpinImage::gpu::generateSpinImages(
+    SpinImage::gpu::array<SpinImage::gpu::SpinImageDescriptor> descriptors = SpinImage::gpu::generateSpinImages(
             device_sceneAsPointCloud,
             device_descriptorOrigins,
             parameters.supportRadius,
@@ -25,15 +25,15 @@ SpinImage::array<char> SIMethod::generateDescriptors(
     return {descriptors.length, reinterpret_cast<char*>(descriptors.content)};
 }
 
-SpinImage::array<unsigned int> SIMethod::computeSearchResultRanks(
-        SpinImage::array<char> device_needleDescriptors,
-        SpinImage::array<char> device_haystackDescriptors,
+SpinImage::cpu::array<unsigned int> SIMethod::computeSearchResultRanks(
+        SpinImage::gpu::array<char> device_needleDescriptors,
+        SpinImage::gpu::array<char> device_haystackDescriptors,
         Clutterbox::SearchParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::SISearchExecutionTimes times{};
 
-    SpinImage::array<unsigned int> searchResultIndices = SpinImage::gpu::computeSpinImageSearchResultRanks(
+    SpinImage::cpu::array<unsigned int> searchResultIndices = SpinImage::gpu::computeSpinImageSearchResultRanks(
             {device_needleDescriptors.length,
              reinterpret_cast<SpinImage::gpu::SpinImageDescriptor*>(device_needleDescriptors.content)},
             {device_haystackDescriptors.length,

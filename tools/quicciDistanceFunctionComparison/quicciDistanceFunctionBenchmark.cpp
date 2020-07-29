@@ -99,19 +99,19 @@ void runQuicciDistanceFunctionBenchmark(
 
     // 8 Remove duplicate vertices
     std::cout << "\tRemoving duplicate vertices.." << std::endl;
-    SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> imageOrigins = SpinImage::utilities::computeUniqueVertices(unmodifiedMesh);
+    SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> imageOrigins = SpinImage::utilities::computeUniqueVertices(unmodifiedMesh);
     size_t imageCount = imageOrigins.length;
     size_t referenceImageCount = imageCount;
     size_t sampleImageCount = 0;
     std::cout << "\t\tReduced " << unmodifiedMesh.vertexCount << " vertices to " << imageCount << "." << std::endl;
-    SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> baselineOrigins;
+    SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> baselineOrigins;
     if(mode == BenchmarkMode::BASELINE) {
         baselineOrigins = SpinImage::utilities::computeUniqueVertices(otherSampleUnmodifiedMesh);
         sampleImageCount = baselineOrigins.length;
     }
 
     std::cout << "\tGenerating reference QUICCI images.." << std::endl;
-    SpinImage::gpu::QUICCIImages device_unmodifiedQuiccImages = SpinImage::gpu::generateQUICCImages(
+    SpinImage::gpu::array<SpinImage::gpu::QUICCIDescriptor> device_unmodifiedQuiccImages = SpinImage::gpu::generateQUICCImages(
             unmodifiedMesh,
             imageOrigins,
             supportRadius);
@@ -119,7 +119,7 @@ void runQuicciDistanceFunctionBenchmark(
     size_t unmodifiedVertexCount = unmodifiedMesh.vertexCount;
     const size_t verticesPerSphere = SPHERE_VERTEX_COUNT;
 
-    std::vector<SpinImage::array<SpinImage::gpu::QUICCIDistances>> measuredDistances;
+    std::vector<SpinImage::cpu::array<SpinImage::gpu::QUICCIDistances>> measuredDistances;
 
     if(mode == BenchmarkMode::SPHERE_CLUTTER) {
         for (unsigned int sphereCountIndex = 0; sphereCountIndex < sphereCountList.size(); sphereCountIndex++) {
@@ -128,8 +128,8 @@ void runQuicciDistanceFunctionBenchmark(
             assert(sphereCount <= sceneSphereCount);
             std::cout << "\tComputing distances for a scene with " << sphereCount << " spheres.." << std::endl;
             std::cout << "\t\tGenerating QUICCI images.." << std::endl;
-            SpinImage::debug::QUICCIRunInfo runInfo;
-            SpinImage::gpu::QUICCIImages device_augmentedQuiccImages = SpinImage::gpu::generateQUICCImages(
+            SpinImage::debug::QUICCIExecutionTimes runInfo;
+            SpinImage::gpu::array<SpinImage::gpu::QUICCIDescriptor> device_augmentedQuiccImages = SpinImage::gpu::generateQUICCImages(
                     augmentedMesh,
                     imageOrigins,
                     supportRadius,
@@ -138,12 +138,11 @@ void runQuicciDistanceFunctionBenchmark(
             std::cout << "\t\t\tTook " << runInfo.totalExecutionTimeSeconds << " seconds." << std::endl;
 
             std::cout << "\t\tComputing QUICCI distances.." << std::endl;
-            SpinImage::array<SpinImage::gpu::QUICCIDistances> sampleDistances = SpinImage::gpu::computeQUICCIElementWiseDistances(
+            SpinImage::cpu::array<SpinImage::gpu::QUICCIDistances> sampleDistances = SpinImage::gpu::computeQUICCIElementWiseDistances(
                     device_unmodifiedQuiccImages,
-                    device_augmentedQuiccImages,
-                    imageCount);
+                    device_augmentedQuiccImages);
 
-            cudaFree(device_augmentedQuiccImages.images);
+            cudaFree(device_augmentedQuiccImages.content);
 
             measuredDistances.push_back(sampleDistances);
         }
@@ -153,8 +152,8 @@ void runQuicciDistanceFunctionBenchmark(
 
         std::cout << "\tComputing distances.." << std::endl;
         std::cout << "\t\tGenerating QUICCI images.." << std::endl;
-        SpinImage::debug::QUICCIRunInfo runInfo;
-        SpinImage::gpu::QUICCIImages device_sampleImages = SpinImage::gpu::generateQUICCImages(
+        SpinImage::debug::QUICCIExecutionTimes runInfo;
+        SpinImage::gpu::array<SpinImage::gpu::QUICCIDescriptor> device_sampleImages = SpinImage::gpu::generateQUICCImages(
                 otherSampleUnmodifiedMesh,
                 baselineOrigins,
                 supportRadius,
@@ -163,12 +162,11 @@ void runQuicciDistanceFunctionBenchmark(
         std::cout << "\t\t\tTook " << runInfo.totalExecutionTimeSeconds << " seconds." << std::endl;
 
         std::cout << "\t\tComputing QUICCI distances.." << std::endl;
-        SpinImage::array<SpinImage::gpu::QUICCIDistances> sampleDistances = SpinImage::gpu::computeQUICCIElementWiseDistances(
+        SpinImage::cpu::array<SpinImage::gpu::QUICCIDistances> sampleDistances = SpinImage::gpu::computeQUICCIElementWiseDistances(
                 device_unmodifiedQuiccImages,
-                device_sampleImages,
-                imageCount);
+                device_sampleImages);
 
-        cudaFree(device_sampleImages.images);
+        cudaFree(device_sampleImages.content);
 
         measuredDistances.push_back(sampleDistances);
     }

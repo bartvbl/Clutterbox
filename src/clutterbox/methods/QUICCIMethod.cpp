@@ -2,16 +2,16 @@
 #include <spinImage/gpu/quickIntersectionCountImageGenerator.cuh>
 #include <spinImage/gpu/quickIntersectionCountImageSearcher.cuh>
 
-SpinImage::array<char> QUICCIMethod::generateDescriptors(
+SpinImage::gpu::array<char> QUICCIMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneAsMesh,
         SpinImage::gpu::PointCloud device_sceneAsPointCloud,
-        SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
+        SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
         Clutterbox::GenerationParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::QUICCIExecutionTimes quicciExecutionTimes{};
 
-    SpinImage::array<SpinImage::gpu::QUICCIDescriptor> descriptors = SpinImage::gpu::generateQUICCImages(
+    SpinImage::gpu::array<SpinImage::gpu::QUICCIDescriptor> descriptors = SpinImage::gpu::generateQUICCImages(
             device_sceneAsMesh,
             device_descriptorOrigins,
             parameters.supportRadius,
@@ -25,15 +25,15 @@ SpinImage::array<char> QUICCIMethod::generateDescriptors(
     return {descriptors.length, reinterpret_cast<char*>(descriptors.content)};
 }
 
-SpinImage::array<unsigned int> QUICCIMethod::computeSearchResultRanks(
-        SpinImage::array<char> device_needleDescriptors,
-        SpinImage::array<char> device_haystackDescriptors,
+SpinImage::cpu::array<unsigned int> QUICCIMethod::computeSearchResultRanks(
+        SpinImage::gpu::array<char> device_needleDescriptors,
+        SpinImage::gpu::array<char> device_haystackDescriptors,
         Clutterbox::SearchParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::QUICCISearchExecutionTimes times{};
 
-    SpinImage::array<unsigned int> searchResultIndices = SpinImage::gpu::computeQUICCImageSearchResultRanks(
+    SpinImage::cpu::array<unsigned int> searchResultIndices = SpinImage::gpu::computeQUICCImageSearchResultRanks(
             {device_needleDescriptors.length,
              reinterpret_cast<SpinImage::gpu::QUICCIDescriptor*>(device_needleDescriptors.content)},
             {device_haystackDescriptors.length,

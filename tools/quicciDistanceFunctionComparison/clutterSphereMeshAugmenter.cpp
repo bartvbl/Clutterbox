@@ -7,6 +7,7 @@
 #include <spinImage/utilities/kernels/meshSampler.cuh>
 #include <spinImage/utilities/copy/DeviceVertexList.h>
 #include <spinImage/utilities/copy/mesh.h>
+#include <spinImage/cpu/types/array.h>
 
 
 void generateSphere(std::vector<SpinImage::cpu::float3> &vertices, std::vector<SpinImage::cpu::float3> &normals, float sphereRadius, int slices, int layers) {
@@ -111,8 +112,8 @@ SpinImage::cpu::Mesh applyClutterSpheres(SpinImage::cpu::Mesh inputMesh, int cou
     SpinImage::gpu::PointCloud sampledMesh = SpinImage::utilities::sampleMesh(device_mesh, sampleCount, randomSeed);
     SpinImage::gpu::freeMesh(device_mesh);
 
-    SpinImage::array<SpinImage::cpu::float3> sampleVertices = SpinImage::copy::deviceVertexListToHost(sampledMesh.vertices);
-    SpinImage::array<SpinImage::cpu::float3> sampleNormals = SpinImage::copy::deviceVertexListToHost(sampledMesh.normals);
+    SpinImage::cpu::array<SpinImage::cpu::float3> sampleVertices = SpinImage::copy::deviceVertexListToHost(sampledMesh.vertices);
+    SpinImage::cpu::array<SpinImage::cpu::float3> sampleNormals = SpinImage::copy::deviceVertexListToHost(sampledMesh.normals);
 
     sampledMesh.free();
 

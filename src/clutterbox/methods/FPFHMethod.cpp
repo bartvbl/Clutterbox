@@ -5,13 +5,13 @@
 SpinImage::array<char> FPFHMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneAsMesh,
         SpinImage::gpu::PointCloud device_sceneAsPointCloud,
-        SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
+        SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
         Clutterbox::GenerationParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::FPFHExecutionTimes fpfhExecutionTimes{};
 
-    SpinImage::array<SpinImage::gpu::FPFHDescriptor> descriptors = SpinImage::gpu::generateFPFHHistograms(
+    SpinImage::gpu::array<SpinImage::gpu::FPFHDescriptor> descriptors = SpinImage::gpu::generateFPFHHistograms(
             device_sceneAsPointCloud,
             device_descriptorOrigins,
             parameters.supportRadius,
@@ -26,15 +26,15 @@ SpinImage::array<char> FPFHMethod::generateDescriptors(
     return {descriptors.length, reinterpret_cast<char*>(descriptors.content)};
 }
 
-SpinImage::array<unsigned int> FPFHMethod::computeSearchResultRanks(
-        SpinImage::array<char> device_needleDescriptors,
-        SpinImage::array<char> device_haystackDescriptors,
+SpinImage::cpu::array<unsigned int> FPFHMethod::computeSearchResultRanks(
+        SpinImage::gpu::array<char> device_needleDescriptors,
+        SpinImage::gpu::array<char> device_haystackDescriptors,
         Clutterbox::SearchParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::FPFHSearchExecutionTimes times{};
 
-    SpinImage::array<unsigned int> searchResultIndices = SpinImage::gpu::computeFPFHSearchResultRanks(
+    SpinImage::cpu::array<unsigned int> searchResultIndices = SpinImage::gpu::computeFPFHSearchResultRanks(
             {device_needleDescriptors.length,
              reinterpret_cast<SpinImage::gpu::FPFHDescriptor*>(device_needleDescriptors.content)},
             {device_haystackDescriptors.length,

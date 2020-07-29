@@ -25,7 +25,6 @@
 #include <spinImage/gpu/fastPointFeatureHistogramGenerator.cuh>
 #include <spinImage/gpu/fastPointFeatureHistogramSearcher.cuh>
 #include <spinImage/utilities/mesh/OBJLoader.h>
-#include <spinImage/utilities/copy/descriptors.h>
 #include <spinImage/utilities/dumpers/spinImageDumper.h>
 #include <spinImage/utilities/dumpers/searchResultDumper.h>
 #include <spinImage/utilities/kernels/duplicateRemoval.cuh>
@@ -233,11 +232,11 @@ void dumpResultsFile(
     }
 }
 
-void dumpRawSearchResultFiles(
+void dumpRawSearchResultFile(
         std::string outputFile,
         std::vector<Clutterbox::Method> descriptorsToEvaluate,
         std::vector<int> objectCountList,
-        std::vector<std::vector<SpinImage::array<unsigned int>>> rawSearchResults,
+        std::vector<std::vector<SpinImage::cpu::array<unsigned int>>> rawSearchResults,
         size_t seed) {
 
     json outJson;
@@ -276,23 +275,23 @@ const inline size_t computeSpinImageSampleCount(size_t &vertexCount) {
     return std::max((size_t)1000000, (size_t) (30 * vertexCount)); 
 }
 
-void dumpSearchResultVisualisationMesh(const SpinImage::array<unsigned int> &searchResults,
+void dumpSearchResultVisualisationMesh(const SpinImage::cpu::array<unsigned int> &searchResults,
                                        const SpinImage::gpu::Mesh &referenceDeviceMesh,
                                        const std::experimental::filesystem::path outFilePath) {
     size_t totalUniqueVertexCount;
     std::vector<size_t> vertexCounts;
-    SpinImage::array<signed long long> device_indexMapping = SpinImage::utilities::computeUniqueIndexMapping(referenceDeviceMesh, {referenceDeviceMesh}, &vertexCounts, totalUniqueVertexCount);
+    SpinImage::gpu::array<signed long long> device_indexMapping = SpinImage::utilities::computeUniqueIndexMapping(referenceDeviceMesh, {referenceDeviceMesh}, &vertexCounts, totalUniqueVertexCount);
 
     SpinImage::cpu::Mesh hostMesh = SpinImage::copy::deviceMeshToHost(referenceDeviceMesh);
 
     size_t referenceMeshVertexCount = referenceDeviceMesh.vertexCount;
-    SpinImage::array<signed long long> host_indexMapping = {0, nullptr};
+    SpinImage::cpu::array<signed long long> host_indexMapping = {0, nullptr};
     host_indexMapping.content = new signed long long[referenceMeshVertexCount];
     host_indexMapping.length = referenceMeshVertexCount;
     cudaMemcpy(host_indexMapping.content, device_indexMapping.content, referenceMeshVertexCount * sizeof(signed long long), cudaMemcpyDeviceToHost);
     cudaFree(device_indexMapping.content);
 
-    SpinImage::array<float2> textureCoords = {referenceMeshVertexCount, new float2[referenceMeshVertexCount]};
+    SpinImage::cpu::array<float2> textureCoords = {referenceMeshVertexCount, new float2[referenceMeshVertexCount]};
     for(size_t vertexIndex = 0; vertexIndex < referenceMeshVertexCount; vertexIndex++) {
 
         SpinImage::cpu::float3 vertex = hostMesh.vertices[vertexIndex];
@@ -378,7 +377,7 @@ void runClutterBoxExperiment(
     std::vector<std::vector<ExecutionTimes>> searchExecutionTimes;
     searchExecutionTimes.resize(descriptorsToEvaluate.size());
 
-    std::vector<std::vector<SpinImage::array<unsigned int>>> rawSearchResults;
+    std::vector<std::vector<SpinImage::cpu::array<unsigned int>>> rawSearchResults;
     rawSearchResults.resize(descriptorsToEvaluate.size());
 
     std::vector<size_t> spinImageSampleCounts;
@@ -437,7 +436,7 @@ void runClutterBoxExperiment(
 
     // 8 Remove duplicate vertices
     std::cout << "\tRemoving duplicate vertices.." << std::endl;
-    SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> spinOrigins_reference = SpinImage::utilities::computeUniqueVertices(scaledMeshesOnGPU.at(0));
+    SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> spinOrigins_reference = SpinImage::utilities::computeUniqueVertices(scaledMeshesOnGPU.at(0));
     size_t referenceImageCount = spinOrigins_reference.length;
     std::cout << "\t\tReduced " << scaledMeshesOnGPU.at(0).vertexCount << " vertices to " << referenceImageCount << "." << std::endl;
 
@@ -448,7 +447,7 @@ void runClutterBoxExperiment(
     // 9 Compute descriptors for reference model
     std::cout << "Generating reference descriptors.." << std::endl;
 
-    std::vector<SpinImage::array<char>> referenceDescriptors;
+    std::vector<SpinImage::gpu::array<char>> referenceDescriptors;
 
     size_t referenceGenerationRandomSeed = generator();
     SpinImage::gpu::PointCloud device_referencePointCloud =
@@ -484,7 +483,7 @@ void runClutterBoxExperiment(
     // 11 Compute unique vertex mapping
     std::vector<size_t> uniqueVertexCounts;
     size_t totalUniqueVertexCount;
-    SpinImage::array<signed long long> device_indexMapping = SpinImage::utilities::computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts, totalUniqueVertexCount);
+    SpinImage::gpu::array<signed long long> device_indexMapping = SpinImage::utilities::computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts, totalUniqueVertexCount);
 
     // 12 Randomly transform objects
     std::cout << "\tRandomly transforming input objects.." << std::endl;
@@ -496,7 +495,7 @@ void runClutterBoxExperiment(
     // 13 Compute corresponding transformed vertex buffer
     //    A mapping is used here because the previously applied transformation can cause non-unique vertices to become
     //    equivalent. It is vital we can rely on a 1:1 mapping existing between vertices.
-    SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_uniqueSpinOrigins = SpinImage::utilities::applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
+    SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_uniqueSpinOrigins = SpinImage::utilities::applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
     checkCudaErrors(cudaFree(device_indexMapping.content));
     size_t imageCount = 0;
 
@@ -557,7 +556,7 @@ void runClutterBoxExperiment(
             Clutterbox::GenerationParameters parameters;
             parameters.supportRadius = supportRadius;
 
-            SpinImage::array<char> sampleDescriptors = descriptorsToEvaluate.at(methodIndex).generateDescriptors(boxScene, device_pointCloud, device_uniqueSpinOrigins, parameters, &generationExecutionTimes);
+            SpinImage::gpu::array<char> sampleDescriptors = descriptorsToEvaluate.at(methodIndex).generateDescriptors(boxScene, device_pointCloud, device_uniqueSpinOrigins, parameters, &generationExecutionTimes);
 
             generationSampleExecutionTimes.at(methodIndex).push_back(generationExecutionTimes);
 
@@ -573,8 +572,8 @@ void runClutterBoxExperiment(
             searchParameters.haystackDescriptorScenePointCloudPointCount = 0;
             searchParameters.needleDescriptorScenePointCloudPointCount = 0;
 
-            SpinImage::array<char> methodReferenceDescriptors = referenceDescriptors.at(methodIndex);
-            SpinImage::array<unsigned int> searchResults = descriptorsToEvaluate.at(methodIndex).computeSearchResultRanks(methodReferenceDescriptors, sampleDescriptors, searchParameters, &sampleSearchExecutionTimes);
+            SpinImage::gpu::array<char> methodReferenceDescriptors = referenceDescriptors.at(methodIndex);
+            SpinImage::cpu::array<unsigned int> searchResults = descriptorsToEvaluate.at(methodIndex).computeSearchResultRanks(methodReferenceDescriptors, sampleDescriptors, searchParameters, &sampleSearchExecutionTimes);
 
             searchExecutionTimes.at(methodIndex).push_back(sampleSearchExecutionTimes);
 

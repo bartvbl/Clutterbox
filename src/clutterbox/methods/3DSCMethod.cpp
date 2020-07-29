@@ -2,16 +2,16 @@
 #include <spinImage/gpu/3dShapeContextGenerator.cuh>
 #include <spinImage/gpu/3dShapeContextSearcher.cuh>
 
-SpinImage::array<char> SCMethod::generateDescriptors(
+SpinImage::gpu::array<char> SCMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneAsMesh,
         SpinImage::gpu::PointCloud device_sceneAsPointCloud,
-        SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
+        SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
         Clutterbox::GenerationParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::SCExecutionTimes scExecutionTimes{};
 
-    SpinImage::array<SpinImage::gpu::ShapeContextDescriptor> descriptors = SpinImage::gpu::generate3DSCDescriptors(
+    SpinImage::gpu::array<SpinImage::gpu::ShapeContextDescriptor> descriptors = SpinImage::gpu::generate3DSCDescriptors(
             device_sceneAsPointCloud,
             device_descriptorOrigins,
             pointDensityRadius,
@@ -27,15 +27,15 @@ SpinImage::array<char> SCMethod::generateDescriptors(
     return {descriptors.length, reinterpret_cast<char*>(descriptors.content)};
 }
 
-SpinImage::array<unsigned int> SCMethod::computeSearchResultRanks(
-        SpinImage::array<char> device_needleDescriptors,
-        SpinImage::array<char> device_haystackDescriptors,
+SpinImage::cpu::array<unsigned int> SCMethod::computeSearchResultRanks(
+        SpinImage::gpu::array<char> device_needleDescriptors,
+        SpinImage::gpu::array<char> device_haystackDescriptors,
         Clutterbox::SearchParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::SCSearchExecutionTimes times{};
 
-    SpinImage::array<unsigned int> searchResultIndices = SpinImage::gpu::compute3DSCSearchResultRanks(
+    SpinImage::cpu::array<unsigned int> searchResultIndices = SpinImage::gpu::compute3DSCSearchResultRanks(
             {device_needleDescriptors.length,
              reinterpret_cast<SpinImage::gpu::ShapeContextDescriptor*>(device_needleDescriptors.content)},
              parameters.needleDescriptorScenePointCloudPointCount,

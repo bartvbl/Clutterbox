@@ -2,16 +2,16 @@
 #include <spinImage/gpu/radialIntersectionCountImageGenerator.cuh>
 #include <spinImage/gpu/radialIntersectionCountImageSearcher.cuh>
 
-SpinImage::array<char> RICIMethod::generateDescriptors(
+SpinImage::gpu::array<char> RICIMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneAsMesh,
         SpinImage::gpu::PointCloud device_sceneAsPointCloud,
-        SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
+        SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
         Clutterbox::GenerationParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::RICIExecutionTimes riciExecutionTimes{};
 
-    SpinImage::array<SpinImage::gpu::RICIDescriptor> descriptors = SpinImage::gpu::generateRadialIntersectionCountImages(
+    SpinImage::gpu::array<SpinImage::gpu::RICIDescriptor> descriptors = SpinImage::gpu::generateRadialIntersectionCountImages(
             device_sceneAsMesh,
             device_descriptorOrigins,
             parameters.supportRadius,
@@ -25,15 +25,15 @@ SpinImage::array<char> RICIMethod::generateDescriptors(
     return {descriptors.length, reinterpret_cast<char*>(descriptors.content)};
 }
 
-SpinImage::array<unsigned int> RICIMethod::computeSearchResultRanks(
-        SpinImage::array<char> device_needleDescriptors,
-        SpinImage::array<char> device_haystackDescriptors,
+SpinImage::cpu::array<unsigned int> RICIMethod::computeSearchResultRanks(
+        SpinImage::gpu::array<char> device_needleDescriptors,
+        SpinImage::gpu::array<char> device_haystackDescriptors,
         Clutterbox::SearchParameters parameters,
         ExecutionTimes *executionTimes) {
 
     SpinImage::debug::RICISearchExecutionTimes times{};
 
-    SpinImage::array<unsigned int> searchResultIndices = SpinImage::gpu::computeRadialIntersectionCountImageSearchResultRanks(
+    SpinImage::cpu::array<unsigned int> searchResultIndices = SpinImage::gpu::computeRadialIntersectionCountImageSearchResultRanks(
             {device_needleDescriptors.length,
              reinterpret_cast<SpinImage::gpu::RICIDescriptor*>(device_needleDescriptors.content)},
             {device_haystackDescriptors.length,

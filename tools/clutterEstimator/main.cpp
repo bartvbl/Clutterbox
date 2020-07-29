@@ -15,6 +15,7 @@
 #include <spinImage/utilities/kernels/duplicateRemoval.cuh>
 #include <spinImage/utilities/mesh/modelScaler.h>
 #include <utilities/stringUtils.h>
+#include <spinImage/utilities/copy/mesh.h>
 
 using json = nlohmann::json;
 
@@ -161,7 +162,7 @@ int main(int argc, const char** argv) {
         // 11 Compute unique vertex mapping
         std::vector<size_t> uniqueVertexCounts;
         size_t totalUniqueVertexCount;
-        SpinImage::array<signed long long> device_indexMapping = SpinImage::utilities::computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts, totalUniqueVertexCount);
+        SpinImage::gpu::array<signed long long> device_indexMapping = SpinImage::utilities::computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts, totalUniqueVertexCount);
 
         // 12 Randomly transform objects
         std::cout << "\tRandomly transforming input objects.." << std::endl;
@@ -188,7 +189,7 @@ int main(int argc, const char** argv) {
         // 13 Compute corresponding transformed vertex buffer
         //    A mapping is used here because the previously applied transformation can cause non-unique vertices to become
         //    equivalent. It is vital we can rely on a 1:1 mapping existing between vertices.
-        SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_uniqueSpinOrigins = SpinImage::utilities::applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
+        SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_uniqueSpinOrigins = SpinImage::utilities::applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
         checkCudaErrors(cudaFree(device_indexMapping.content));
 
         // Should be as large as possible, but can be selected arbitrarily
@@ -210,7 +211,7 @@ int main(int argc, const char** argv) {
         std::cout << "\tComputing clutter values.." << std::endl;
         float spinImageWidth = resultFileContents["spinImageWidth"];
 
-        SpinImage::array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth, referenceObjectSampleCount, resultFileContents["uniqueVertexCounts"][0]);
+        SpinImage::cpu::array<float> clutterValues = computeClutter(device_uniqueSpinOrigins, sampledScene, spinImageWidth, referenceObjectSampleCount, resultFileContents["uniqueVertexCounts"][0]);
 
         json outJson;
 

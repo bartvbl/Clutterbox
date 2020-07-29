@@ -6,15 +6,15 @@ class SCMethod : public Clutterbox::Method {
     float minSupportRadius;
     float pointDensityRadius;
 
-    SpinImage::array<char>
+    SpinImage::gpu::array<char>
     generateDescriptors(SpinImage::gpu::Mesh device_sceneAsMesh,
                         SpinImage::gpu::PointCloud device_sceneAsPointCloud,
-                        SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_origins,
+                        SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_origins,
                         Clutterbox::GenerationParameters parameters,
                         ExecutionTimes *executionTimes) override;
 
-    SpinImage::array<unsigned int> computeSearchResultRanks(SpinImage::array<char> device_needleDescriptors,
-                                                            SpinImage::array<char> device_haystackDescriptors,
+    SpinImage::cpu::array<unsigned int> computeSearchResultRanks(SpinImage::gpu::array<char> device_needleDescriptors,
+                                                            SpinImage::gpu::array<char> device_haystackDescriptors,
                                                             Clutterbox::SearchParameters parameters,
                                                             ExecutionTimes *executionTimes) override;
 

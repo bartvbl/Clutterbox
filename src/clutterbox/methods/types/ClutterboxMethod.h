@@ -2,10 +2,11 @@
 
 #include <string>
 #include <utility>
-#include <spinImage/common/types/array.h>
 #include <spinImage/gpu/types/Mesh.h>
 #include <spinImage/gpu/types/DeviceOrientedPoint.h>
 #include <spinImage/gpu/types/PointCloud.h>
+#include <spinImage/gpu/types/array.h>
+#include <spinImage/cpu/types/array.h>
 #include "ExecutionTimes.h"
 
 namespace Clutterbox {
@@ -23,16 +24,16 @@ namespace Clutterbox {
 
     class Method {
     public:
-        virtual SpinImage::array<char> generateDescriptors(
+        virtual SpinImage::gpu::array<char> generateDescriptors(
                 SpinImage::gpu::Mesh device_sceneAsMesh,
                 SpinImage::gpu::PointCloud device_sceneAsPointCloud,
-                SpinImage::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
+                SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
                 Clutterbox::GenerationParameters parameters,
                 ExecutionTimes* executionTimes = nullptr) = 0;
 
-        virtual SpinImage::array<unsigned int> computeSearchResultRanks(
-                SpinImage::array<char> device_needleDescriptors,
-                SpinImage::array<char> device_haystackDescriptors,
+        virtual SpinImage::cpu::array<unsigned int> computeSearchResultRanks(
+                SpinImage::gpu::array<char> device_needleDescriptors,
+                SpinImage::gpu::array<char> device_haystackDescriptors,
                 Clutterbox::SearchParameters parameters,
                 ExecutionTimes* executionTimes = nullptr) = 0;
 
