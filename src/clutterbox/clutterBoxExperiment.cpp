@@ -25,7 +25,7 @@
 #include <spinImage/gpu/fastPointFeatureHistogramGenerator.cuh>
 #include <spinImage/gpu/fastPointFeatureHistogramSearcher.cuh>
 #include <spinImage/utilities/mesh/OBJLoader.h>
-#include <spinImage/utilities/dumpers/spinImageDumper.h>
+#include <spinImage/utilities/dumpers/descriptors.h>
 #include <spinImage/utilities/dumpers/searchResultDumper.h>
 #include <spinImage/utilities/kernels/duplicateRemoval.cuh>
 #include <spinImage/utilities/mesh/modelScaler.h>
