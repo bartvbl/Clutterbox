@@ -12,7 +12,7 @@ struct GPUMetaData {
 
 void runClutterBoxExperiment(
         std::string objectDirectory,
-        std::vector<Clutterbox::Method> descriptorsToEvaluate,
+        std::vector<Clutterbox::Method*> descriptorsToEvaluate,
         std::vector<int> objectCountList,
         int overrideObjectCount,
         float boxSize,

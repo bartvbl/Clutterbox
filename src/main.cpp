@@ -136,19 +136,19 @@ int main(int argc, const char **argv)
         descriptorList = {"rici", "si", "quicci", "3dsc", "fpfh"};
     }
 
-    std::vector<Clutterbox::Method> descriptorsToEvaluate;
+    std::vector<Clutterbox::Method*> descriptorsToEvaluate;
 
     for(const auto &descriptor : descriptorList) {
         if(descriptor == "rici") {
-            descriptorsToEvaluate.push_back(RICIMethod());
+            descriptorsToEvaluate.push_back(new RICIMethod());
         } else if(descriptor == "si") {
-            descriptorsToEvaluate.push_back(SIMethod(spinImageSupportAngle.value()));
+            descriptorsToEvaluate.push_back(new SIMethod(spinImageSupportAngle.value()));
         } else if(descriptor == "3dsc") {
-            descriptorsToEvaluate.push_back(SCMethod(minSupportRadius3dsc.value(), pointDensityRadius3dsc.value()));
+            descriptorsToEvaluate.push_back(new SCMethod(minSupportRadius3dsc.value(), pointDensityRadius3dsc.value()));
         } else if(descriptor == "fpfh") {
-            descriptorsToEvaluate.push_back(FPFHMethod());
+            descriptorsToEvaluate.push_back(new FPFHMethod());
         } else if(descriptor == "quicci") {
-            descriptorsToEvaluate.push_back(QUICCIMethod());
+            descriptorsToEvaluate.push_back(new QUICCIMethod());
         }
     }
 

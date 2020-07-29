@@ -2,7 +2,7 @@
 #include <spinImage/gpu/fastPointFeatureHistogramGenerator.cuh>
 #include <spinImage/gpu/fastPointFeatureHistogramSearcher.cuh>
 
-SpinImage::array<char> FPFHMethod::generateDescriptors(
+SpinImage::gpu::array<char> FPFHMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneAsMesh,
         SpinImage::gpu::PointCloud device_sceneAsPointCloud,
         SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,

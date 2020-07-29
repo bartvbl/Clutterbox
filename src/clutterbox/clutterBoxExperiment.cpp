@@ -61,7 +61,7 @@ Histogram computeSearchResultHistogram(size_t vertexCount, const SpinImage::arra
 
 void dumpResultsFile(
         std::string outputFile,
-        std::vector<Clutterbox::Method> descriptorsToEvaluate,
+        std::vector<Clutterbox::Method*> descriptorsToEvaluate,
         size_t seed,
         std::vector<std::vector<Histogram>> histograms,
         std::string sourceDirectory,
@@ -234,7 +234,7 @@ void dumpResultsFile(
 
 void dumpRawSearchResultFile(
         std::string outputFile,
-        std::vector<Clutterbox::Method> descriptorsToEvaluate,
+        std::vector<Clutterbox::Method*> descriptorsToEvaluate,
         std::vector<int> objectCountList,
         std::vector<std::vector<SpinImage::cpu::array<unsigned int>>> rawSearchResults,
         size_t seed) {
@@ -325,7 +325,7 @@ void dumpSearchResultVisualisationMesh(const SpinImage::cpu::array<unsigned int>
 
 void runClutterBoxExperiment(
         std::string objectDirectory,
-        std::vector<Clutterbox::Method> descriptorsToEvaluate,
+        std::vector<Clutterbox::Method*> descriptorsToEvaluate,
         std::vector<int> objectCountList,
         int overrideObjectCount,
         float boxSize,
