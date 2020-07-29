@@ -8,7 +8,6 @@
 
 #include <spinImage/utilities/mesh/OBJLoader.h>
 #include <spinImage/gpu/types/Mesh.h>
-#include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/gpu/types/DeviceOrientedPoint.h>
 #include <clutterbox/clutterBoxUtilities.h>
 #include <spinImage/gpu/types/PointCloud.h>

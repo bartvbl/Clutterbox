@@ -7,6 +7,11 @@
 
 
 #include <stdexcept>
+#include <clutterbox/methods/RICIMethod.h>
+#include <clutterbox/methods/QUICCIMethod.h>
+#include <clutterbox/methods/FPFHMethod.h>
+#include <clutterbox/methods/3DSCMethod.h>
+#include <clutterbox/methods/SIMethod.h>
 
 cudaDeviceProp setCurrentCUDADevice(bool listOnly, int forceGPU);
 
@@ -23,9 +28,11 @@ void splitByCharacter(std::vector<std::string>* parts, const std::string &s, cha
     }
 }
 
+
+
 int main(int argc, const char **argv)
 {
-	arrrgh::parser parser("clutterbox", "Generates and compares both radial intersection count and spin images on the GPU");
+    arrrgh::parser parser("clutterbox", "Generates and compares both radial intersection count and spin images on the GPU");
 	const auto& showHelp = parser.add<bool>("help", "Show this help message.", 'h', arrrgh::Optional, false);
 	const auto& listGPUs = parser.add<bool>("list-gpus", "List all GPU's, used for the --force-gpu parameter.", 'a', arrrgh::Optional, false);
 	const auto& forceGPU = parser.add<int>("force-gpu", "Force using the GPU with the given ID", 'b', arrrgh::Optional, -1);
@@ -34,7 +41,6 @@ int main(int argc, const char **argv)
 	const auto& supportRadius = parser.add<float>("support-radius", "The size of the spin image plane in 3D object space", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_WIDTH);
     const auto& minSupportRadius3dsc = parser.add<float>("3dsc-min-support-radius", "The 3DSC descriptor also requires a minimum support radius to be set", '\0', arrrgh::Optional, 0.1);
     const auto& pointDensityRadius3dsc = parser.add<float>("3dsc-point-density-radius", "The 3DSC descriptor requires a set radius for its point density computation pre-processing step", '\0', arrrgh::Optional, 0.05);
-    const auto& fpfhBinCount = parser.add<int>("fpfh-bin-count", "The number of bins per feature to use for FPFH generation", '\0', arrrgh::Optional, 11);
 	const auto& spinImageSupportAngle = parser.add<float>("spin-image-support-angle-degrees", "The support angle to use for filtering spin image point samples", '\0', arrrgh::Optional, DEFAULT_SPIN_IMAGE_SUPPORT_ANGLE_DEGREES);
     const auto& forcedSeed = parser.add<std::string>("force-seed", "Specify the seed to use for random generation. Used for reproducing results.", '\0', arrrgh::Optional, "0");
 	const auto& dumpRawResults = parser.add<bool>("dump-raw-search-results", "Enable dumping of raw search result index values", '\0', arrrgh::Optional, false);
@@ -130,19 +136,31 @@ int main(int argc, const char **argv)
         descriptorList = {"rici", "si", "quicci", "3dsc", "fpfh"};
     }
 
+    std::vector<Clutterbox::Method> descriptorsToEvaluate;
+
+    for(const auto &descriptor : descriptorList) {
+        if(descriptor == "rici") {
+            descriptorsToEvaluate.push_back(RICIMethod());
+        } else if(descriptor == "si") {
+            descriptorsToEvaluate.push_back(SIMethod(spinImageSupportAngle.value()));
+        } else if(descriptor == "3dsc") {
+            descriptorsToEvaluate.push_back(SCMethod(minSupportRadius3dsc.value(), pointDensityRadius3dsc.value()));
+        } else if(descriptor == "fpfh") {
+            descriptorsToEvaluate.push_back(FPFHMethod());
+        } else if(descriptor == "quicci") {
+            descriptorsToEvaluate.push_back(QUICCIMethod());
+        }
+    }
+
     std::sort(objectCountList.begin(), objectCountList.end());
 
     runClutterBoxExperiment(
             objectDirectory.value(),
-            descriptorList,
+            descriptorsToEvaluate,
             objectCountList,
             overrideObjectCount.value(),
             boxSize.value(),
-            pointDensityRadius3dsc.value(),
-            minSupportRadius3dsc.value(),
             supportRadius.value(),
-            spinImageSupportAngle.value(),
-            fpfhBinCount.value(),
             dumpRawResults.value(),
             outputDirectory.value(),
             enableOBJDump,

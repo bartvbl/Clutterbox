@@ -2,7 +2,7 @@
 
 #include <clutterbox/methods/types/ClutterboxMethod.h>
 
-class SIMethod : Clutterbox::Method {
+class SIMethod : public Clutterbox::Method {
     float supportAngle;
 
     SpinImage::array<char>
@@ -21,5 +21,6 @@ class SIMethod : Clutterbox::Method {
 
     const std::string getMethodDumpFileName() override;
 
+public:
     explicit SIMethod(float supportAngle) : supportAngle(supportAngle) {}
 };

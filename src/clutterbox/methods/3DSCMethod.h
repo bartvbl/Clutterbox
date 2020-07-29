@@ -2,7 +2,7 @@
 
 #include <clutterbox/methods/types/ClutterboxMethod.h>
 
-class SCMethod : Clutterbox::Method {
+class SCMethod : public Clutterbox::Method {
     float minSupportRadius;
     float pointDensityRadius;
 
@@ -22,6 +22,7 @@ class SCMethod : Clutterbox::Method {
 
     const std::string getMethodDumpFileName() override;
 
+public:
     explicit SCMethod(float minSupportRadius, float pointDensityRadius)
      : minSupportRadius(minSupportRadius),
        pointDensityRadius(pointDensityRadius) {}

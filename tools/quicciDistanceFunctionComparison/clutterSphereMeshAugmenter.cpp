@@ -5,8 +5,8 @@
 #include <iostream>
 #include "clutterSphereMeshAugmenter.h"
 #include <spinImage/utilities/kernels/meshSampler.cuh>
-#include <spinImage/utilities/copy/hostMeshToDevice.h>
 #include <spinImage/utilities/copy/DeviceVertexList.h>
+#include <spinImage/utilities/copy/mesh.h>
 
 
 void generateSphere(std::vector<SpinImage::cpu::float3> &vertices, std::vector<SpinImage::cpu::float3> &normals, float sphereRadius, int slices, int layers) {

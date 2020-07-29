@@ -2,7 +2,7 @@
 
 #include <clutterbox/methods/types/ClutterboxMethod.h>
 
-class QUICCIMethod : Clutterbox::Method {
+class QUICCIMethod : public Clutterbox::Method {
     SpinImage::array<char>
     generateDescriptors(SpinImage::gpu::Mesh device_sceneAsMesh,
                         SpinImage::gpu::PointCloud device_sceneAsPointCloud,
