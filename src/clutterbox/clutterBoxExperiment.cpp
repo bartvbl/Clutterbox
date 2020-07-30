@@ -149,7 +149,7 @@ void dumpResultsFile(
     outJson["spinImageWidthPixels"] = spinImageWidthPixels;
     // TODO
     //outJson["spinImageSupportAngle"] = spinImageSupportAngleDegrees;
-    //outJson["spinImageSampleCounts"] = spinImageSampleCounts;
+    outJson["pointCloudSampleCounts"] = pointCloudSampleCounts;
     outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
     outJson["fpfhBinCount"] = FPFH_BINS_PER_FEATURE;
     //outJson["3dscMinSupportRadius"] = minSupportRadius3dsc;
@@ -560,7 +560,7 @@ void runClutterBoxExperiment(
 
             generationSampleExecutionTimes.at(methodIndex).push_back(generationExecutionTimes);
 
-            std::cout << "\t\tExecution time:" << generationExecutionTimes.getMeasurementByName("total") << std::endl;
+            std::cout << "\t\tExecution time: " << generationExecutionTimes.getMeasurementByName("total") << "s" << std::endl;
 
             std::cout << "\tSearching in " + descriptorsToEvaluate.at(methodIndex)->getMethodDumpFileName()
                        + " descriptors.." << std::endl;
