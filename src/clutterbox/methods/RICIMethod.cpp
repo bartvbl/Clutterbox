@@ -1,6 +1,6 @@
 #include "RICIMethod.h"
-#include <spinImage/gpu/radialIntersectionCountImageGenerator.cuh>
-#include <spinImage/gpu/radialIntersectionCountImageSearcher.cuh>
+#include <shapeDescriptor/gpu/radialIntersectionCountImageGenerator.cuh>
+#include <shapeDescriptor/gpu/radialIntersectionCountImageSearcher.cuh>
 
 SpinImage::gpu::array<char> RICIMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneAsMesh,

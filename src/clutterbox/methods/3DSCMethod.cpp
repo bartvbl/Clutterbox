@@ -1,6 +1,6 @@
 #include "3DSCMethod.h"
-#include <spinImage/gpu/3dShapeContextGenerator.cuh>
-#include <spinImage/gpu/3dShapeContextSearcher.cuh>
+#include <shapeDescriptor/gpu/3dShapeContextGenerator.cuh>
+#include <shapeDescriptor/gpu/3dShapeContextSearcher.cuh>
 
 SpinImage::gpu::array<char> SCMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneAsMesh,

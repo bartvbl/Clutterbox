@@ -9,39 +9,25 @@
 #include <algorithm>
 
 #include <utilities/stringUtils.h>
-#include <spinImage/utilities/mesh/modelScaler.h>
+#include <shapeDescriptor/utilities/mesh/modelScaler.h>
 #include <utilities/Histogram.h>
 
-#include <spinImage/cpu/types/Mesh.h>
-#include <spinImage/gpu/types/Mesh.h>
-#include <spinImage/gpu/radialIntersectionCountImageGenerator.cuh>
-#include <spinImage/gpu/radialIntersectionCountImageSearcher.cuh>
-#include <spinImage/gpu/quickIntersectionCountImageGenerator.cuh>
-#include <spinImage/gpu/quickIntersectionCountImageSearcher.cuh>
-#include <spinImage/gpu/spinImageGenerator.cuh>
-#include <spinImage/gpu/spinImageSearcher.cuh>
-#include <spinImage/gpu/3dShapeContextGenerator.cuh>
-#include <spinImage/gpu/3dShapeContextSearcher.cuh>
-#include <spinImage/gpu/fastPointFeatureHistogramGenerator.cuh>
-#include <spinImage/gpu/fastPointFeatureHistogramSearcher.cuh>
-#include <spinImage/utilities/mesh/OBJLoader.h>
-#include <spinImage/utilities/dumpers/descriptors.h>
-#include <spinImage/utilities/dumpers/searchResultDumper.h>
-#include <spinImage/utilities/kernels/duplicateRemoval.cuh>
-#include <spinImage/utilities/mesh/modelScaler.h>
-#include <spinImage/utilities/kernels/meshSampler.cuh>
+#include <shapeDescriptor/cpu/types/Mesh.h>
+#include <shapeDescriptor/gpu/types/Mesh.h>
+#include <shapeDescriptor/gpu/radialIntersectionCountImageGenerator.cuh>
+#include <shapeDescriptor/gpu/3dShapeContextSearcher.cuh>
+#include <shapeDescriptor/utilities/mesh/OBJLoader.h>
+#include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>
+#include <shapeDescriptor/utilities/kernels/meshSampler.cuh>
 
 #include <clutterbox/clutterBoxUtilities.h>
-#include <fstream>
 #include <glm/vec3.hpp>
 #include <map>
-#include <sstream>
-#include <algorithm>
 #include <json.hpp>
 #include <tsl/ordered_map.h>
-#include <spinImage/gpu/types/PointCloud.h>
-#include <spinImage/utilities/dumpers/meshDumper.h>
-#include <spinImage/utilities/copy/mesh.h>
+#include <shapeDescriptor/gpu/types/PointCloud.h>
+#include <shapeDescriptor/utilities/dumpers/meshDumper.h>
+#include <shapeDescriptor/utilities/copy/mesh.h>
 #include <utilities/randomFileSelector.h>
 
 template<class Key, class T, class Ignore, class Allocator,

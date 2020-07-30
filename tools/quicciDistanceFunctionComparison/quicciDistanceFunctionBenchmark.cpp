@@ -3,23 +3,22 @@
 #include <random>
 #include <algorithm>
 #include <iostream>
-#include <spinImage/cpu/types/Mesh.h>
-#include <spinImage/utilities/mesh/modelScaler.h>
-#include <spinImage/utilities/mesh/OBJLoader.h>
-#include <spinImage/gpu/types/DeviceOrientedPoint.h>
-#include <spinImage/utilities/kernels/duplicateRemoval.cuh>
+#include <shapeDescriptor/cpu/types/Mesh.h>
+#include <shapeDescriptor/utilities/mesh/modelScaler.h>
+#include <shapeDescriptor/utilities/mesh/OBJLoader.h>
+#include <shapeDescriptor/gpu/types/DeviceOrientedPoint.h>
+#include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>
 #include <utilities/randomFileSelector.h>
 #include <cuda_runtime_api.h>
 #include <nvidia/helper_cuda.h>
-#include <clutterbox/clutterBoxUtilities.h>
-#include <spinImage/utilities/dumpers/meshDumper.h>
-#include <spinImage/gpu/quickIntersectionCountImageGenerator.cuh>
-#include <spinImage/gpu/quickIntersectionCountImageSearcher.cuh>
+#include <shapeDescriptor/utilities/dumpers/meshDumper.h>
+#include <shapeDescriptor/gpu/quickIntersectionCountImageGenerator.cuh>
+#include <shapeDescriptor/gpu/quickIntersectionCountImageSearcher.cuh>
 #include <cassert>
 #include <utilities/stringUtils.h>
 #include <json.hpp>
 #include <tsl/ordered_map.h>
-#include <spinImage/utilities/copy/mesh.h>
+#include <shapeDescriptor/utilities/copy/mesh.h>
 
 template<class Key, class T, class Ignore, class Allocator,
         class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,

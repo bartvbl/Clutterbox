@@ -1,6 +1,6 @@
 #pragma once
 
-#include <spinImage/cpu/types/Mesh.h>
+#include <shapeDescriptor/cpu/types/Mesh.h>
 
 const unsigned int SPHERE_RESOLUTION_X = 15;
 const unsigned int SPHERE_RESOLUTION_Y = 15;

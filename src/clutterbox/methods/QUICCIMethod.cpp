@@ -1,6 +1,6 @@
 #include "QUICCIMethod.h"
-#include <spinImage/gpu/quickIntersectionCountImageGenerator.cuh>
-#include <spinImage/gpu/quickIntersectionCountImageSearcher.cuh>
+#include <shapeDescriptor/gpu/quickIntersectionCountImageGenerator.cuh>
+#include <shapeDescriptor/gpu/quickIntersectionCountImageSearcher.cuh>
 
 SpinImage::gpu::array<char> QUICCIMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneAsMesh,

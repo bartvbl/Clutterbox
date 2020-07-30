@@ -1,6 +1,6 @@
 #include "FPFHMethod.h"
-#include <spinImage/gpu/fastPointFeatureHistogramGenerator.cuh>
-#include <spinImage/gpu/fastPointFeatureHistogramSearcher.cuh>
+#include <shapeDescriptor/gpu/fastPointFeatureHistogramGenerator.cuh>
+#include <shapeDescriptor/gpu/fastPointFeatureHistogramSearcher.cuh>
 
 SpinImage::gpu::array<char> FPFHMethod::generateDescriptors(
         SpinImage::gpu::Mesh device_sceneAsMesh,

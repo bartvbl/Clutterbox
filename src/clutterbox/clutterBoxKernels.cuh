@@ -2,8 +2,8 @@
 
 #include <vector>
 #include <random>
-#include <spinImage/gpu/types/Mesh.h>
-#include <spinImage/gpu/types/DeviceOrientedPoint.h>
+#include <shapeDescriptor/gpu/types/Mesh.h>
+#include <shapeDescriptor/gpu/types/DeviceOrientedPoint.h>
 
 struct Transformation {
     float3 position;

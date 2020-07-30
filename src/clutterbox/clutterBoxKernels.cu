@@ -8,7 +8,7 @@
 #include <glm/gtc/matrix_inverse.hpp>
 
 #include <cuda_runtime.h>
-#include <spinImage/gpu/types/DeviceOrientedPoint.h>
+#include <shapeDescriptor/gpu/types/DeviceOrientedPoint.h>
 #include <nvidia/helper_cuda.h>
 
 // MUST be a define!!!

@@ -2,11 +2,11 @@
 
 #include <string>
 #include <utility>
-#include <spinImage/gpu/types/Mesh.h>
-#include <spinImage/gpu/types/DeviceOrientedPoint.h>
-#include <spinImage/gpu/types/PointCloud.h>
-#include <spinImage/gpu/types/array.h>
-#include <spinImage/cpu/types/array.h>
+#include <shapeDescriptor/gpu/types/Mesh.h>
+#include <shapeDescriptor/gpu/types/DeviceOrientedPoint.h>
+#include <shapeDescriptor/gpu/types/PointCloud.h>
+#include <shapeDescriptor/gpu/types/array.h>
+#include <shapeDescriptor/cpu/types/array.h>
 #include "ExecutionTimes.h"
 
 namespace Clutterbox {

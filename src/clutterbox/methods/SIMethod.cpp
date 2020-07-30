@@ -1,5 +1,5 @@
-#include <spinImage/gpu/spinImageGenerator.cuh>
-#include <spinImage/gpu/spinImageSearcher.cuh>
+#include <shapeDescriptor/gpu/spinImageGenerator.cuh>
+#include <shapeDescriptor/gpu/spinImageSearcher.cuh>
 #include "SIMethod.h"
 
 SpinImage::gpu::array<char> SIMethod::generateDescriptors(

@@ -1,4 +1,3 @@
-#include <fstream>
 #include <string>
 #include <random>
 
@@ -6,22 +5,21 @@
 #include <json.hpp>
 #include <cuda_runtime_api.h>
 
-#include <spinImage/utilities/mesh/OBJLoader.h>
-#include <spinImage/gpu/types/Mesh.h>
-#include <spinImage/gpu/types/DeviceOrientedPoint.h>
+#include <shapeDescriptor/utilities/mesh/OBJLoader.h>
+#include <shapeDescriptor/gpu/types/Mesh.h>
+#include <shapeDescriptor/gpu/types/DeviceOrientedPoint.h>
 #include <clutterbox/clutterBoxUtilities.h>
-#include <spinImage/gpu/types/PointCloud.h>
-#include <spinImage/utilities/kernels/meshSampler.cuh>
-#include <spinImage/utilities/kernels/duplicateRemoval.cuh>
-#include <spinImage/utilities/mesh/modelScaler.h>
+#include <shapeDescriptor/gpu/types/PointCloud.h>
+#include <shapeDescriptor/utilities/kernels/meshSampler.cuh>
+#include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>
+#include <shapeDescriptor/utilities/mesh/modelScaler.h>
 #include <utilities/stringUtils.h>
-#include <spinImage/utilities/copy/mesh.h>
+#include <shapeDescriptor/utilities/copy/mesh.h>
 
 using json = nlohmann::json;
 
 #include "utilities/listDir.h"
 #include "clutterbox/clutterBoxKernels.cuh"
-#include "spinImage/utilities/mesh/modelScaler.h"
 #include "clutterKernel.cuh"
 #include "nvidia/helper_cuda.h"
 

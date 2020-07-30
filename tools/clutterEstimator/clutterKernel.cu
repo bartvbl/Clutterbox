@@ -3,7 +3,7 @@
 #include <nvidia/helper_math.h>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
-#include <spinImage/gpu/types/array.h>
+#include <shapeDescriptor/gpu/types/array.h>
 
 #define MAX_EQUIVALENCE_ROUNDING_ERROR 0.0001
 
