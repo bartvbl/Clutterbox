@@ -136,7 +136,7 @@ void dumpResultsFile(
 
     json outJson;
 
-    outJson["version"] = "v12";
+    outJson["version"] = "v14";
     outJson["seed"] = seed;
     outJson["descriptors"] = descriptorNames;
     outJson["sampleSetSize"] = sampleObjectCount;

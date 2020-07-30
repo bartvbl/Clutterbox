@@ -19,7 +19,7 @@ class ExecutionTimes {
 public:
     void append(const std::string& name, double timeInSeconds) {
         measurements.emplace_back(name, timeInSeconds);
-        measurementMap.at(name) = timeInSeconds;
+        measurementMap[name] = timeInSeconds;
     }
 
     std::vector<ExecutionTimeMeasurement>* getAll() {
