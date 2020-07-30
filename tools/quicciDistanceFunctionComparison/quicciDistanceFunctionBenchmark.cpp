@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <shapeDescriptor/cpu/types/Mesh.h>
-#include <shapeDescriptor/utilities/mesh/modelScaler.h>
+#include <shapeDescriptor/utilities/mesh/MeshScaler.h>
 #include <shapeDescriptor/utilities/mesh/OBJLoader.h>
 #include <shapeDescriptor/gpu/types/DeviceOrientedPoint.h>
 #include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>

@@ -3,13 +3,12 @@
 #include <cuda_runtime_api.h>
 
 #include <vector>
-#include <memory>
 #include <random>
 #include <iostream>
 #include <algorithm>
 
 #include <utilities/stringUtils.h>
-#include <shapeDescriptor/utilities/mesh/modelScaler.h>
+#include <shapeDescriptor/utilities/mesh/MeshScaler.h>
 #include <utilities/Histogram.h>
 
 #include <shapeDescriptor/cpu/types/Mesh.h>
