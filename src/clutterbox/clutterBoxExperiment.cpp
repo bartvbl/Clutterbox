@@ -470,7 +470,7 @@ void runClutterBoxExperiment(
 
         generationReferenceExecutionTimes.at(i) = executionTimes;
 
-        std::cout << "\t\tExecution time: " << executionTimes.getMeasurementByName("total") << std::endl;
+        std::cout << "\t\tExecution time: " << executionTimes.getMeasurementByName("total") << "s" << std::endl;
     }
 
     device_referencePointCloud.free();
@@ -578,7 +578,7 @@ void runClutterBoxExperiment(
 
             rawSearchResults.at(methodIndex).push_back(searchResults);
 
-            std::cout << "\t\tExecution time: " << sampleSearchExecutionTimes.getMeasurementByName("total") << std::endl;
+            std::cout << "\t\tExecution time: " << sampleSearchExecutionTimes.getMeasurementByName("total") << "s" << std::endl;
             Histogram histogram = computeSearchResultHistogram(referenceMeshImageCount, searchResults);
 
             if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), descriptorsToEvaluate.at(methodIndex)->getMethodCommandLineParameterName()) != matchVisualisationDescriptorList.end()) {
