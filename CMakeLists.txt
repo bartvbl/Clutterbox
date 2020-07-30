@@ -57,7 +57,7 @@ set(CUDA_NVCC_FLAGS -arch=sm_61 -gencode arch=compute_61,code=\"sm_61,compute_61
 set(CUDA_VERBOSE_BUILD ON)
 
 # libShapeSearch
-add_subdirectory(../libSpinImage ${CMAKE_CURRENT_BINARY_DIR}/libSpinImage)
+add_subdirectory(../libShapeDescriptor ${CMAKE_CURRENT_BINARY_DIR}/libShapeDescriptor)
 
 
 #
@@ -65,7 +65,7 @@ add_subdirectory(../libSpinImage ${CMAKE_CURRENT_BINARY_DIR}/libSpinImage)
 #
 include_directories (
         src/
-        ../libSpinImage/src
+        ../libShapeDescriptor/src
         tools/clutterEstimator
         lib/glm
         lib/json
@@ -118,10 +118,10 @@ add_executable (${PROJECT_NAME} ${PROJECT_SOURCES} ${PROJECT_HEADERS}
         ${VENDORS_SOURCES})
 
 
-target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart SpinImage cudadevrt)
+target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart ShapeDescriptor cudadevrt)
 
 add_executable(clutterEstimator ${CLUTTER_ESTIMATOR_SOURCES} ${CLUTTER_EXPERIMENT_SOURCES})
-target_link_libraries(clutterEstimator ${CUDA_LIBRARY} cuda cudart SpinImage cudadevrt)
+target_link_libraries(clutterEstimator ${CUDA_LIBRARY} cuda cudart ShapeDescriptor cudadevrt)
 
 add_executable(projectionBenchmark tools/projectionBenchmark/compare.cpp)
 target_link_libraries(projectionBenchmark ${PCL_LIBRARIES})
@@ -134,4 +134,4 @@ add_executable(quicciDistanceFunctionBenchmark
         src/utilities/listDir.cpp
         src/utilities/stringUtils.cpp
         src/clutterbox/clutterBoxUtilities.cpp)
-target_link_libraries(quicciDistanceFunctionBenchmark SpinImage)
+target_link_libraries(quicciDistanceFunctionBenchmark ShapeDescriptor)

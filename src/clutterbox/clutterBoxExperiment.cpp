@@ -57,7 +57,7 @@ using json = nlohmann::basic_json<ordered_map>;
 #include "utilities/listDir.h"
 #include "nvidia/helper_cuda.h"
 
-Histogram computeSearchResultHistogram(size_t vertexCount, const SpinImage::array<unsigned int> &searchResults);
+Histogram computeSearchResultHistogram(size_t vertexCount, const SpinImage::cpu::array<unsigned int> &searchResults);
 
 void dumpResultsFile(
         std::string outputFile,
@@ -131,7 +131,7 @@ void dumpResultsFile(
 
     std::vector<std::string> descriptorNames;
     for(int i = 0; i < descriptorsToEvaluate.size(); i++) {
-        descriptorNames.push_back(descriptorsToEvaluate.at(i).getMethodCommandLineParameterName());
+        descriptorNames.push_back(descriptorsToEvaluate.at(i)->getMethodCommandLineParameterName());
     }
 
     json outJson;
@@ -147,12 +147,13 @@ void dumpResultsFile(
     outJson["boxSize"] = boxSize;
     outJson["spinImageWidth"] = supportRadius;
     outJson["spinImageWidthPixels"] = spinImageWidthPixels;
-    outJson["spinImageSupportAngle"] = spinImageSupportAngleDegrees;
-    outJson["spinImageSampleCounts"] = spinImageSampleCounts;
+    // TODO
+    //outJson["spinImageSupportAngle"] = spinImageSupportAngleDegrees;
+    //outJson["spinImageSampleCounts"] = spinImageSampleCounts;
     outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
     outJson["fpfhBinCount"] = FPFH_BINS_PER_FEATURE;
-    outJson["3dscMinSupportRadius"] = minSupportRadius3dsc;
-    outJson["3dscPointDensityRadius"] = pointDensityRadius3dsc;
+    //outJson["3dscMinSupportRadius"] = minSupportRadius3dsc;
+    //outJson["3dscPointDensityRadius"] = pointDensityRadius3dsc;
 #if QUICCI_DISTANCE_FUNCTION == CLUTTER_RESISTANT_DISTANCE
     outJson["quicciDistanceFunction"] = "clutterResistant";
 #elif QUICCI_DISTANCE_FUNCTION == WEIGHTED_HAMMING_DISTANCE
@@ -181,7 +182,7 @@ void dumpResultsFile(
 
     // Dump execution times
     for(int descriptorIndex = 0; descriptorIndex < descriptorsToEvaluate.size(); descriptorIndex++) {
-        std::string descriptorName = descriptorsToEvaluate.at(descriptorIndex).getMethodDumpFileName();
+        std::string descriptorName = descriptorsToEvaluate.at(descriptorIndex)->getMethodDumpFileName();
         for(const auto &i : *referenceExecutionTimes->at(descriptorIndex).getAll()) {
             outJson["runtimes"][descriptorName + "ReferenceGeneration"][i.name] = i.timeInSeconds;
         }
@@ -207,7 +208,7 @@ void dumpResultsFile(
 
     // Dump histograms
     for(int descriptorIndex = 0; descriptorIndex < descriptorsToEvaluate.size(); descriptorIndex++) {
-        std::string descriptorName = descriptorsToEvaluate.at(descriptorIndex).getMethodDumpFileName();
+        std::string descriptorName = descriptorsToEvaluate.at(descriptorIndex)->getMethodDumpFileName();
         outJson[descriptorName + "histograms"] = {};
         for(unsigned int i = 0; i < objectCountList.size(); i++) {
             std::map<unsigned int, size_t> descriptorMap = histograms.at(descriptorIndex).at(i).getMap();
@@ -247,12 +248,12 @@ void dumpRawSearchResultFile(
 
 
     for(int descriptorIndex = 0; descriptorIndex < descriptorsToEvaluate.size(); descriptorIndex++) {
-        std::string descriptorName = descriptorsToEvaluate.at(descriptorIndex).getMethodDumpFileName();
+        std::string descriptorName = descriptorsToEvaluate.at(descriptorIndex)->getMethodDumpFileName();
 
         outJson[descriptorName] = {};
         for(int i = 0; i < rawSearchResults.at(descriptorIndex).size(); i++) {
             std::string indexString = std::to_string(objectCountList.at(i));
-            outJson[descriptorName[indexString] = {};
+            outJson[descriptorName][indexString] = {};
             for(int j = 0; j < rawSearchResults.at(descriptorIndex).at(i).length; j++) {
                 outJson[descriptorName][indexString].push_back(rawSearchResults.at(descriptorIndex).at(i).content[j]);
             }
@@ -343,7 +344,7 @@ void runClutterBoxExperiment(
     std::cout << "Running clutterbox experiment for the following descriptors: ";
 
     for(int i = 0; i < descriptorsToEvaluate.size(); i++) {
-        std::cout << descriptorsToEvaluate.at(i).getMethodCommandLineParameterName();
+        std::cout << descriptorsToEvaluate.at(i)->getMethodCommandLineParameterName();
         if(i + 1 < descriptorsToEvaluate.size()) {
             std::cout << ", ";
         }
@@ -454,14 +455,14 @@ void runClutterBoxExperiment(
             SpinImage::utilities::sampleMesh(scaledMeshesOnGPU.at(0), spinImageSampleCount, referenceGenerationRandomSeed);
 
     for(int i = 0; i < descriptorsToEvaluate.size(); i++) {
-        std::cout << "\tGenerating reference " + descriptorsToEvaluate.at(i).getMethodDumpFileName() + " descriptors.." << std::endl;
+        std::cout << "\tGenerating reference " + descriptorsToEvaluate.at(i)->getMethodDumpFileName() + " descriptors.." << std::endl;
 
         Clutterbox::GenerationParameters parameters;
         parameters.supportRadius = supportRadius;
 
         ExecutionTimes executionTimes;
 
-        referenceDescriptors.push_back(descriptorsToEvaluate.at(i).generateDescriptors(
+        referenceDescriptors.push_back(descriptorsToEvaluate.at(i)->generateDescriptors(
                 scaledMeshesOnGPU.at(0),
                 device_referencePointCloud,
                 spinOrigins_reference,
@@ -548,7 +549,7 @@ void runClutterBoxExperiment(
 
 
         for(int methodIndex = 0; methodIndex < descriptorsToEvaluate.size(); methodIndex++) {
-            std::cout << "\tGenerating " + descriptorsToEvaluate.at(methodIndex).getMethodDumpFileName()
+            std::cout << "\tGenerating " + descriptorsToEvaluate.at(methodIndex)->getMethodDumpFileName()
                        + " descriptors.. (" << imageCount << " descriptors)" << std::endl;
 
             ExecutionTimes generationExecutionTimes;
@@ -556,13 +557,13 @@ void runClutterBoxExperiment(
             Clutterbox::GenerationParameters parameters;
             parameters.supportRadius = supportRadius;
 
-            SpinImage::gpu::array<char> sampleDescriptors = descriptorsToEvaluate.at(methodIndex).generateDescriptors(boxScene, device_pointCloud, device_uniqueSpinOrigins, parameters, &generationExecutionTimes);
+            SpinImage::gpu::array<char> sampleDescriptors = descriptorsToEvaluate.at(methodIndex)->generateDescriptors(boxScene, device_pointCloud, device_uniqueSpinOrigins, parameters, &generationExecutionTimes);
 
             generationSampleExecutionTimes.at(methodIndex).push_back(generationExecutionTimes);
 
             std::cout << "\t\tExecution time:" << generationExecutionTimes.getMeasurementByName("total") << std::endl;
 
-            std::cout << "\tSearching in " + descriptorsToEvaluate.at(methodIndex).getMethodDumpFileName()
+            std::cout << "\tSearching in " + descriptorsToEvaluate.at(methodIndex)->getMethodDumpFileName()
                        + " descriptors.." << std::endl;
 
             ExecutionTimes sampleSearchExecutionTimes;
@@ -573,7 +574,7 @@ void runClutterBoxExperiment(
             searchParameters.needleDescriptorScenePointCloudPointCount = 0;
 
             SpinImage::gpu::array<char> methodReferenceDescriptors = referenceDescriptors.at(methodIndex);
-            SpinImage::cpu::array<unsigned int> searchResults = descriptorsToEvaluate.at(methodIndex).computeSearchResultRanks(methodReferenceDescriptors, sampleDescriptors, searchParameters, &sampleSearchExecutionTimes);
+            SpinImage::cpu::array<unsigned int> searchResults = descriptorsToEvaluate.at(methodIndex)->computeSearchResultRanks(methodReferenceDescriptors, sampleDescriptors, searchParameters, &sampleSearchExecutionTimes);
 
             searchExecutionTimes.at(methodIndex).push_back(sampleSearchExecutionTimes);
 
@@ -582,11 +583,11 @@ void runClutterBoxExperiment(
             std::cout << "\t\tExecution time: " << sampleSearchExecutionTimes.getMeasurementByName("total") << std::endl;
             Histogram histogram = computeSearchResultHistogram(referenceMeshImageCount, searchResults);
 
-            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), descriptorsToEvaluate.at(methodIndex).getMethodCommandLineParameterName()) != matchVisualisationDescriptorList.end()) {
+            if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), descriptorsToEvaluate.at(methodIndex)->getMethodCommandLineParameterName()) != matchVisualisationDescriptorList.end()) {
                 std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
                 std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
                 outFilePath = outFilePath / (std::to_string(randomSeed)
-                                  + "_" + descriptorsToEvaluate.at(methodIndex).getMethodCommandLineParameterName()
+                                  + "_" + descriptorsToEvaluate.at(methodIndex)->getMethodCommandLineParameterName()
                                   + "_" + std::to_string(objectCount + 1) + ".obj");
                 dumpSearchResultVisualisationMesh(searchResults, scaledMeshesOnGPU.at(0), outFilePath);
             }
@@ -669,7 +670,7 @@ void runClutterBoxExperiment(
 
 
 
-Histogram computeSearchResultHistogram(size_t vertexCount, const SpinImage::array<unsigned int> &searchResults) {
+Histogram computeSearchResultHistogram(size_t vertexCount, const SpinImage::cpu::array<unsigned int> &searchResults) {
 
     Histogram histogram;
 
