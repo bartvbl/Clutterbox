@@ -441,8 +441,7 @@ void runClutterBoxExperiment(
     size_t referenceImageCount = spinOrigins_reference.length;
     std::cout << "\t\tReduced " << scaledMeshesOnGPU.at(0).vertexCount << " vertices to " << referenceImageCount << "." << std::endl;
 
-    size_t spinImageSampleCount = computeSpinImageSampleCount(scaledMeshesOnGPU.at(0).vertexCount);
-    const size_t referenceSampleCount = spinImageSampleCount;
+    const size_t referenceSampleCount = computeSpinImageSampleCount(scaledMeshesOnGPU.at(0).vertexCount);
     std::cout << "\tUsing sample count: " << referenceSampleCount << std::endl;
 
     // 9 Compute descriptors for reference model
@@ -525,13 +524,13 @@ void runClutterBoxExperiment(
         // Do mesh sampling
         std::cout << "\t" << std::endl;
         size_t meshSamplingSeed = generator();
-        spinImageSampleCount = computeSpinImageSampleCount(imageCount);
-        spinImageSampleCounts.push_back(spinImageSampleCount);
+        size_t pointCloudSampleCount = computeSpinImageSampleCount(imageCount);
+        spinImageSampleCounts.push_back(pointCloudSampleCount);
 
         // wasteful solution, but I don't want to do ugly hacks that destroy the function APIs
         // Computes number of samples used for the reference object
         SpinImage::internal::MeshSamplingBuffers sampleBuffers;
-        SpinImage::gpu::PointCloud device_pointCloud = SpinImage::utilities::sampleMesh(boxScene, spinImageSampleCount, meshSamplingSeed, &sampleBuffers);
+        SpinImage::gpu::PointCloud device_pointCloud = SpinImage::utilities::sampleMesh(boxScene, pointCloudSampleCount, meshSamplingSeed, &sampleBuffers);
         float totalArea;
         float referenceObjectTotalArea;
         size_t referenceObjectTriangleCount = scaledMeshesOnGPU.at(0).vertexCount / 3;
@@ -544,7 +543,7 @@ void runClutterBoxExperiment(
                                    sizeof(float), cudaMemcpyDeviceToHost));
         cudaFree(sampleBuffers.cumulativeAreaArray.content);
         float areaFraction = referenceObjectTotalArea / totalArea;
-        size_t currentReferenceObjectSampleCount = size_t(double(areaFraction) * double(spinImageSampleCount));
+        size_t currentReferenceObjectSampleCount = size_t(double(areaFraction) * double(pointCloudSampleCount));
         std::cout << "\t\tReference object sample count: " << currentReferenceObjectSampleCount << std::endl;
 
 
@@ -569,9 +568,8 @@ void runClutterBoxExperiment(
             ExecutionTimes sampleSearchExecutionTimes;
 
             Clutterbox::SearchParameters searchParameters;
-            //TODO
-            searchParameters.haystackDescriptorScenePointCloudPointCount = 0;
-            searchParameters.needleDescriptorScenePointCloudPointCount = 0;
+            searchParameters.haystackDescriptorScenePointCloudPointCount = pointCloudSampleCount;
+            searchParameters.needleDescriptorScenePointCloudPointCount = referenceSampleCount;
 
             SpinImage::gpu::array<char> methodReferenceDescriptors = referenceDescriptors.at(methodIndex);
             SpinImage::cpu::array<unsigned int> searchResults = descriptorsToEvaluate.at(methodIndex)->computeSearchResultRanks(methodReferenceDescriptors, sampleDescriptors, searchParameters, &sampleSearchExecutionTimes);
