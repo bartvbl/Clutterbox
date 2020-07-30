@@ -443,7 +443,7 @@ void runClutterBoxExperiment(
 
     size_t spinImageSampleCount = computeSpinImageSampleCount(scaledMeshesOnGPU.at(0).vertexCount);
     const size_t referenceSampleCount = spinImageSampleCount;
-    std::cout << "\tUsing sample count: " << spinImageSampleCount << std::endl;
+    std::cout << "\tUsing sample count: " << referenceSampleCount << std::endl;
 
     // 9 Compute descriptors for reference model
     std::cout << "Generating reference descriptors.." << std::endl;
@@ -452,7 +452,7 @@ void runClutterBoxExperiment(
 
     size_t referenceGenerationRandomSeed = generator();
     SpinImage::gpu::PointCloud device_referencePointCloud =
-            SpinImage::utilities::sampleMesh(scaledMeshesOnGPU.at(0), spinImageSampleCount, referenceGenerationRandomSeed);
+            SpinImage::utilities::sampleMesh(scaledMeshesOnGPU.at(0), referenceSampleCount, referenceGenerationRandomSeed);
 
     for(int i = 0; i < descriptorsToEvaluate.size(); i++) {
         std::cout << "\tGenerating reference " + descriptorsToEvaluate.at(i)->getMethodDumpFileName() + " descriptors.." << std::endl;
@@ -471,7 +471,7 @@ void runClutterBoxExperiment(
 
         generationReferenceExecutionTimes.at(i) = executionTimes;
 
-        std::cout << "\t\tExecution time: " << executionTimes.getMeasurementByName("total");
+        std::cout << "\t\tExecution time: " << executionTimes.getMeasurementByName("total") << std::endl;
     }
 
     device_referencePointCloud.free();
