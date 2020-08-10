@@ -120,7 +120,7 @@ void dumpResultsFile(
 
     json outJson;
 
-    outJson["version"] = "v14";
+    outJson["version"] = "v15";
     outJson["seed"] = seed;
     outJson["descriptors"] = descriptorNames;
     outJson["sampleSetSize"] = sampleObjectCount;
@@ -129,28 +129,17 @@ void dumpResultsFile(
     outJson["uniqueVertexCounts"] = uniqueVertexCounts;
     outJson["imageCounts"] = uniqueVertexCounts;
     outJson["boxSize"] = boxSize;
-    outJson["spinImageWidth"] = supportRadius;
-    outJson["spinImageWidthPixels"] = spinImageWidthPixels;
-    // TODO
-    //outJson["spinImageSupportAngle"] = spinImageSupportAngleDegrees;
+    outJson["supportRadius"] = supportRadius;
     outJson["pointCloudSampleCounts"] = pointCloudSampleCounts;
     outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
-    outJson["fpfhBinCount"] = FPFH_BINS_PER_FEATURE;
-    //outJson["3dscMinSupportRadius"] = minSupportRadius3dsc;
-    //outJson["3dscPointDensityRadius"] = pointDensityRadius3dsc;
-#if QUICCI_DISTANCE_FUNCTION == CLUTTER_RESISTANT_DISTANCE
-    outJson["quicciDistanceFunction"] = "clutterResistant";
-#elif QUICCI_DISTANCE_FUNCTION == WEIGHTED_HAMMING_DISTANCE
-    outJson["quicciDistanceFunction"] = "weightedHamming";
-#elif QUICCI_DISTANCE_FUNCTION == HAMMING_DISTANCE
-    outJson["quicciDistanceFunction"] = "hamming";
-#endif
+    for(int descriptorIndex = 0; descriptorIndex < descriptorsToEvaluate.size(); descriptorIndex++) {
+        descriptorsToEvaluate.at(descriptorIndex)->dumpMetadata(outJson);
+    }
     outJson["gpuInfo"] = {};
     outJson["gpuInfo"]["name"] = gpuMetaData.name;
     outJson["gpuInfo"]["clockrate"] = gpuMetaData.clockRate;
     outJson["gpuInfo"]["memoryCapacityInMB"] = gpuMetaData.memorySizeMB;
     outJson["inputFiles"] = chosenFiles;
-    outJson["riciEarlyExitEnabled"] = ENABLE_RICI_COMPARISON_EARLY_EXIT;
     outJson["vertexCounts"] = {};
     for (auto &sampleMesh : sampleMeshes) {
         outJson["vertexCounts"].push_back(sampleMesh.vertexCount);

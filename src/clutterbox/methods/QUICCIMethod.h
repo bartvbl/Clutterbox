@@ -10,10 +10,13 @@ class QUICCIMethod : public Clutterbox::Method {
                         Clutterbox::GenerationParameters parameters,
                         ExecutionTimes *executionTimes) override;
 
-    ShapeDescriptor::cpu::array<unsigned int> computeSearchResultRanks(ShapeDescriptor::gpu::array<char> device_needleDescriptors,
-                                                            ShapeDescriptor::gpu::array<char> device_haystackDescriptors,
-                                                            Clutterbox::SearchParameters parameters,
-                                                            ExecutionTimes *executionTimes) override;
+    ShapeDescriptor::cpu::array<unsigned int> computeSearchResultRanks(
+            ShapeDescriptor::gpu::array<char> device_needleDescriptors,
+            ShapeDescriptor::gpu::array<char> device_haystackDescriptors,
+            Clutterbox::SearchParameters parameters,
+            ExecutionTimes *executionTimes) override;
+
+    void dumpMetadata(json jsonOutput) override;
 
     const std::string getMethodCommandLineParameterName() override;
 

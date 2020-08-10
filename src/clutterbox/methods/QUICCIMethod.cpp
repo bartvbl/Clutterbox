@@ -46,6 +46,17 @@ ShapeDescriptor::cpu::array<unsigned int> QUICCIMethod::computeSearchResultRanks
     return searchResultIndices;
 }
 
+void QUICCIMethod::dumpMetadata(json jsonOutput) {
+#if QUICCI_DISTANCE_FUNCTION == CLUTTER_RESISTANT_DISTANCE
+    jsonOutput["quicciDistanceFunction"] = "clutterResistant";
+#elif QUICCI_DISTANCE_FUNCTION == WEIGHTED_HAMMING_DISTANCE
+    jsonOutput["quicciDistanceFunction"] = "weightedHamming";
+#elif QUICCI_DISTANCE_FUNCTION == HAMMING_DISTANCE
+    jsonOutput["quicciDistanceFunction"] = "hamming";
+#endif
+    jsonOutput["quicciImageWidthPixels"] = spinImageWidthPixels;
+}
+
 const std::string QUICCIMethod::getMethodCommandLineParameterName() {
     return "quicci";
 }

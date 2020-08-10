@@ -2,12 +2,23 @@
 
 #include <string>
 #include <utility>
+#include <json.hpp>
+
 #include <shapeDescriptor/gpu/types/Mesh.h>
 #include <shapeDescriptor/gpu/types/DeviceOrientedPoint.h>
 #include <shapeDescriptor/gpu/types/PointCloud.h>
 #include <shapeDescriptor/gpu/types/array.h>
 #include <shapeDescriptor/cpu/types/array.h>
+#include <tsl/ordered_map.h>
 #include "ExecutionTimes.h"
+
+template<class Key, class T, class Ignore, class Allocator,
+        class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
+        class AllocatorPair = typename std::allocator_traits<Allocator>::template rebind_alloc<std::pair<Key, T>>,
+        class ValueTypeContainer = std::vector<std::pair<Key, T>, AllocatorPair>>
+using ordered_map = tsl::ordered_map<Key, T, Hash, KeyEqual, AllocatorPair, ValueTypeContainer>;
+
+using json = nlohmann::basic_json<ordered_map>;
 
 namespace Clutterbox {
     // Storing additional parameters in structs allows the addition of more parameters without
@@ -36,6 +47,8 @@ namespace Clutterbox {
                 ShapeDescriptor::gpu::array<char> device_haystackDescriptors,
                 Clutterbox::SearchParameters parameters,
                 ExecutionTimes* executionTimes = nullptr) = 0;
+
+        virtual void dumpMetadata(json jsonOutput) = 0;
 
         virtual const std::string getMethodCommandLineParameterName() = 0;
 
