@@ -11,7 +11,7 @@ ShapeDescriptor::gpu::array<char> SIMethod::generateDescriptors(
 
     ShapeDescriptor::debug::SIExecutionTimes siExecutionTimes{};
 
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::SpinImageDescriptor> descriptors = ShapeDescriptor::gpu::generateSpinImages(
+    ShapeDescriptor::gpu::array<ShapeDescriptor::SpinImageDescriptor> descriptors = ShapeDescriptor::gpu::generateSpinImages(
             device_sceneAsPointCloud,
             device_descriptorOrigins,
             parameters.supportRadius,
@@ -35,9 +35,9 @@ ShapeDescriptor::cpu::array<unsigned int> SIMethod::computeSearchResultRanks(
 
     ShapeDescriptor::cpu::array<unsigned int> searchResultIndices = ShapeDescriptor::gpu::computeSpinImageSearchResultRanks(
             {device_needleDescriptors.length,
-             reinterpret_cast<ShapeDescriptor::gpu::SpinImageDescriptor*>(device_needleDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::SpinImageDescriptor*>(device_needleDescriptors.content)},
             {device_haystackDescriptors.length,
-             reinterpret_cast<ShapeDescriptor::gpu::SpinImageDescriptor*>(device_haystackDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::SpinImageDescriptor*>(device_haystackDescriptors.content)},
              &times);
 
     executionTimes->append("total", times.totalExecutionTimeSeconds);

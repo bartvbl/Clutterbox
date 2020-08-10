@@ -110,7 +110,7 @@ void runQuicciDistanceFunctionBenchmark(
     }
 
     std::cout << "\tGenerating reference QUICCI images.." << std::endl;
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::QUICCIDescriptor> device_unmodifiedQuiccImages = ShapeDescriptor::gpu::generateQUICCImages(
+    ShapeDescriptor::gpu::array<ShapeDescriptor::QUICCIDescriptor> device_unmodifiedQuiccImages = ShapeDescriptor::gpu::generateQUICCImages(
             unmodifiedMesh,
             imageOrigins,
             supportRadius);
@@ -128,7 +128,7 @@ void runQuicciDistanceFunctionBenchmark(
             std::cout << "\tComputing distances for a scene with " << sphereCount << " spheres.." << std::endl;
             std::cout << "\t\tGenerating QUICCI images.." << std::endl;
             ShapeDescriptor::debug::QUICCIExecutionTimes runInfo;
-            ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::QUICCIDescriptor> device_augmentedQuiccImages = ShapeDescriptor::gpu::generateQUICCImages(
+            ShapeDescriptor::gpu::array<ShapeDescriptor::QUICCIDescriptor> device_augmentedQuiccImages = ShapeDescriptor::gpu::generateQUICCImages(
                     augmentedMesh,
                     imageOrigins,
                     supportRadius,
@@ -152,7 +152,7 @@ void runQuicciDistanceFunctionBenchmark(
         std::cout << "\tComputing distances.." << std::endl;
         std::cout << "\t\tGenerating QUICCI images.." << std::endl;
         ShapeDescriptor::debug::QUICCIExecutionTimes runInfo;
-        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::QUICCIDescriptor> device_sampleImages = ShapeDescriptor::gpu::generateQUICCImages(
+        ShapeDescriptor::gpu::array<ShapeDescriptor::QUICCIDescriptor> device_sampleImages = ShapeDescriptor::gpu::generateQUICCImages(
                 otherSampleUnmodifiedMesh,
                 baselineOrigins,
                 supportRadius,

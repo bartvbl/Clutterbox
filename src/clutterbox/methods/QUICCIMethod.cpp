@@ -11,7 +11,7 @@ ShapeDescriptor::gpu::array<char> QUICCIMethod::generateDescriptors(
 
     ShapeDescriptor::debug::QUICCIExecutionTimes quicciExecutionTimes{};
 
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::QUICCIDescriptor> descriptors = ShapeDescriptor::gpu::generateQUICCImages(
+    ShapeDescriptor::gpu::array<ShapeDescriptor::QUICCIDescriptor> descriptors = ShapeDescriptor::gpu::generateQUICCImages(
             device_sceneAsMesh,
             device_descriptorOrigins,
             parameters.supportRadius,
@@ -35,9 +35,9 @@ ShapeDescriptor::cpu::array<unsigned int> QUICCIMethod::computeSearchResultRanks
 
     ShapeDescriptor::cpu::array<unsigned int> searchResultIndices = ShapeDescriptor::gpu::computeQUICCImageSearchResultRanks(
             {device_needleDescriptors.length,
-             reinterpret_cast<ShapeDescriptor::gpu::QUICCIDescriptor*>(device_needleDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::QUICCIDescriptor*>(device_needleDescriptors.content)},
             {device_haystackDescriptors.length,
-             reinterpret_cast<ShapeDescriptor::gpu::QUICCIDescriptor*>(device_haystackDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::QUICCIDescriptor*>(device_haystackDescriptors.content)},
              &times);
 
     executionTimes->append("total", times.totalExecutionTimeSeconds);

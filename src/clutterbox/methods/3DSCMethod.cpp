@@ -11,7 +11,7 @@ ShapeDescriptor::gpu::array<char> SCMethod::generateDescriptors(
 
     ShapeDescriptor::debug::SCExecutionTimes scExecutionTimes{};
 
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::ShapeContextDescriptor> descriptors = ShapeDescriptor::gpu::generate3DSCDescriptors(
+    ShapeDescriptor::gpu::array<ShapeDescriptor::ShapeContextDescriptor> descriptors = ShapeDescriptor::gpu::generate3DSCDescriptors(
             device_sceneAsPointCloud,
             device_descriptorOrigins,
             pointDensityRadius,
@@ -37,10 +37,10 @@ ShapeDescriptor::cpu::array<unsigned int> SCMethod::computeSearchResultRanks(
 
     ShapeDescriptor::cpu::array<unsigned int> searchResultIndices = ShapeDescriptor::gpu::compute3DSCSearchResultRanks(
             {device_needleDescriptors.length,
-             reinterpret_cast<ShapeDescriptor::gpu::ShapeContextDescriptor*>(device_needleDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::ShapeContextDescriptor*>(device_needleDescriptors.content)},
              parameters.needleDescriptorScenePointCloudPointCount,
             {device_haystackDescriptors.length,
-             reinterpret_cast<ShapeDescriptor::gpu::ShapeContextDescriptor*>(device_haystackDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::ShapeContextDescriptor*>(device_haystackDescriptors.content)},
              parameters.haystackDescriptorScenePointCloudPointCount,
              &times);
 

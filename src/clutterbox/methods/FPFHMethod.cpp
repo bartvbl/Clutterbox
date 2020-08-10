@@ -11,7 +11,7 @@ ShapeDescriptor::gpu::array<char> FPFHMethod::generateDescriptors(
 
     ShapeDescriptor::debug::FPFHExecutionTimes fpfhExecutionTimes{};
 
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::FPFHDescriptor> descriptors = ShapeDescriptor::gpu::generateFPFHHistograms(
+    ShapeDescriptor::gpu::array<ShapeDescriptor::FPFHDescriptor> descriptors = ShapeDescriptor::gpu::generateFPFHHistograms(
             device_sceneAsPointCloud,
             device_descriptorOrigins,
             parameters.supportRadius,
@@ -36,9 +36,9 @@ ShapeDescriptor::cpu::array<unsigned int> FPFHMethod::computeSearchResultRanks(
 
     ShapeDescriptor::cpu::array<unsigned int> searchResultIndices = ShapeDescriptor::gpu::computeFPFHSearchResultRanks(
             {device_needleDescriptors.length,
-             reinterpret_cast<ShapeDescriptor::gpu::FPFHDescriptor*>(device_needleDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::FPFHDescriptor*>(device_needleDescriptors.content)},
             {device_haystackDescriptors.length,
-             reinterpret_cast<ShapeDescriptor::gpu::FPFHDescriptor*>(device_haystackDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::FPFHDescriptor*>(device_haystackDescriptors.content)},
              &times);
 
     executionTimes->append("total", times.totalExecutionTimeSeconds);

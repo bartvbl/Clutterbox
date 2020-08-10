@@ -11,7 +11,7 @@ ShapeDescriptor::gpu::array<char> RICIMethod::generateDescriptors(
 
     ShapeDescriptor::debug::RICIExecutionTimes riciExecutionTimes{};
 
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::RICIDescriptor> descriptors = ShapeDescriptor::gpu::generateRadialIntersectionCountImages(
+    ShapeDescriptor::gpu::array<ShapeDescriptor::RICIDescriptor> descriptors = ShapeDescriptor::gpu::generateRadialIntersectionCountImages(
             device_sceneAsMesh,
             device_descriptorOrigins,
             parameters.supportRadius,
@@ -35,9 +35,9 @@ ShapeDescriptor::cpu::array<unsigned int> RICIMethod::computeSearchResultRanks(
 
     ShapeDescriptor::cpu::array<unsigned int> searchResultIndices = ShapeDescriptor::gpu::computeRadialIntersectionCountImageSearchResultRanks(
             {device_needleDescriptors.length,
-             reinterpret_cast<ShapeDescriptor::gpu::RICIDescriptor*>(device_needleDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::RICIDescriptor*>(device_needleDescriptors.content)},
             {device_haystackDescriptors.length,
-             reinterpret_cast<ShapeDescriptor::gpu::RICIDescriptor*>(device_haystackDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::RICIDescriptor*>(device_haystackDescriptors.content)},
              &times);
 
     executionTimes->append("total", times.totalExecutionTimeSeconds);
