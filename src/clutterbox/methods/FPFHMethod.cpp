@@ -47,8 +47,8 @@ ShapeDescriptor::cpu::array<unsigned int> FPFHMethod::computeSearchResultRanks(
     return searchResultIndices;
 }
 
-void FPFHMethod::dumpMetadata(json jsonOutput) {
-    jsonOutput["fpfhBinCount"] = FPFH_BINS_PER_FEATURE;
+void FPFHMethod::dumpMetadata(json* jsonOutput) {
+    (*jsonOutput)["fpfhBinCount"] = FPFH_BINS_PER_FEATURE;
 }
 
 const std::string FPFHMethod::getMethodCommandLineParameterName() {

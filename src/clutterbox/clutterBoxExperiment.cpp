@@ -133,7 +133,7 @@ void dumpResultsFile(
     outJson["pointCloudSampleCounts"] = pointCloudSampleCounts;
     outJson["searchResultCount"] = SEARCH_RESULT_COUNT;
     for(int descriptorIndex = 0; descriptorIndex < descriptorsToEvaluate.size(); descriptorIndex++) {
-        descriptorsToEvaluate.at(descriptorIndex)->dumpMetadata(outJson);
+        descriptorsToEvaluate.at(descriptorIndex)->dumpMetadata(&outJson);
     }
     outJson["gpuInfo"] = {};
     outJson["gpuInfo"]["name"] = gpuMetaData.name;

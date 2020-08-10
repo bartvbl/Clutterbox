@@ -46,9 +46,9 @@ ShapeDescriptor::cpu::array<unsigned int> RICIMethod::computeSearchResultRanks(
     return searchResultIndices;
 }
 
-void RICIMethod::dumpMetadata(json jsonOutput) {
-    jsonOutput["riciImageWidthPixels"] = spinImageWidthPixels;
-    jsonOutput["riciEarlyExitEnabled"] = ENABLE_RICI_COMPARISON_EARLY_EXIT;
+void RICIMethod::dumpMetadata(json* jsonOutput) {
+    (*jsonOutput)["riciImageWidthPixels"] = spinImageWidthPixels;
+    (*jsonOutput)["riciEarlyExitEnabled"] = ENABLE_RICI_COMPARISON_EARLY_EXIT;
 }
 
 const std::string RICIMethod::getMethodCommandLineParameterName() {

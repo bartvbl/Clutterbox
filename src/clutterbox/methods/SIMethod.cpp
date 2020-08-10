@@ -47,9 +47,9 @@ ShapeDescriptor::cpu::array<unsigned int> SIMethod::computeSearchResultRanks(
     return searchResultIndices;
 }
 
-void SIMethod::dumpMetadata(json jsonOutput) {
-    jsonOutput["spinImageSupportAngle"] = supportAngle;
-    jsonOutput["spinImageWidthPixels"] = spinImageWidthPixels;
+void SIMethod::dumpMetadata(json* jsonOutput) {
+    (*jsonOutput)["spinImageSupportAngle"] = supportAngle;
+    (*jsonOutput)["spinImageWidthPixels"] = spinImageWidthPixels;
 }
 
 const std::string SIMethod::getMethodCommandLineParameterName() {

@@ -18,7 +18,7 @@ class SIMethod : public Clutterbox::Method {
             Clutterbox::SearchParameters parameters,
             ExecutionTimes *executionTimes) override;
 
-    void dumpMetadata(json jsonOutput) override;
+    void dumpMetadata(json* jsonOutput) override;
 
     const std::string getMethodCommandLineParameterName() override;
 

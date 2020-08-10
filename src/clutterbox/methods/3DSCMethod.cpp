@@ -50,9 +50,9 @@ ShapeDescriptor::cpu::array<unsigned int> SCMethod::computeSearchResultRanks(
     return searchResultIndices;
 }
 
-void SCMethod::dumpMetadata(json jsonOutput) {
-    jsonOutput["3dscMinSupportRadius"] = minSupportRadius;
-    jsonOutput["3dscPointDensityRadius"] = pointDensityRadius;
+void SCMethod::dumpMetadata(json* jsonOutput) {
+    (*jsonOutput)["3dscMinSupportRadius"] = minSupportRadius;
+    (*jsonOutput)["3dscPointDensityRadius"] = pointDensityRadius;
 }
 
 const std::string SCMethod::getMethodCommandLineParameterName() {

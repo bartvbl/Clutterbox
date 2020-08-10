@@ -48,7 +48,7 @@ namespace Clutterbox {
                 Clutterbox::SearchParameters parameters,
                 ExecutionTimes* executionTimes = nullptr) = 0;
 
-        virtual void dumpMetadata(json jsonOutput) = 0;
+        virtual void dumpMetadata(json* jsonOutput) = 0;
 
         virtual const std::string getMethodCommandLineParameterName() = 0;
 
