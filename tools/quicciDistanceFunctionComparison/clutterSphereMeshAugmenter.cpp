@@ -10,7 +10,7 @@
 #include <shapeDescriptor/cpu/types/array.h>
 
 
-void generateSphere(std::vector<SpinImage::cpu::float3> &vertices, std::vector<SpinImage::cpu::float3> &normals, float sphereRadius, int slices, int layers) {
+void generateSphere(std::vector<ShapeDescriptor::cpu::float3> &vertices, std::vector<ShapeDescriptor::cpu::float3> &normals, float sphereRadius, int slices, int layers) {
     const unsigned int triangleCount = slices * layers * 2;
 
     vertices.reserve(3 * triangleCount);
@@ -94,9 +94,9 @@ void generateSphere(std::vector<SpinImage::cpu::float3> &vertices, std::vector<S
     }
 }
 
-SpinImage::cpu::Mesh applyClutterSpheres(SpinImage::cpu::Mesh inputMesh, int count, float radius, size_t randomSeed) {
-    std::vector<SpinImage::cpu::float3> sphereVertices;
-    std::vector<SpinImage::cpu::float3> sphereNormals;
+ShapeDescriptor::cpu::Mesh applyClutterSpheres(ShapeDescriptor::cpu::Mesh inputMesh, int count, float radius, size_t randomSeed) {
+    std::vector<ShapeDescriptor::cpu::float3> sphereVertices;
+    std::vector<ShapeDescriptor::cpu::float3> sphereNormals;
     std::cout << "Input mesh has " << inputMesh.vertexCount << " vertices." << std::endl;
 
     generateSphere(sphereVertices, sphereNormals, radius, SPHERE_RESOLUTION_X, SPHERE_RESOLUTION_Y);
@@ -104,16 +104,16 @@ SpinImage::cpu::Mesh applyClutterSpheres(SpinImage::cpu::Mesh inputMesh, int cou
     size_t combinedVertexCount = inputMesh.vertexCount + count * SPHERE_VERTEX_COUNT;
 
     // Indices are ignored on the GPU
-    SpinImage::cpu::Mesh outputMesh(combinedVertexCount, 0);
+    ShapeDescriptor::cpu::Mesh outputMesh(combinedVertexCount, 0);
 
     const unsigned int sampleCount = 10000000;
 
-    SpinImage::gpu::Mesh device_mesh = SpinImage::copy::hostMeshToDevice(inputMesh);
-    SpinImage::gpu::PointCloud sampledMesh = SpinImage::utilities::sampleMesh(device_mesh, sampleCount, randomSeed);
-    SpinImage::gpu::freeMesh(device_mesh);
+    ShapeDescriptor::gpu::Mesh device_mesh = ShapeDescriptor::copy::hostMeshToDevice(inputMesh);
+    ShapeDescriptor::gpu::PointCloud sampledMesh = ShapeDescriptor::utilities::sampleMesh(device_mesh, sampleCount, randomSeed);
+    ShapeDescriptor::gpu::freeMesh(device_mesh);
 
-    SpinImage::cpu::array<SpinImage::cpu::float3> sampleVertices = SpinImage::copy::deviceVertexListToHost(sampledMesh.vertices);
-    SpinImage::cpu::array<SpinImage::cpu::float3> sampleNormals = SpinImage::copy::deviceVertexListToHost(sampledMesh.normals);
+    ShapeDescriptor::cpu::array<ShapeDescriptor::cpu::float3> sampleVertices = ShapeDescriptor::copy::deviceVertexListToHost(sampledMesh.vertices);
+    ShapeDescriptor::cpu::array<ShapeDescriptor::cpu::float3> sampleNormals = ShapeDescriptor::copy::deviceVertexListToHost(sampledMesh.normals);
 
     sampledMesh.free();
 
@@ -132,10 +132,10 @@ SpinImage::cpu::Mesh applyClutterSpheres(SpinImage::cpu::Mesh inputMesh, int cou
 
     // Place spheres on surface
     for(int i = 0; i < count; i++) {
-        SpinImage::cpu::float3 sampleVertex = sampleVertices.content[vertexIndices.at(i)];
-        SpinImage::cpu::float3 sampleNormal = sampleNormals.content[vertexIndices.at(i)];
+        ShapeDescriptor::cpu::float3 sampleVertex = sampleVertices.content[vertexIndices.at(i)];
+        ShapeDescriptor::cpu::float3 sampleNormal = sampleNormals.content[vertexIndices.at(i)];
 
-        SpinImage::cpu::float3 sphereOrigin = sampleVertex + radius * sampleNormal;
+        ShapeDescriptor::cpu::float3 sphereOrigin = sampleVertex + radius * sampleNormal;
 
         unsigned int startIndex = inputMesh.vertexCount + i * SPHERE_VERTEX_COUNT;
         for(int j = 0; j < SPHERE_VERTEX_COUNT; j++) {

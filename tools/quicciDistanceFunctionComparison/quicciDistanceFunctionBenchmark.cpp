@@ -58,59 +58,59 @@ void runQuicciDistanceFunctionBenchmark(
 
     // 4 Load the models in the sample set
     std::cout << "\tLoading sample model.." << std::endl;
-    SpinImage::cpu::Mesh sampleMesh = SpinImage::utilities::loadOBJ(filePaths.at(0), true);
-    SpinImage::cpu::Mesh otherSampleMesh;
+    ShapeDescriptor::cpu::Mesh sampleMesh = ShapeDescriptor::utilities::loadOBJ(filePaths.at(0), true);
+    ShapeDescriptor::cpu::Mesh otherSampleMesh;
     if(mode == BenchmarkMode::BASELINE) {
-        otherSampleMesh = SpinImage::utilities::loadOBJ(filePaths.at(1), true);
+        otherSampleMesh = ShapeDescriptor::utilities::loadOBJ(filePaths.at(1), true);
     }
 
     // 5 Scale all models to fit in a 1x1x1 sphere
     std::cout << "\tScaling meshes.." << std::endl;
-    SpinImage::cpu::Mesh scaledMesh = SpinImage::utilities::fitMeshInsideSphereOfRadius(sampleMesh, 1);
-    SpinImage::cpu::freeMesh(sampleMesh);
-    SpinImage::cpu::Mesh scaledOtherSampleMesh;
+    ShapeDescriptor::cpu::Mesh scaledMesh = ShapeDescriptor::utilities::fitMeshInsideSphereOfRadius(sampleMesh, 1);
+    ShapeDescriptor::cpu::freeMesh(sampleMesh);
+    ShapeDescriptor::cpu::Mesh scaledOtherSampleMesh;
     if(mode == BenchmarkMode::BASELINE) {
-        scaledOtherSampleMesh = SpinImage::utilities::fitMeshInsideSphereOfRadius(otherSampleMesh, 1);
-        SpinImage::cpu::freeMesh(otherSampleMesh);
+        scaledOtherSampleMesh = ShapeDescriptor::utilities::fitMeshInsideSphereOfRadius(otherSampleMesh, 1);
+        ShapeDescriptor::cpu::freeMesh(otherSampleMesh);
     }
 
     // 6 Add clutter spheres to the mesh
     std::cout << "\tAugmenting mesh with spheres.." << std::endl;
-    SpinImage::cpu::Mesh augmentedHostMesh;
+    ShapeDescriptor::cpu::Mesh augmentedHostMesh;
     if(mode == BenchmarkMode::SPHERE_CLUTTER) {
         augmentedHostMesh = applyClutterSpheres(scaledMesh, sceneSphereCount, clutterSphereRadius, generator());
-        //SpinImage::dump::mesh(augmentedHostMesh, "dumped_sphere_mesh.obj");
+        //ShapeDescriptor::dump::mesh(augmentedHostMesh, "dumped_sphere_mesh.obj");
     }
 
     // 6 Copy meshes to GPU
     std::cout << "\tCopying meshes to device.." << std::endl;
-    SpinImage::gpu::Mesh unmodifiedMesh = SpinImage::copy::hostMeshToDevice(scaledMesh);
-    SpinImage::cpu::freeMesh(scaledMesh);
-    SpinImage::gpu::Mesh augmentedMesh;
+    ShapeDescriptor::gpu::Mesh unmodifiedMesh = ShapeDescriptor::copy::hostMeshToDevice(scaledMesh);
+    ShapeDescriptor::cpu::freeMesh(scaledMesh);
+    ShapeDescriptor::gpu::Mesh augmentedMesh;
     if(mode == BenchmarkMode::SPHERE_CLUTTER) {
-        augmentedMesh = SpinImage::copy::hostMeshToDevice(augmentedHostMesh);
+        augmentedMesh = ShapeDescriptor::copy::hostMeshToDevice(augmentedHostMesh);
     }
-    SpinImage::gpu::Mesh otherSampleUnmodifiedMesh;
+    ShapeDescriptor::gpu::Mesh otherSampleUnmodifiedMesh;
     if(mode == BenchmarkMode::BASELINE) {
-        otherSampleUnmodifiedMesh = SpinImage::copy::hostMeshToDevice(scaledOtherSampleMesh);
-        SpinImage::cpu::freeMesh(scaledOtherSampleMesh);
+        otherSampleUnmodifiedMesh = ShapeDescriptor::copy::hostMeshToDevice(scaledOtherSampleMesh);
+        ShapeDescriptor::cpu::freeMesh(scaledOtherSampleMesh);
     }
 
     // 8 Remove duplicate vertices
     std::cout << "\tRemoving duplicate vertices.." << std::endl;
-    SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> imageOrigins = SpinImage::utilities::computeUniqueVertices(unmodifiedMesh);
+    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> imageOrigins = ShapeDescriptor::utilities::computeUniqueVertices(unmodifiedMesh);
     size_t imageCount = imageOrigins.length;
     size_t referenceImageCount = imageCount;
     size_t sampleImageCount = 0;
     std::cout << "\t\tReduced " << unmodifiedMesh.vertexCount << " vertices to " << imageCount << "." << std::endl;
-    SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> baselineOrigins;
+    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> baselineOrigins;
     if(mode == BenchmarkMode::BASELINE) {
-        baselineOrigins = SpinImage::utilities::computeUniqueVertices(otherSampleUnmodifiedMesh);
+        baselineOrigins = ShapeDescriptor::utilities::computeUniqueVertices(otherSampleUnmodifiedMesh);
         sampleImageCount = baselineOrigins.length;
     }
 
     std::cout << "\tGenerating reference QUICCI images.." << std::endl;
-    SpinImage::gpu::array<SpinImage::gpu::QUICCIDescriptor> device_unmodifiedQuiccImages = SpinImage::gpu::generateQUICCImages(
+    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::QUICCIDescriptor> device_unmodifiedQuiccImages = ShapeDescriptor::gpu::generateQUICCImages(
             unmodifiedMesh,
             imageOrigins,
             supportRadius);
@@ -118,7 +118,7 @@ void runQuicciDistanceFunctionBenchmark(
     size_t unmodifiedVertexCount = unmodifiedMesh.vertexCount;
     const size_t verticesPerSphere = SPHERE_VERTEX_COUNT;
 
-    std::vector<SpinImage::cpu::array<SpinImage::gpu::QUICCIDistances>> measuredDistances;
+    std::vector<ShapeDescriptor::cpu::array<ShapeDescriptor::gpu::QUICCIDistances>> measuredDistances;
 
     if(mode == BenchmarkMode::SPHERE_CLUTTER) {
         for (unsigned int sphereCountIndex = 0; sphereCountIndex < sphereCountList.size(); sphereCountIndex++) {
@@ -127,8 +127,8 @@ void runQuicciDistanceFunctionBenchmark(
             assert(sphereCount <= sceneSphereCount);
             std::cout << "\tComputing distances for a scene with " << sphereCount << " spheres.." << std::endl;
             std::cout << "\t\tGenerating QUICCI images.." << std::endl;
-            SpinImage::debug::QUICCIExecutionTimes runInfo;
-            SpinImage::gpu::array<SpinImage::gpu::QUICCIDescriptor> device_augmentedQuiccImages = SpinImage::gpu::generateQUICCImages(
+            ShapeDescriptor::debug::QUICCIExecutionTimes runInfo;
+            ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::QUICCIDescriptor> device_augmentedQuiccImages = ShapeDescriptor::gpu::generateQUICCImages(
                     augmentedMesh,
                     imageOrigins,
                     supportRadius,
@@ -137,7 +137,7 @@ void runQuicciDistanceFunctionBenchmark(
             std::cout << "\t\t\tTook " << runInfo.totalExecutionTimeSeconds << " seconds." << std::endl;
 
             std::cout << "\t\tComputing QUICCI distances.." << std::endl;
-            SpinImage::cpu::array<SpinImage::gpu::QUICCIDistances> sampleDistances = SpinImage::gpu::computeQUICCIElementWiseDistances(
+            ShapeDescriptor::cpu::array<ShapeDescriptor::gpu::QUICCIDistances> sampleDistances = ShapeDescriptor::gpu::computeQUICCIElementWiseDistances(
                     device_unmodifiedQuiccImages,
                     device_augmentedQuiccImages);
 
@@ -151,8 +151,8 @@ void runQuicciDistanceFunctionBenchmark(
 
         std::cout << "\tComputing distances.." << std::endl;
         std::cout << "\t\tGenerating QUICCI images.." << std::endl;
-        SpinImage::debug::QUICCIExecutionTimes runInfo;
-        SpinImage::gpu::array<SpinImage::gpu::QUICCIDescriptor> device_sampleImages = SpinImage::gpu::generateQUICCImages(
+        ShapeDescriptor::debug::QUICCIExecutionTimes runInfo;
+        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::QUICCIDescriptor> device_sampleImages = ShapeDescriptor::gpu::generateQUICCImages(
                 otherSampleUnmodifiedMesh,
                 baselineOrigins,
                 supportRadius,
@@ -161,7 +161,7 @@ void runQuicciDistanceFunctionBenchmark(
         std::cout << "\t\t\tTook " << runInfo.totalExecutionTimeSeconds << " seconds." << std::endl;
 
         std::cout << "\t\tComputing QUICCI distances.." << std::endl;
-        SpinImage::cpu::array<SpinImage::gpu::QUICCIDistances> sampleDistances = SpinImage::gpu::computeQUICCIElementWiseDistances(
+        ShapeDescriptor::cpu::array<ShapeDescriptor::gpu::QUICCIDistances> sampleDistances = ShapeDescriptor::gpu::computeQUICCIElementWiseDistances(
                 device_unmodifiedQuiccImages,
                 device_sampleImages);
 

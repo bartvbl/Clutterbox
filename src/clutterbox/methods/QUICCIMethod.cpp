@@ -2,16 +2,16 @@
 #include <shapeDescriptor/gpu/quickIntersectionCountImageGenerator.cuh>
 #include <shapeDescriptor/gpu/quickIntersectionCountImageSearcher.cuh>
 
-SpinImage::gpu::array<char> QUICCIMethod::generateDescriptors(
-        SpinImage::gpu::Mesh device_sceneAsMesh,
-        SpinImage::gpu::PointCloud device_sceneAsPointCloud,
-        SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
+ShapeDescriptor::gpu::array<char> QUICCIMethod::generateDescriptors(
+        ShapeDescriptor::gpu::Mesh device_sceneAsMesh,
+        ShapeDescriptor::gpu::PointCloud device_sceneAsPointCloud,
+        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> device_descriptorOrigins,
         Clutterbox::GenerationParameters parameters,
         ExecutionTimes *executionTimes) {
 
-    SpinImage::debug::QUICCIExecutionTimes quicciExecutionTimes{};
+    ShapeDescriptor::debug::QUICCIExecutionTimes quicciExecutionTimes{};
 
-    SpinImage::gpu::array<SpinImage::gpu::QUICCIDescriptor> descriptors = SpinImage::gpu::generateQUICCImages(
+    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::QUICCIDescriptor> descriptors = ShapeDescriptor::gpu::generateQUICCImages(
             device_sceneAsMesh,
             device_descriptorOrigins,
             parameters.supportRadius,
@@ -25,19 +25,19 @@ SpinImage::gpu::array<char> QUICCIMethod::generateDescriptors(
     return {descriptors.length, reinterpret_cast<char*>(descriptors.content)};
 }
 
-SpinImage::cpu::array<unsigned int> QUICCIMethod::computeSearchResultRanks(
-        SpinImage::gpu::array<char> device_needleDescriptors,
-        SpinImage::gpu::array<char> device_haystackDescriptors,
+ShapeDescriptor::cpu::array<unsigned int> QUICCIMethod::computeSearchResultRanks(
+        ShapeDescriptor::gpu::array<char> device_needleDescriptors,
+        ShapeDescriptor::gpu::array<char> device_haystackDescriptors,
         Clutterbox::SearchParameters parameters,
         ExecutionTimes *executionTimes) {
 
-    SpinImage::debug::QUICCISearchExecutionTimes times{};
+    ShapeDescriptor::debug::QUICCISearchExecutionTimes times{};
 
-    SpinImage::cpu::array<unsigned int> searchResultIndices = SpinImage::gpu::computeQUICCImageSearchResultRanks(
+    ShapeDescriptor::cpu::array<unsigned int> searchResultIndices = ShapeDescriptor::gpu::computeQUICCImageSearchResultRanks(
             {device_needleDescriptors.length,
-             reinterpret_cast<SpinImage::gpu::QUICCIDescriptor*>(device_needleDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::gpu::QUICCIDescriptor*>(device_needleDescriptors.content)},
             {device_haystackDescriptors.length,
-             reinterpret_cast<SpinImage::gpu::QUICCIDescriptor*>(device_haystackDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::gpu::QUICCIDescriptor*>(device_haystackDescriptors.content)},
              &times);
 
     executionTimes->append("total", times.totalExecutionTimeSeconds);

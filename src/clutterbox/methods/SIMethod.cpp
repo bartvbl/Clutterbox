@@ -2,16 +2,16 @@
 #include <shapeDescriptor/gpu/spinImageSearcher.cuh>
 #include "SIMethod.h"
 
-SpinImage::gpu::array<char> SIMethod::generateDescriptors(
-        SpinImage::gpu::Mesh device_sceneAsMesh,
-        SpinImage::gpu::PointCloud device_sceneAsPointCloud,
-        SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
+ShapeDescriptor::gpu::array<char> SIMethod::generateDescriptors(
+        ShapeDescriptor::gpu::Mesh device_sceneAsMesh,
+        ShapeDescriptor::gpu::PointCloud device_sceneAsPointCloud,
+        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> device_descriptorOrigins,
         Clutterbox::GenerationParameters parameters,
         ExecutionTimes *executionTimes) {
 
-    SpinImage::debug::SIExecutionTimes siExecutionTimes{};
+    ShapeDescriptor::debug::SIExecutionTimes siExecutionTimes{};
 
-    SpinImage::gpu::array<SpinImage::gpu::SpinImageDescriptor> descriptors = SpinImage::gpu::generateSpinImages(
+    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::SpinImageDescriptor> descriptors = ShapeDescriptor::gpu::generateSpinImages(
             device_sceneAsPointCloud,
             device_descriptorOrigins,
             parameters.supportRadius,
@@ -25,19 +25,19 @@ SpinImage::gpu::array<char> SIMethod::generateDescriptors(
     return {descriptors.length, reinterpret_cast<char*>(descriptors.content)};
 }
 
-SpinImage::cpu::array<unsigned int> SIMethod::computeSearchResultRanks(
-        SpinImage::gpu::array<char> device_needleDescriptors,
-        SpinImage::gpu::array<char> device_haystackDescriptors,
+ShapeDescriptor::cpu::array<unsigned int> SIMethod::computeSearchResultRanks(
+        ShapeDescriptor::gpu::array<char> device_needleDescriptors,
+        ShapeDescriptor::gpu::array<char> device_haystackDescriptors,
         Clutterbox::SearchParameters parameters,
         ExecutionTimes *executionTimes) {
 
-    SpinImage::debug::SISearchExecutionTimes times{};
+    ShapeDescriptor::debug::SISearchExecutionTimes times{};
 
-    SpinImage::cpu::array<unsigned int> searchResultIndices = SpinImage::gpu::computeSpinImageSearchResultRanks(
+    ShapeDescriptor::cpu::array<unsigned int> searchResultIndices = ShapeDescriptor::gpu::computeSpinImageSearchResultRanks(
             {device_needleDescriptors.length,
-             reinterpret_cast<SpinImage::gpu::SpinImageDescriptor*>(device_needleDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::gpu::SpinImageDescriptor*>(device_needleDescriptors.content)},
             {device_haystackDescriptors.length,
-             reinterpret_cast<SpinImage::gpu::SpinImageDescriptor*>(device_haystackDescriptors.content)},
+             reinterpret_cast<ShapeDescriptor::gpu::SpinImageDescriptor*>(device_haystackDescriptors.content)},
              &times);
 
     executionTimes->append("total", times.totalExecutionTimeSeconds);

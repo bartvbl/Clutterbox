@@ -15,7 +15,7 @@
 // Defining it as const float invalidates the results!
 #define PI 3.14159265358979323846
 
-__global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMatrices, size_t* endIndices, SpinImage::gpu::Mesh scene) {
+__global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMatrices, size_t* endIndices, ShapeDescriptor::gpu::Mesh scene) {
     size_t threadIndex = blockIdx.x * blockDim.x + threadIdx.x;
 
     if(threadIndex >= scene.vertexCount) {
@@ -53,7 +53,7 @@ __global__ void transformMeshes(glm::mat4* transformations, glm::mat3* normalMat
 
 }
 
-void randomlyTransformMeshes(SpinImage::gpu::Mesh scene, std::vector<SpinImage::gpu::Mesh> device_meshList, std::vector<Transformation> transformations) {
+void randomlyTransformMeshes(ShapeDescriptor::gpu::Mesh scene, std::vector<ShapeDescriptor::gpu::Mesh> device_meshList, std::vector<Transformation> transformations) {
     std::vector<size_t> meshEndIndices(device_meshList.size());
     size_t currentEndIndex = 0;
 
@@ -114,7 +114,7 @@ void randomlyTransformMeshes(SpinImage::gpu::Mesh scene, std::vector<SpinImage::
     cudaFree(device_endIndices);
 }
 
-void randomlyTransformMeshes(SpinImage::gpu::Mesh scene, float maxDistance, std::vector<SpinImage::gpu::Mesh> device_meshList, std::minstd_rand0 &randomGenerator) {
+void randomlyTransformMeshes(ShapeDescriptor::gpu::Mesh scene, float maxDistance, std::vector<ShapeDescriptor::gpu::Mesh> device_meshList, std::minstd_rand0 &randomGenerator) {
     std::uniform_real_distribution<float> distribution(0, 1);
 
     std::vector<Transformation> transformations;

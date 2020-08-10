@@ -24,16 +24,16 @@ namespace Clutterbox {
 
     class Method {
     public:
-        virtual SpinImage::gpu::array<char> generateDescriptors(
-                SpinImage::gpu::Mesh device_sceneAsMesh,
-                SpinImage::gpu::PointCloud device_sceneAsPointCloud,
-                SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_descriptorOrigins,
+        virtual ShapeDescriptor::gpu::array<char> generateDescriptors(
+                ShapeDescriptor::gpu::Mesh device_sceneAsMesh,
+                ShapeDescriptor::gpu::PointCloud device_sceneAsPointCloud,
+                ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> device_descriptorOrigins,
                 Clutterbox::GenerationParameters parameters,
                 ExecutionTimes* executionTimes = nullptr) = 0;
 
-        virtual SpinImage::cpu::array<unsigned int> computeSearchResultRanks(
-                SpinImage::gpu::array<char> device_needleDescriptors,
-                SpinImage::gpu::array<char> device_haystackDescriptors,
+        virtual ShapeDescriptor::cpu::array<unsigned int> computeSearchResultRanks(
+                ShapeDescriptor::gpu::array<char> device_needleDescriptors,
+                ShapeDescriptor::gpu::array<char> device_haystackDescriptors,
                 Clutterbox::SearchParameters parameters,
                 ExecutionTimes* executionTimes = nullptr) = 0;
 

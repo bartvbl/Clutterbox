@@ -8,14 +8,14 @@
 #include <shapeDescriptor/utilities/kernels/meshSampler.cuh>
 #include <vector>
 
-SpinImage::cpu::array<float> computeClutter(
-        SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> array,
-        SpinImage::gpu::PointCloud cloud,
+ShapeDescriptor::cpu::array<float> computeClutter(
+        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> array,
+        ShapeDescriptor::gpu::PointCloud cloud,
         float spinImageWidth,
         size_t referenceObjectSampleCount,
         size_t referenceObjectOriginCount);
 
 size_t computeReferenceSampleCount(
-        SpinImage::gpu::Mesh referenceMesh,
+        ShapeDescriptor::gpu::Mesh referenceMesh,
         size_t totalSceneSampleCount,
-        SpinImage::gpu::array<float> cumulativeAreaArray);
+        ShapeDescriptor::gpu::array<float> cumulativeAreaArray);

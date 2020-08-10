@@ -42,7 +42,7 @@ using json = nlohmann::basic_json<ordered_map>;
 #include "utilities/listDir.h"
 #include "nvidia/helper_cuda.h"
 
-Histogram computeSearchResultHistogram(size_t vertexCount, const SpinImage::cpu::array<unsigned int> &searchResults);
+Histogram computeSearchResultHistogram(size_t vertexCount, const ShapeDescriptor::cpu::array<unsigned int> &searchResults);
 
 void dumpResultsFile(
         std::string outputFile,
@@ -98,9 +98,9 @@ void dumpResultsFile(
         translations.at(i) = glm::vec3(distanceX, distanceY, distanceZ);
     }
 
-    std::vector<SpinImage::cpu::Mesh> sampleMeshes(sampleObjectCount);
+    std::vector<ShapeDescriptor::cpu::Mesh> sampleMeshes(sampleObjectCount);
     for (unsigned int i = 0; i < sampleObjectCount; i++) {
-        sampleMeshes.at(i) = SpinImage::utilities::loadOBJ(chosenFiles.at(i), true);
+        sampleMeshes.at(i) = ShapeDescriptor::utilities::loadOBJ(chosenFiles.at(i), true);
     }
 
     // This represents random number generations for the spin image seed selections during the experiment
@@ -214,7 +214,7 @@ void dumpResultsFile(
     outFile.close();
 
     for (unsigned int i = 0; i < sampleObjectCount; i++) {
-        SpinImage::cpu::freeMesh(sampleMeshes.at(i));
+        ShapeDescriptor::cpu::freeMesh(sampleMeshes.at(i));
     }
 }
 
@@ -222,7 +222,7 @@ void dumpRawSearchResultFile(
         std::string outputFile,
         std::vector<Clutterbox::Method*> descriptorsToEvaluate,
         std::vector<int> objectCountList,
-        std::vector<std::vector<SpinImage::cpu::array<unsigned int>>> rawSearchResults,
+        std::vector<std::vector<ShapeDescriptor::cpu::array<unsigned int>>> rawSearchResults,
         size_t seed) {
 
     json outJson;
@@ -261,31 +261,31 @@ const inline size_t computeSpinImageSampleCount(size_t &vertexCount) {
     return std::max((size_t)1000000, (size_t) (30 * vertexCount)); 
 }
 
-void dumpSearchResultVisualisationMesh(const SpinImage::cpu::array<unsigned int> &searchResults,
-                                       const SpinImage::gpu::Mesh &referenceDeviceMesh,
+void dumpSearchResultVisualisationMesh(const ShapeDescriptor::cpu::array<unsigned int> &searchResults,
+                                       const ShapeDescriptor::gpu::Mesh &referenceDeviceMesh,
                                        const std::experimental::filesystem::path outFilePath) {
     size_t totalUniqueVertexCount;
     std::vector<size_t> vertexCounts;
-    SpinImage::gpu::array<signed long long> device_indexMapping = SpinImage::utilities::computeUniqueIndexMapping(referenceDeviceMesh, {referenceDeviceMesh}, &vertexCounts, totalUniqueVertexCount);
+    ShapeDescriptor::gpu::array<signed long long> device_indexMapping = ShapeDescriptor::utilities::computeUniqueIndexMapping(referenceDeviceMesh, {referenceDeviceMesh}, &vertexCounts, totalUniqueVertexCount);
 
-    SpinImage::cpu::Mesh hostMesh = SpinImage::copy::deviceMeshToHost(referenceDeviceMesh);
+    ShapeDescriptor::cpu::Mesh hostMesh = ShapeDescriptor::copy::deviceMeshToHost(referenceDeviceMesh);
 
     size_t referenceMeshVertexCount = referenceDeviceMesh.vertexCount;
-    SpinImage::cpu::array<signed long long> host_indexMapping = {0, nullptr};
+    ShapeDescriptor::cpu::array<signed long long> host_indexMapping = {0, nullptr};
     host_indexMapping.content = new signed long long[referenceMeshVertexCount];
     host_indexMapping.length = referenceMeshVertexCount;
     cudaMemcpy(host_indexMapping.content, device_indexMapping.content, referenceMeshVertexCount * sizeof(signed long long), cudaMemcpyDeviceToHost);
     cudaFree(device_indexMapping.content);
 
-    SpinImage::cpu::array<float2> textureCoords = {referenceMeshVertexCount, new float2[referenceMeshVertexCount]};
+    ShapeDescriptor::cpu::array<float2> textureCoords = {referenceMeshVertexCount, new float2[referenceMeshVertexCount]};
     for(size_t vertexIndex = 0; vertexIndex < referenceMeshVertexCount; vertexIndex++) {
 
-        SpinImage::cpu::float3 vertex = hostMesh.vertices[vertexIndex];
-        SpinImage::cpu::float3 normal = hostMesh.normals[vertexIndex];
+        ShapeDescriptor::cpu::float3 vertex = hostMesh.vertices[vertexIndex];
+        ShapeDescriptor::cpu::float3 normal = hostMesh.normals[vertexIndex];
         size_t targetIndex = 0;
         for(size_t duplicateVertexIndex = 0; duplicateVertexIndex < hostMesh.vertexCount; duplicateVertexIndex++) {
-            SpinImage::cpu::float3 otherVertex = hostMesh.vertices[duplicateVertexIndex];
-            SpinImage::cpu::float3 otherNormal = hostMesh.normals[duplicateVertexIndex];
+            ShapeDescriptor::cpu::float3 otherVertex = hostMesh.vertices[duplicateVertexIndex];
+            ShapeDescriptor::cpu::float3 otherNormal = hostMesh.normals[duplicateVertexIndex];
             if(vertex == otherVertex && normal == otherNormal) {
                 break;
             }
@@ -303,10 +303,10 @@ void dumpSearchResultVisualisationMesh(const SpinImage::cpu::array<unsigned int>
         textureCoords.content[vertexIndex] = texCoord;
     }
 
-    SpinImage::dump::mesh(hostMesh, outFilePath, textureCoords, "colourTexture.png");
+    ShapeDescriptor::dump::mesh(hostMesh, outFilePath, textureCoords, "colourTexture.png");
 
     delete[] host_indexMapping.content;
-    SpinImage::cpu::freeMesh(hostMesh);
+    ShapeDescriptor::cpu::freeMesh(hostMesh);
 }
 
 void runClutterBoxExperiment(
@@ -363,7 +363,7 @@ void runClutterBoxExperiment(
     std::vector<std::vector<ExecutionTimes>> searchExecutionTimes;
     searchExecutionTimes.resize(descriptorsToEvaluate.size());
 
-    std::vector<std::vector<SpinImage::cpu::array<unsigned int>>> rawSearchResults;
+    std::vector<std::vector<ShapeDescriptor::cpu::array<unsigned int>>> rawSearchResults;
     rawSearchResults.resize(descriptorsToEvaluate.size());
 
     std::vector<size_t> spinImageSampleCounts;
@@ -395,25 +395,25 @@ void runClutterBoxExperiment(
 
     // 4 Load the models in the sample set
     std::cout << "\tLoading sample models.." << std::endl;
-    std::vector<SpinImage::cpu::Mesh> sampleMeshes(sampleObjectCount);
+    std::vector<ShapeDescriptor::cpu::Mesh> sampleMeshes(sampleObjectCount);
     for (unsigned int i = 0; i < sampleObjectCount; i++) {
-        sampleMeshes.at(i) = SpinImage::utilities::loadOBJ(filePaths.at(i), true);
+        sampleMeshes.at(i) = ShapeDescriptor::utilities::loadOBJ(filePaths.at(i), true);
         std::cout << "\t\tMesh " << i << ": " << sampleMeshes.at(i).vertexCount << " vertices" << std::endl;
     }
 
     // 5 Scale all models to fit in a 1x1x1 sphere
     std::cout << "\tScaling meshes.." << std::endl;
-    std::vector<SpinImage::cpu::Mesh> scaledMeshes(sampleObjectCount);
+    std::vector<ShapeDescriptor::cpu::Mesh> scaledMeshes(sampleObjectCount);
     for (unsigned int i = 0; i < sampleObjectCount; i++) {
-        scaledMeshes.at(i) = SpinImage::utilities::fitMeshInsideSphereOfRadius(sampleMeshes.at(i), 1);
-        SpinImage::cpu::freeMesh(sampleMeshes.at(i));
+        scaledMeshes.at(i) = ShapeDescriptor::utilities::fitMeshInsideSphereOfRadius(sampleMeshes.at(i), 1);
+        ShapeDescriptor::cpu::freeMesh(sampleMeshes.at(i));
     }
 
     // 6 Copy meshes to GPU
     std::cout << "\tCopying meshes to device.." << std::endl;
-    std::vector<SpinImage::gpu::Mesh> scaledMeshesOnGPU(sampleObjectCount);
+    std::vector<ShapeDescriptor::gpu::Mesh> scaledMeshesOnGPU(sampleObjectCount);
     for (unsigned int i = 0; i < sampleObjectCount; i++) {
-        scaledMeshesOnGPU.at(i) = SpinImage::copy::hostMeshToDevice(scaledMeshes.at(i));
+        scaledMeshesOnGPU.at(i) = ShapeDescriptor::copy::hostMeshToDevice(scaledMeshes.at(i));
     }
 
     // 7 Shuffle the list. First mesh is now our "reference".
@@ -422,7 +422,7 @@ void runClutterBoxExperiment(
 
     // 8 Remove duplicate vertices
     std::cout << "\tRemoving duplicate vertices.." << std::endl;
-    SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> spinOrigins_reference = SpinImage::utilities::computeUniqueVertices(scaledMeshesOnGPU.at(0));
+    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> spinOrigins_reference = ShapeDescriptor::utilities::computeUniqueVertices(scaledMeshesOnGPU.at(0));
     size_t referenceImageCount = spinOrigins_reference.length;
     std::cout << "\t\tReduced " << scaledMeshesOnGPU.at(0).vertexCount << " vertices to " << referenceImageCount << "." << std::endl;
 
@@ -432,11 +432,11 @@ void runClutterBoxExperiment(
     // 9 Compute descriptors for reference model
     std::cout << "Generating reference descriptors.." << std::endl;
 
-    std::vector<SpinImage::gpu::array<char>> referenceDescriptors;
+    std::vector<ShapeDescriptor::gpu::array<char>> referenceDescriptors;
 
     size_t referenceGenerationRandomSeed = generator();
-    SpinImage::gpu::PointCloud device_referencePointCloud =
-            SpinImage::utilities::sampleMesh(scaledMeshesOnGPU.at(0), referenceSampleCount, referenceGenerationRandomSeed);
+    ShapeDescriptor::gpu::PointCloud device_referencePointCloud =
+            ShapeDescriptor::utilities::sampleMesh(scaledMeshesOnGPU.at(0), referenceSampleCount, referenceGenerationRandomSeed);
 
     for(int i = 0; i < descriptorsToEvaluate.size(); i++) {
         std::cout << "\tGenerating reference " + descriptorsToEvaluate.at(i)->getMethodDumpFileName() + " descriptors.." << std::endl;
@@ -463,12 +463,12 @@ void runClutterBoxExperiment(
     checkCudaErrors(cudaFree(spinOrigins_reference.content));
 
     // 10 Combine meshes into one larger scene
-    SpinImage::gpu::Mesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
+    ShapeDescriptor::gpu::Mesh boxScene = combineMeshesOnGPU(scaledMeshesOnGPU);
 
     // 11 Compute unique vertex mapping
     std::vector<size_t> uniqueVertexCounts;
     size_t totalUniqueVertexCount;
-    SpinImage::gpu::array<signed long long> device_indexMapping = SpinImage::utilities::computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts, totalUniqueVertexCount);
+    ShapeDescriptor::gpu::array<signed long long> device_indexMapping = ShapeDescriptor::utilities::computeUniqueIndexMapping(boxScene, scaledMeshesOnGPU, &uniqueVertexCounts, totalUniqueVertexCount);
 
     // 12 Randomly transform objects
     std::cout << "\tRandomly transforming input objects.." << std::endl;
@@ -480,7 +480,7 @@ void runClutterBoxExperiment(
     // 13 Compute corresponding transformed vertex buffer
     //    A mapping is used here because the previously applied transformation can cause non-unique vertices to become
     //    equivalent. It is vital we can rely on a 1:1 mapping existing between vertices.
-    SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> device_uniqueSpinOrigins = SpinImage::utilities::applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
+    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> device_uniqueSpinOrigins = ShapeDescriptor::utilities::applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
     checkCudaErrors(cudaFree(device_indexMapping.content));
     size_t imageCount = 0;
 
@@ -514,8 +514,8 @@ void runClutterBoxExperiment(
 
         // wasteful solution, but I don't want to do ugly hacks that destroy the function APIs
         // Computes number of samples used for the reference object
-        SpinImage::internal::MeshSamplingBuffers sampleBuffers;
-        SpinImage::gpu::PointCloud device_pointCloud = SpinImage::utilities::sampleMesh(boxScene, pointCloudSampleCount, meshSamplingSeed, &sampleBuffers);
+        ShapeDescriptor::internal::MeshSamplingBuffers sampleBuffers;
+        ShapeDescriptor::gpu::PointCloud device_pointCloud = ShapeDescriptor::utilities::sampleMesh(boxScene, pointCloudSampleCount, meshSamplingSeed, &sampleBuffers);
         float totalArea;
         float referenceObjectTotalArea;
         size_t referenceObjectTriangleCount = scaledMeshesOnGPU.at(0).vertexCount / 3;
@@ -541,7 +541,7 @@ void runClutterBoxExperiment(
             Clutterbox::GenerationParameters parameters;
             parameters.supportRadius = supportRadius;
 
-            SpinImage::gpu::array<char> sampleDescriptors = descriptorsToEvaluate.at(methodIndex)->generateDescriptors(boxScene, device_pointCloud, device_uniqueSpinOrigins, parameters, &generationExecutionTimes);
+            ShapeDescriptor::gpu::array<char> sampleDescriptors = descriptorsToEvaluate.at(methodIndex)->generateDescriptors(boxScene, device_pointCloud, device_uniqueSpinOrigins, parameters, &generationExecutionTimes);
 
             generationSampleExecutionTimes.at(methodIndex).push_back(generationExecutionTimes);
 
@@ -556,8 +556,8 @@ void runClutterBoxExperiment(
             searchParameters.haystackDescriptorScenePointCloudPointCount = pointCloudSampleCount;
             searchParameters.needleDescriptorScenePointCloudPointCount = referenceSampleCount;
 
-            SpinImage::gpu::array<char> methodReferenceDescriptors = referenceDescriptors.at(methodIndex);
-            SpinImage::cpu::array<unsigned int> searchResults = descriptorsToEvaluate.at(methodIndex)->computeSearchResultRanks(methodReferenceDescriptors, sampleDescriptors, searchParameters, &sampleSearchExecutionTimes);
+            ShapeDescriptor::gpu::array<char> methodReferenceDescriptors = referenceDescriptors.at(methodIndex);
+            ShapeDescriptor::cpu::array<unsigned int> searchResults = descriptorsToEvaluate.at(methodIndex)->computeSearchResultRanks(methodReferenceDescriptors, sampleDescriptors, searchParameters, &sampleSearchExecutionTimes);
 
             searchExecutionTimes.at(methodIndex).push_back(sampleSearchExecutionTimes);
 
@@ -588,21 +588,21 @@ void runClutterBoxExperiment(
 
         // Dumping OBJ file of current scene, if enabled
         if(dumpSceneOBJFiles) {
-            SpinImage::cpu::Mesh hostMesh = SpinImage::copy::deviceMeshToHost(boxScene);
+            ShapeDescriptor::cpu::Mesh hostMesh = ShapeDescriptor::copy::deviceMeshToHost(boxScene);
 
             std::experimental::filesystem::path outFilePath = sceneOBJFileDumpDir;
             outFilePath = outFilePath / (std::to_string(randomSeed) + "_" + std::to_string(objectCount + 1) + ".obj");
 
             std::cout << "\tDumping OBJ file of scene to " << outFilePath << std::endl;
 
-            SpinImage::dump::mesh(hostMesh, outFilePath, 0, scaledMeshesOnGPU.at(0).vertexCount);
+            ShapeDescriptor::dump::mesh(hostMesh, outFilePath, 0, scaledMeshesOnGPU.at(0).vertexCount);
 
-            SpinImage::cpu::freeMesh(hostMesh);
+            ShapeDescriptor::cpu::freeMesh(hostMesh);
         }
     }
 
     // Cleaning up
-    SpinImage::gpu::freeMesh(boxScene);
+    ShapeDescriptor::gpu::freeMesh(boxScene);
     for(int i = 0; i < descriptorsToEvaluate.size(); i++) {
         cudaFree(referenceDescriptors.at(i).content);
     }
@@ -644,8 +644,8 @@ void runClutterBoxExperiment(
         }
     }
 
-    for(SpinImage::gpu::Mesh deviceMesh : scaledMeshesOnGPU) {
-        SpinImage::gpu::freeMesh(deviceMesh);
+    for(ShapeDescriptor::gpu::Mesh deviceMesh : scaledMeshesOnGPU) {
+        ShapeDescriptor::gpu::freeMesh(deviceMesh);
     }
 
     std::cout << std::endl << "Complete." << std::endl;
@@ -653,7 +653,7 @@ void runClutterBoxExperiment(
 
 
 
-Histogram computeSearchResultHistogram(size_t vertexCount, const SpinImage::cpu::array<unsigned int> &searchResults) {
+Histogram computeSearchResultHistogram(size_t vertexCount, const ShapeDescriptor::cpu::array<unsigned int> &searchResults) {
 
     Histogram histogram;
 

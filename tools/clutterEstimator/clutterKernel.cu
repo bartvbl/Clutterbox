@@ -40,9 +40,9 @@ __device__ __inline__ float3 transformCoordinate(const float3 &vertex, const flo
 }
 
 __global__ void computeClutterKernel(
-        SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> origins,
-        SpinImage::gpu::PointCloud samplePointCloud,
-        SpinImage::gpu::array<float> clutterValues,
+        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> origins,
+        ShapeDescriptor::gpu::PointCloud samplePointCloud,
+        ShapeDescriptor::gpu::array<float> clutterValues,
         float spinImageWidth,
         size_t referenceObjectSampleCount) {
 
@@ -61,7 +61,7 @@ __global__ void computeClutterKernel(
 
     __syncthreads();
 
-    const SpinImage::gpu::DeviceOrientedPoint origin = origins.content[blockIdx.x];
+    const ShapeDescriptor::gpu::DeviceOrientedPoint origin = origins.content[blockIdx.x];
     const float3 spinVertex = origin.vertex;
     const float3 spinNormal = origin.normal;
 
@@ -102,8 +102,8 @@ __global__ void computeClutterKernel(
     }
 }
 
-SpinImage::cpu::array<float> computeClutter(SpinImage::gpu::array<SpinImage::gpu::DeviceOrientedPoint> origins, SpinImage::gpu::PointCloud samplePointCloud, float spinImageWidth, size_t referenceObjectSampleCount, size_t referenceObjectOriginCount) {
-    SpinImage::gpu::array<float> device_clutterValues;
+ShapeDescriptor::cpu::array<float> computeClutter(ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> origins, ShapeDescriptor::gpu::PointCloud samplePointCloud, float spinImageWidth, size_t referenceObjectSampleCount, size_t referenceObjectOriginCount) {
+    ShapeDescriptor::gpu::array<float> device_clutterValues;
 
     size_t clutterBufferSize = referenceObjectOriginCount * sizeof(float);
     checkCudaErrors(cudaMalloc(&device_clutterValues.content, clutterBufferSize));
@@ -113,7 +113,7 @@ SpinImage::cpu::array<float> computeClutter(SpinImage::gpu::array<SpinImage::gpu
     computeClutterKernel<<<referenceObjectOriginCount, 128>>>(origins, samplePointCloud, device_clutterValues, spinImageWidth, referenceObjectSampleCount);
     checkCudaErrors(cudaDeviceSynchronize());
 
-    SpinImage::cpu::array<float> host_clutterValues;
+    ShapeDescriptor::cpu::array<float> host_clutterValues;
     host_clutterValues.content = new float[referenceObjectOriginCount];
     host_clutterValues.length = referenceObjectOriginCount;
 
@@ -125,7 +125,7 @@ SpinImage::cpu::array<float> computeClutter(SpinImage::gpu::array<SpinImage::gpu
 
 }
 
-__global__ void computeSampleCount(size_t baseVertexIndex, size_t totalSceneSampleCount, SpinImage::gpu::array<float> cumulativeAreaArray, size_t* outputIndex) {
+__global__ void computeSampleCount(size_t baseVertexIndex, size_t totalSceneSampleCount, ShapeDescriptor::gpu::array<float> cumulativeAreaArray, size_t* outputIndex) {
 
     size_t triangleIndex = baseVertexIndex / 3;
 
@@ -139,7 +139,7 @@ __global__ void computeSampleCount(size_t baseVertexIndex, size_t totalSceneSamp
     *outputIndex = lastIndexInRange;
 }
 
-size_t computeReferenceSampleCount(SpinImage::gpu::Mesh referenceMesh, size_t totalSceneSampleCount, SpinImage::gpu::array<float> cumulativeAreaArray) {
+size_t computeReferenceSampleCount(ShapeDescriptor::gpu::Mesh referenceMesh, size_t totalSceneSampleCount, ShapeDescriptor::gpu::array<float> cumulativeAreaArray) {
     size_t* device_sampleCount;
     checkCudaErrors(cudaMalloc(&device_sampleCount, sizeof(size_t)));
 
