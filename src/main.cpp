@@ -86,11 +86,15 @@ int main(int argc, const char **argv)
 
 	if(objectCounts.value() == "NONE") {
 		std::cout << "Experiment requires the --object-counts parameter to be set" << std::endl;
+        std::cout << std::endl;
+		parser.show_usage(std::cout);
 		exit(0);
 	}
 
 	if(objectDirectory.value().empty()) {
 		std::cout << "Experiment requires the --source-directory parameter to be set" << std::endl;
+        std::cout << std::endl;
+        parser.show_usage(std::cout);
 		exit(0);
 	}
 
