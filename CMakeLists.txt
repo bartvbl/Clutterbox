@@ -8,7 +8,7 @@ set(CUDAHOSTCXX "${CMAKE_CXX_COMPILER}")
 set(CMAKE_CUDA_HOST_COMPILER "${CMAKE_CXX_COMPILER}")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -ccbin ${CMAKE_CXX_COMPILER}")
 #set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
-set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda")
+#set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda")
 endif()
 
 project (clutterbox CXX CUDA)

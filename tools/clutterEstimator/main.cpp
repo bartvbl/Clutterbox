@@ -93,6 +93,7 @@ int main(int argc, const char** argv) {
     std::cout << " (found " << resultFileList.size() << " files)" << std::endl;
     std::cout << std::endl;
 
+    std::sort(resultFileList.begin(), resultFileList.end());
 
     std::vector<std::string> parts;
     unsigned int firstIndex = (computeSingleIndex.value() != -1) ? computeSingleIndex.value() : startIndex.value();
@@ -224,8 +225,8 @@ int main(int argc, const char** argv) {
             outJson["clutterValues"].push_back(clutterValues.content[item]);
         }
 
-        std::cout << "Writing output file.." << std::endl;
         std::string outFilePath = outDir.value() + "/" + getCurrentDateTimeString() + "_" + std::to_string((int)resultFileContents["seed"]) + ".json";
+        std::cout << "Writing output file to " << outFilePath << std::endl;
         std::ofstream outFile(outFilePath);
         outFile << outJson.dump(4) << std::endl;
         outFile.close();

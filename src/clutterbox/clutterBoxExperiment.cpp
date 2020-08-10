@@ -62,12 +62,11 @@ void dumpResultsFile(
         std::vector<size_t> pointCloudSampleCounts,
         GPUMetaData gpuMetaData) {
 
-    std::cout << std::endl << "Dumping results file.." << std::endl;
+    std::cout << std::endl << "Dumping results file to " << outputFile << ".." << std::endl;
 
-	std::minstd_rand0 generator{seed};
+    std::minstd_rand0 generator{seed};
 
     int sampleObjectCount = *std::max_element(objectCountList.begin(), objectCountList.end());
-    int originalObjectCount = sampleObjectCount;
 
     if(overrideObjectCount != -1) {
         sampleObjectCount = overrideObjectCount;
@@ -225,6 +224,8 @@ void dumpRawSearchResultFile(
         std::vector<std::vector<ShapeDescriptor::cpu::array<unsigned int>>> rawSearchResults,
         size_t seed) {
 
+    std::cout << "Dumping raw search results to " << outputFile << ".." << std::endl;
+
     json outJson;
 
     outJson["version"] = "rawfile_v4";
@@ -263,7 +264,8 @@ const inline size_t computeSpinImageSampleCount(size_t &vertexCount) {
 
 void dumpSearchResultVisualisationMesh(const ShapeDescriptor::cpu::array<unsigned int> &searchResults,
                                        const ShapeDescriptor::gpu::Mesh &referenceDeviceMesh,
-                                       const std::experimental::filesystem::path outFilePath) {
+                                       const std::experimental::filesystem::path outFilePath,
+                                       unsigned int resultThreshold) {
     size_t totalUniqueVertexCount;
     std::vector<size_t> vertexCounts;
     ShapeDescriptor::gpu::array<signed long long> device_indexMapping = ShapeDescriptor::utilities::computeUniqueIndexMapping(referenceDeviceMesh, {referenceDeviceMesh}, &vertexCounts, totalUniqueVertexCount);
@@ -298,7 +300,7 @@ void dumpSearchResultVisualisationMesh(const ShapeDescriptor::cpu::array<unsigne
         // Entry has been marked as duplicate
         // So we need to find the correct index
 
-        float texComponent = searchResult == 0 ? 0.5 : 0;
+        float texComponent = searchResult == resultThreshold ? 0.5 : 0;
         float2 texCoord = {texComponent, texComponent};
         textureCoords.content[vertexIndex] = texCoord;
     }
@@ -323,6 +325,7 @@ void runClutterBoxExperiment(
         bool enableMatchVisualisation,
         std::string matchVisualisationOutputDir,
         std::vector<std::string> matchVisualisationDescriptorList,
+        unsigned int matchVisualisationThreshold,
         GPUMetaData gpuMetaData,
         size_t overrideSeed) {
 
@@ -569,10 +572,10 @@ void runClutterBoxExperiment(
             if(enableMatchVisualisation && std::find(matchVisualisationDescriptorList.begin(), matchVisualisationDescriptorList.end(), descriptorsToEvaluate.at(methodIndex)->getMethodCommandLineParameterName()) != matchVisualisationDescriptorList.end()) {
                 std::cout << "\tDumping OBJ visualisation of search results.." << std::endl;
                 std::experimental::filesystem::path outFilePath = matchVisualisationOutputDir;
-                outFilePath = outFilePath / (std::to_string(randomSeed)
+                outFilePath = outFilePath / ("searchresults_" + std::to_string(randomSeed)
                                   + "_" + descriptorsToEvaluate.at(methodIndex)->getMethodCommandLineParameterName()
                                   + "_" + std::to_string(objectCount + 1) + ".obj");
-                dumpSearchResultVisualisationMesh(searchResults, scaledMeshesOnGPU.at(0), outFilePath);
+                dumpSearchResultVisualisationMesh(searchResults, scaledMeshesOnGPU.at(0), outFilePath, matchVisualisationThreshold);
             }
 
             if(!dumpRawSearchResults) {
@@ -591,7 +594,7 @@ void runClutterBoxExperiment(
             ShapeDescriptor::cpu::Mesh hostMesh = ShapeDescriptor::copy::deviceMeshToHost(boxScene);
 
             std::experimental::filesystem::path outFilePath = sceneOBJFileDumpDir;
-            outFilePath = outFilePath / (std::to_string(randomSeed) + "_" + std::to_string(objectCount + 1) + ".obj");
+            outFilePath = outFilePath / ("scene_" + std::to_string(randomSeed) + "_" + std::to_string(objectCount + 1) + ".obj");
 
             std::cout << "\tDumping OBJ file of scene to " << outFilePath << std::endl;
 
@@ -648,7 +651,10 @@ void runClutterBoxExperiment(
         ShapeDescriptor::gpu::freeMesh(deviceMesh);
     }
 
-    std::cout << std::endl << "Complete." << std::endl;
+    std::cout << std::endl;
+    std::cout << "Experiment complete. Results have been written to:" << std::endl;
+    std::cout << std::endl << "    " << outputDirectory + timestring + "_" + std::to_string(randomSeed) + ".json" << std::endl;
+    std::cout << std::endl;
 }
 
 
