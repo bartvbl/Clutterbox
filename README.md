@@ -31,3 +31,11 @@ The project generates several executables:
 - `projectionBenchmark`: The paper discusses a microbenchmark for comparing the PCL method for projecting points into cylindrical coordinates relative to our proposed method. This executable performs this benchmark.
 - `clutterEstimator`: Tool used to generate the heatmaps comparing search result ranks to clutter levels in the area around a given point. This tool was used to estimate the clutter level around each point in a scene.
 - `libShapeDescriptor/imagerenderer`: Tool for using our QUICCI, RICI, and SI implementations to render images of a given input object. Outputs PNG images.
+
+## Credits
+
+- Development and implementation: Bart Iver van Blokland, [NTNU Visual Computing Lab](https://www.idi.ntnu.no/grupper/vis/)
+- Supervision: Theoharis Theoharis, [NTNU Visual Computing Lab](https://www.idi.ntnu.no/grupper/vis/)
+
+
+
