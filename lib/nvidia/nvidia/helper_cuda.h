@@ -284,6 +284,60 @@ __host__ __device__ static const char *_cudaGetErrorEnum(cudaError_t error)
         /* Since CUDA 8.0*/        
         case cudaErrorNvlinkUncorrectable :   
             return "cudaErrorNvlinkUncorrectable";
+        case cudaErrorDeviceUninitilialized:
+            return "cudaErrorDeviceUninitilialized";
+        case cudaErrorArrayIsMapped:
+            return "cudaErrorArrayIsMapped";
+        case cudaErrorAlreadyMapped:
+            return "cudaErrorAlreadyMapped";
+        case cudaErrorAlreadyAcquired:
+            return "cudaErrorAlreadyAcquired";
+        case cudaErrorNotMapped:
+            return "cudaErrorNotMapped";
+        case cudaErrorNotMappedAsArray:
+            return "cudaErrorNotMappedAsArray";
+        case cudaErrorNotMappedAsPointer:
+            return "cudaErrorNotMappedAsPointer";
+        case cudaErrorJitCompilerNotFound:
+            return "cudaErrorJitCompilerNotFound";
+        case cudaErrorInvalidSource:
+            return "cudaErrorInvalidSource";
+        case cudaErrorFileNotFound:
+            return "cudaErrorFileNotFound";
+        case cudaErrorIllegalState:
+            return "cudaErrorIllegalState";
+        case cudaErrorSymbolNotFound:
+            return "cudaErrorSymbolNotFound";
+        case cudaErrorLaunchIncompatibleTexturing:
+            return "cudaErrorLaunchIncompatibleTexturing";
+        case cudaErrorContextIsDestroyed:
+            return "cudaErrorContextIsDestroyed";
+        case cudaErrorCooperativeLaunchTooLarge:
+            return "cudaErrorCooperativeLaunchTooLarge";
+        case cudaErrorSystemNotReady:
+            return "cudaErrorSystemNotReady";
+        case cudaErrorSystemDriverMismatch:
+            return "cudaErrorSystemDriverMismatch";
+        case cudaErrorCompatNotSupportedOnDevice:
+            return "cudaErrorCompatNotSupportedOnDevice";
+        case cudaErrorStreamCaptureUnsupported:
+            return "cudaErrorStreamCaptureUnsupported";
+        case cudaErrorStreamCaptureInvalidated:
+            return "cudaErrorStreamCaptureInvalidated";
+        case cudaErrorStreamCaptureMerge:
+            return "cudaErrorStreamCaptureMerge";
+        case cudaErrorStreamCaptureUnmatched:
+            return "cudaErrorStreamCaptureUnmatched";
+        case cudaErrorStreamCaptureUnjoined:
+            return "cudaErrorStreamCaptureUnjoined";
+        case cudaErrorStreamCaptureIsolation:
+            return "cudaErrorStreamCaptureIsolation";
+        case cudaErrorStreamCaptureImplicit:
+            return "cudaErrorStreamCaptureImplicit";
+        case cudaErrorCapturedEvent:
+            return "cudaErrorCapturedEvent";
+        case cudaErrorStreamCaptureWrongThread:
+            return "cudaErrorStreamCaptureWrongThread";
     }
 
     return "<unknown>";
@@ -466,6 +520,51 @@ static const char *_cudaGetErrorEnum(CUresult error)
 
         case CUDA_ERROR_NOT_PERMITTED:
             return "CUDA_ERROR_NOT_PERMITTED";
+
+        case CUDA_ERROR_JIT_COMPILER_NOT_FOUND:
+            return "CUDA_ERROR_JIT_COMPILER_NOT_FOUND";
+
+        case CUDA_ERROR_ILLEGAL_STATE:
+            return "CUDA_ERROR_ILLEGAL_STATE";
+
+        case CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE:
+            return "CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE";
+
+        case CUDA_ERROR_SYSTEM_NOT_READY:
+            return "CUDA_ERROR_SYSTEM_NOT_READY";
+
+        case CUDA_ERROR_SYSTEM_DRIVER_MISMATCH:
+            return "CUDA_ERROR_SYSTEM_DRIVER_MISMATCH";
+
+        case CUDA_ERROR_COMPAT_NOT_SUPPORTED_ON_DEVICE:
+            return "CUDA_ERROR_COMPAT_NOT_SUPPORTED_ON_DEVICE";
+
+        case CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED:
+            return "CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED";
+
+        case CUDA_ERROR_STREAM_CAPTURE_INVALIDATED:
+            return "CUDA_ERROR_STREAM_CAPTURE_INVALIDATED";
+
+        case CUDA_ERROR_STREAM_CAPTURE_MERGE:
+            return "CUDA_ERROR_STREAM_CAPTURE_MERGE";
+
+        case CUDA_ERROR_STREAM_CAPTURE_UNMATCHED:
+            return "CUDA_ERROR_STREAM_CAPTURE_UNMATCHED";
+
+        case CUDA_ERROR_STREAM_CAPTURE_UNJOINED:
+            return "CUDA_ERROR_STREAM_CAPTURE_UNJOINED";
+
+        case CUDA_ERROR_STREAM_CAPTURE_ISOLATION:
+            return "CUDA_ERROR_STREAM_CAPTURE_ISOLATION";
+
+        case CUDA_ERROR_STREAM_CAPTURE_IMPLICIT:
+            return "CUDA_ERROR_STREAM_CAPTURE_IMPLICIT";
+
+        case CUDA_ERROR_CAPTURED_EVENT:
+            return "CUDA_ERROR_CAPTURED_EVENT";
+
+        case CUDA_ERROR_STREAM_CAPTURE_WRONG_THREAD:
+            return "CUDA_ERROR_STREAM_CAPTURE_WRONG_THREAD";
 
         case CUDA_ERROR_NOT_SUPPORTED:
             return "CUDA_ERROR_NOT_SUPPORTED";

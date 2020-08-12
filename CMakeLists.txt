@@ -7,8 +7,6 @@ if(!MSVC)
 set(CUDAHOSTCXX "${CMAKE_CXX_COMPILER}")
 set(CMAKE_CUDA_HOST_COMPILER "${CMAKE_CXX_COMPILER}")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -ccbin ${CMAKE_CXX_COMPILER}")
-#set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
-#set(CUDA_TOOLKIT_ROOT_DIR "/usr/local/cuda")
 endif()
 
 project (clutterbox CXX CUDA)
@@ -19,10 +17,6 @@ set (CMAKE_CXX_STANDARD 14)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set (CMAKE_VERBOSE_MAKEFILE 0) # 1 should be used for debugging
 set (CMAKE_SUPPRESS_REGENERATION TRUE) # Suppresses ZERO_CHECK
-
-# Eigen
-
-#find_package (Eigen3 3.3.4 REQUIRED NO_MODULE)
 
 # PCL
 
@@ -54,7 +48,7 @@ find_package(CUDA REQUIRED)
 INCLUDE(FindCUDA)
 
 set(CUDA_NVCC_FLAGS -arch=sm_61 -gencode arch=compute_61,code=\"sm_61,compute_61\" -lcurand -lineinfo -std=c++14)
-set(CUDA_VERBOSE_BUILD ON)
+set(CUDA_VERBOSE_BUILD OFF)
 
 # libShapeSearch
 add_subdirectory(../libShapeDescriptor ${CMAKE_CURRENT_BINARY_DIR}/libShapeDescriptor)
@@ -76,10 +70,6 @@ include_directories (
         ${CUDA_INCLUDE_DIRS}
 )
 
-
-link_directories(${PCL_LIBRARY_DIRS})
-
-add_definitions(${PCL_DEFINITIONS})
 
 #
 # Add files
@@ -122,9 +112,6 @@ target_link_libraries (${PROJECT_NAME} ${CUDA_LIBRARY} cuda cudart ShapeDescript
 
 add_executable(clutterEstimator ${CLUTTER_ESTIMATOR_SOURCES} ${CLUTTER_EXPERIMENT_SOURCES})
 target_link_libraries(clutterEstimator ${CUDA_LIBRARY} cuda cudart ShapeDescriptor cudadevrt)
-
-add_executable(projectionBenchmark tools/projectionBenchmark/compare.cpp)
-target_link_libraries(projectionBenchmark ${PCL_LIBRARIES})
 
 add_executable(quicciDistanceFunctionBenchmark
         tools/quicciDistanceFunctionComparison/main.cpp

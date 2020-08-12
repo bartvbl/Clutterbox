@@ -11,7 +11,6 @@ std::string getCurrentDateTimeString() {
 
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H-%M-%S", timeinfo);
 
-    tm localTime;
     std::chrono::system_clock::time_point t = std::chrono::system_clock::now();
 
     const std::chrono::duration<double> tse = t.time_since_epoch();
