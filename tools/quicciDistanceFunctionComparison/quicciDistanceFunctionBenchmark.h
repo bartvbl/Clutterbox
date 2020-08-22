@@ -13,6 +13,8 @@ enum class BenchmarkMode {
 void runQuicciDistanceFunctionBenchmark(
         std::experimental::filesystem::path sourceDirectory,
         std::experimental::filesystem::path outputDirectory,
+        std::experimental::filesystem::path objDumpFilePath,
+        bool dumpOBJ,
         size_t seed,
         std::vector<int> sphereCountList,
         int sceneSphereCount,

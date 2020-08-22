@@ -31,6 +31,8 @@ using json = nlohmann::basic_json<ordered_map>;
 void runQuicciDistanceFunctionBenchmark(
         std::experimental::filesystem::path sourceDirectory,
         std::experimental::filesystem::path outputDirectory,
+        std::experimental::filesystem::path objDumpFilePath,
+        bool dumpOBJ,
         size_t seed,
         std::vector<int> sphereCountList,
         int sceneSphereCount,
@@ -79,7 +81,8 @@ void runQuicciDistanceFunctionBenchmark(
     ShapeDescriptor::cpu::Mesh augmentedHostMesh;
     if(mode == BenchmarkMode::SPHERE_CLUTTER) {
         augmentedHostMesh = applyClutterSpheres(scaledMesh, sceneSphereCount, clutterSphereRadius, generator());
-        //ShapeDescriptor::dump::mesh(augmentedHostMesh, "dumped_sphere_mesh.obj");
+
+
     }
 
     // 6 Copy meshes to GPU
@@ -126,6 +129,13 @@ void runQuicciDistanceFunctionBenchmark(
             augmentedMesh.vertexCount = unmodifiedVertexCount + sphereCount * verticesPerSphere;
             assert(sphereCount <= sceneSphereCount);
             std::cout << "\tComputing distances for a scene with " << sphereCount << " spheres.." << std::endl;
+
+            if(dumpOBJ) {
+                augmentedHostMesh.vertexCount = augmentedMesh.vertexCount;
+                ShapeDescriptor::dump::mesh(augmentedHostMesh, objDumpFilePath / ("dumped_sphere_mesh_" + std::to_string(seed) + "_" + std::to_string(sphereCount) + ".obj"));
+            }
+
+
             std::cout << "\t\tGenerating QUICCI images.." << std::endl;
             ShapeDescriptor::debug::QUICCIExecutionTimes runInfo;
             ShapeDescriptor::gpu::array<ShapeDescriptor::QUICCIDescriptor> device_augmentedQuiccImages = ShapeDescriptor::gpu::generateQUICCImages(
