@@ -5,7 +5,7 @@
 #include <iostream>
 #include "clutterSphereMeshAugmenter.h"
 #include <shapeDescriptor/utilities/kernels/meshSampler.cuh>
-#include <shapeDescriptor/utilities/copy/DeviceVertexList.h>
+#include <shapeDescriptor/utilities/copy/VertexList.h>
 #include <shapeDescriptor/utilities/copy/mesh.h>
 #include <shapeDescriptor/cpu/types/array.h>
 
