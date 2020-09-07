@@ -2,7 +2,7 @@
 
 #include <shapeDescriptor/gpu/types/array.h>
 #include <shapeDescriptor/cpu/types/array.h>
-#include <shapeDescriptor/gpu/types/OrientedPoint.h>
+#include <shapeDescriptor/common/OrientedPoint.h>
 #include <shapeDescriptor/gpu/types/PointCloud.h>
 #include <shapeDescriptor/gpu/types/Mesh.h>
 #include <shapeDescriptor/utilities/kernels/meshSampler.cuh>

@@ -7,7 +7,7 @@
 
 #include <shapeDescriptor/utilities/mesh/OBJLoader.h>
 #include <shapeDescriptor/gpu/types/Mesh.h>
-#include <shapeDescriptor/gpu/types/OrientedPoint.h>
+#include <shapeDescriptor/common/OrientedPoint.h>
 #include <clutterbox/clutterBoxUtilities.h>
 #include <shapeDescriptor/gpu/types/PointCloud.h>
 #include <shapeDescriptor/utilities/kernels/meshSampler.cuh>

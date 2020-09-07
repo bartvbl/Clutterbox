@@ -6,7 +6,7 @@
 #include <shapeDescriptor/cpu/types/Mesh.h>
 #include <shapeDescriptor/utilities/mesh/MeshScaler.h>
 #include <shapeDescriptor/utilities/mesh/OBJLoader.h>
-#include <shapeDescriptor/gpu/types/OrientedPoint.h>
+#include <shapeDescriptor/common/OrientedPoint.h>
 #include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>
 #include <utilities/randomFileSelector.h>
 #include <cuda_runtime_api.h>
