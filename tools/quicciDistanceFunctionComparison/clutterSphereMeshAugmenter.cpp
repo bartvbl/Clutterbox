@@ -103,8 +103,7 @@ ShapeDescriptor::cpu::Mesh applyClutterSpheres(ShapeDescriptor::cpu::Mesh inputM
 
     size_t combinedVertexCount = inputMesh.vertexCount + count * SPHERE_VERTEX_COUNT;
 
-    // Indices are ignored on the GPU
-    ShapeDescriptor::cpu::Mesh outputMesh(combinedVertexCount, 0);
+    ShapeDescriptor::cpu::Mesh outputMesh(combinedVertexCount);
 
     const unsigned int sampleCount = 10000000;
 

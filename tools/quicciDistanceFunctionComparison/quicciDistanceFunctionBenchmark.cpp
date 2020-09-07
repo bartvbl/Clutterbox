@@ -6,7 +6,7 @@
 #include <shapeDescriptor/cpu/types/Mesh.h>
 #include <shapeDescriptor/utilities/mesh/MeshScaler.h>
 #include <shapeDescriptor/utilities/mesh/OBJLoader.h>
-#include <shapeDescriptor/gpu/types/DeviceOrientedPoint.h>
+#include <shapeDescriptor/gpu/types/OrientedPoint.h>
 #include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>
 #include <utilities/randomFileSelector.h>
 #include <cuda_runtime_api.h>
@@ -101,12 +101,12 @@ void runQuicciDistanceFunctionBenchmark(
 
     // 8 Remove duplicate vertices
     std::cout << "\tRemoving duplicate vertices.." << std::endl;
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> imageOrigins = ShapeDescriptor::utilities::computeUniqueVertices(unmodifiedMesh);
+    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> imageOrigins = ShapeDescriptor::utilities::computeUniqueVertices(unmodifiedMesh);
     size_t imageCount = imageOrigins.length;
     size_t referenceImageCount = imageCount;
     size_t sampleImageCount = 0;
     std::cout << "\t\tReduced " << unmodifiedMesh.vertexCount << " vertices to " << imageCount << "." << std::endl;
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> baselineOrigins;
+    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> baselineOrigins;
     if(mode == BenchmarkMode::BASELINE) {
         baselineOrigins = ShapeDescriptor::utilities::computeUniqueVertices(otherSampleUnmodifiedMesh);
         sampleImageCount = baselineOrigins.length;

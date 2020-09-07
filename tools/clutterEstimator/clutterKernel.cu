@@ -40,7 +40,7 @@ __device__ __inline__ float3 transformCoordinate(const float3 &vertex, const flo
 }
 
 __global__ void computeClutterKernel(
-        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> origins,
+        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> origins,
         ShapeDescriptor::gpu::PointCloud samplePointCloud,
         ShapeDescriptor::gpu::array<float> clutterValues,
         float spinImageWidth,
@@ -61,7 +61,7 @@ __global__ void computeClutterKernel(
 
     __syncthreads();
 
-    const ShapeDescriptor::gpu::DeviceOrientedPoint origin = origins.content[blockIdx.x];
+    const ShapeDescriptor::gpu::OrientedPoint origin = origins.content[blockIdx.x];
     const float3 spinVertex = origin.vertex;
     const float3 spinNormal = origin.normal;
 
@@ -102,7 +102,7 @@ __global__ void computeClutterKernel(
     }
 }
 
-ShapeDescriptor::cpu::array<float> computeClutter(ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> origins, ShapeDescriptor::gpu::PointCloud samplePointCloud, float spinImageWidth, size_t referenceObjectSampleCount, size_t referenceObjectOriginCount) {
+ShapeDescriptor::cpu::array<float> computeClutter(ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> origins, ShapeDescriptor::gpu::PointCloud samplePointCloud, float spinImageWidth, size_t referenceObjectSampleCount, size_t referenceObjectOriginCount) {
     ShapeDescriptor::gpu::array<float> device_clutterValues;
 
     size_t clutterBufferSize = referenceObjectOriginCount * sizeof(float);

@@ -5,7 +5,7 @@
 ShapeDescriptor::gpu::array<char> QUICCIMethod::generateDescriptors(
         ShapeDescriptor::gpu::Mesh device_sceneAsMesh,
         ShapeDescriptor::gpu::PointCloud device_sceneAsPointCloud,
-        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> device_descriptorOrigins,
+        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> device_descriptorOrigins,
         Clutterbox::GenerationParameters parameters,
         ExecutionTimes *executionTimes) {
 

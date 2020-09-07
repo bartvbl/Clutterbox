@@ -414,7 +414,7 @@ void runClutterBoxExperiment(
 
     // 8 Remove duplicate vertices
     std::cout << "\tRemoving duplicate vertices.." << std::endl;
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> spinOrigins_reference = ShapeDescriptor::utilities::computeUniqueVertices(scaledMeshesOnGPU.at(0));
+    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> spinOrigins_reference = ShapeDescriptor::utilities::computeUniqueVertices(scaledMeshesOnGPU.at(0));
     size_t referenceImageCount = spinOrigins_reference.length;
     std::cout << "\t\tReduced " << scaledMeshesOnGPU.at(0).vertexCount << " vertices to " << referenceImageCount << "." << std::endl;
 
@@ -472,7 +472,7 @@ void runClutterBoxExperiment(
     // 13 Compute corresponding transformed vertex buffer
     //    A mapping is used here because the previously applied transformation can cause non-unique vertices to become
     //    equivalent. It is vital we can rely on a 1:1 mapping existing between vertices.
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::DeviceOrientedPoint> device_uniqueSpinOrigins = ShapeDescriptor::utilities::applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
+    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> device_uniqueSpinOrigins = ShapeDescriptor::utilities::applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
     checkCudaErrors(cudaFree(device_indexMapping.content));
     size_t imageCount = 0;
 
