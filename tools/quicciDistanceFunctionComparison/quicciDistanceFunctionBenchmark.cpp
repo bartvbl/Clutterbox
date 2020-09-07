@@ -101,12 +101,12 @@ void runQuicciDistanceFunctionBenchmark(
 
     // 8 Remove duplicate vertices
     std::cout << "\tRemoving duplicate vertices.." << std::endl;
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> imageOrigins = ShapeDescriptor::utilities::computeUniqueVertices(unmodifiedMesh);
+    ShapeDescriptor::gpu::array<ShapeDescriptor::OrientedPoint> imageOrigins = ShapeDescriptor::utilities::computeUniqueVertices(unmodifiedMesh);
     size_t imageCount = imageOrigins.length;
     size_t referenceImageCount = imageCount;
     size_t sampleImageCount = 0;
     std::cout << "\t\tReduced " << unmodifiedMesh.vertexCount << " vertices to " << imageCount << "." << std::endl;
-    ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> baselineOrigins;
+    ShapeDescriptor::gpu::array<ShapeDescriptor::OrientedPoint> baselineOrigins;
     if(mode == BenchmarkMode::BASELINE) {
         baselineOrigins = ShapeDescriptor::utilities::computeUniqueVertices(otherSampleUnmodifiedMesh);
         sampleImageCount = baselineOrigins.length;

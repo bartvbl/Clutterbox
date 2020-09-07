@@ -188,7 +188,7 @@ int main(int argc, const char** argv) {
         // 13 Compute corresponding transformed vertex buffer
         //    A mapping is used here because the previously applied transformation can cause non-unique vertices to become
         //    equivalent. It is vital we can rely on a 1:1 mapping existing between vertices.
-        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> device_uniqueSpinOrigins = ShapeDescriptor::utilities::applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
+        ShapeDescriptor::gpu::array<ShapeDescriptor::OrientedPoint> device_uniqueSpinOrigins = ShapeDescriptor::utilities::applyUniqueMapping(boxScene, device_indexMapping, totalUniqueVertexCount);
         checkCudaErrors(cudaFree(device_indexMapping.content));
 
         // Should be as large as possible, but can be selected arbitrarily

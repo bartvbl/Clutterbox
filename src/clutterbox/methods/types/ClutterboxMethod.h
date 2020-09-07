@@ -38,7 +38,7 @@ namespace Clutterbox {
         virtual ShapeDescriptor::gpu::array<char> generateDescriptors(
                 ShapeDescriptor::gpu::Mesh device_sceneAsMesh,
                 ShapeDescriptor::gpu::PointCloud device_sceneAsPointCloud,
-                ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> device_descriptorOrigins,
+                ShapeDescriptor::gpu::array<ShapeDescriptor::OrientedPoint> device_descriptorOrigins,
                 Clutterbox::GenerationParameters parameters,
                 ExecutionTimes* executionTimes = nullptr) = 0;
 

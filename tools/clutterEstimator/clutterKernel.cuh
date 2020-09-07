@@ -9,7 +9,7 @@
 #include <vector>
 
 ShapeDescriptor::cpu::array<float> computeClutter(
-        ShapeDescriptor::gpu::array<ShapeDescriptor::gpu::OrientedPoint> array,
+        ShapeDescriptor::gpu::array<ShapeDescriptor::OrientedPoint> array,
         ShapeDescriptor::gpu::PointCloud cloud,
         float spinImageWidth,
         size_t referenceObjectSampleCount,
