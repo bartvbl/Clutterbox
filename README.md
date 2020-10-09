@@ -41,23 +41,23 @@ The project generates several executables:
 If you use (parts of) this library in your research, we kindly ask you reference the papers on which this project is based:
 
     @article{van2020radial,
-      title={Radial intersection count image: A clutter resistant 3D shape descriptor},
-      author={van Blokland, Bart Iver and Theoharis, Theoharis},
-      journal={Computers \& Graphics},
-      volume="91",
-      pages="118--128",
-      year={2020},
-      publisher={Elsevier}
+        title={Radial intersection count image: A clutter resistant 3D shape descriptor},
+        author={van Blokland, Bart Iver and Theoharis, Theoharis},
+        journal={Computers \& Graphics},
+        volume="91",
+        pages="118--128",
+        year={2020},
+        publisher={Elsevier}
     }
     
     @article{van2020indexing,
-      title={An Indexing Scheme and Descriptor for 3D Object Retrieval Based on Local Shape Querying},
-      author={van Blokland, Bart Iver and Theoharis, Theoharis},
-      journal={Computers \& Graphics},
-      volume="TBD",
-      pages="TBD",
-      year={2020},
-      publisher={Elsevier}
+        title={An Indexing Scheme and Descriptor for 3D Object Retrieval Based on Local Shape Querying},
+        author={van Blokland, Bart Iver and Theoharis, Theoharis},
+        journal={Computers \& Graphics},
+        volume="92",
+        pages="55-66",
+        year={2020},
+        publisher={Elsevier}
     }
 
 
