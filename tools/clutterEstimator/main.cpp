@@ -15,6 +15,7 @@
 #include <shapeDescriptor/utilities/mesh/MeshScaler.h>
 #include <utilities/stringUtils.h>
 #include <shapeDescriptor/utilities/copy/mesh.h>
+#include <shapeDescriptor/utilities/free/mesh.h>
 
 using json = nlohmann::json;
 
@@ -134,14 +135,14 @@ int main(int argc, const char** argv) {
         std::vector<ShapeDescriptor::cpu::Mesh> scaledMeshes(sampleObjectCount);
         for (unsigned int i = 0; i < sampleObjectCount; i++) {
             scaledMeshes.at(i) = ShapeDescriptor::utilities::fitMeshInsideSphereOfRadius(objects.at(i), 1);
-            ShapeDescriptor::cpu::freeMesh(objects.at(i));
+            ShapeDescriptor::free::mesh(objects.at(i));
         }
 
         // We need to reduce the scene to the number of objects we want to test with
         int numberOfObjectsInExperiment = *std::max_element(resultFileContents["sampleObjectCounts"].begin(), resultFileContents["sampleObjectCounts"].end());
         // Avoid a memory leak
         for(int i = numberOfObjectsInExperiment; i < scaledMeshes.size(); i++) {
-            ShapeDescriptor::cpu::freeMesh(scaledMeshes.at(i));
+            ShapeDescriptor::free::mesh(scaledMeshes.at(i));
         }
         std::cout << "Constructing a scene with " << numberOfObjectsInExperiment << " objects.." << std::endl;
         scaledMeshes.resize(numberOfObjectsInExperiment);

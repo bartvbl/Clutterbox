@@ -19,6 +19,7 @@
 #include <json.hpp>
 #include <tsl/ordered_map.h>
 #include <shapeDescriptor/utilities/copy/mesh.h>
+#include <shapeDescriptor/utilities/free/mesh.h>
 
 template<class Key, class T, class Ignore, class Allocator,
         class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>,
@@ -69,11 +70,11 @@ void runQuicciDistanceFunctionBenchmark(
     // 5 Scale all models to fit in a 1x1x1 sphere
     std::cout << "\tScaling meshes.." << std::endl;
     ShapeDescriptor::cpu::Mesh scaledMesh = ShapeDescriptor::utilities::fitMeshInsideSphereOfRadius(sampleMesh, 1);
-    ShapeDescriptor::cpu::freeMesh(sampleMesh);
+    ShapeDescriptor::free::mesh(sampleMesh);
     ShapeDescriptor::cpu::Mesh scaledOtherSampleMesh;
     if(mode == BenchmarkMode::BASELINE) {
         scaledOtherSampleMesh = ShapeDescriptor::utilities::fitMeshInsideSphereOfRadius(otherSampleMesh, 1);
-        ShapeDescriptor::cpu::freeMesh(otherSampleMesh);
+        ShapeDescriptor::free::mesh(otherSampleMesh);
     }
 
     // 6 Add clutter spheres to the mesh
@@ -88,7 +89,7 @@ void runQuicciDistanceFunctionBenchmark(
     // 6 Copy meshes to GPU
     std::cout << "\tCopying meshes to device.." << std::endl;
     ShapeDescriptor::gpu::Mesh unmodifiedMesh = ShapeDescriptor::copy::hostMeshToDevice(scaledMesh);
-    ShapeDescriptor::cpu::freeMesh(scaledMesh);
+    ShapeDescriptor::free::mesh(scaledMesh);
     ShapeDescriptor::gpu::Mesh augmentedMesh;
     if(mode == BenchmarkMode::SPHERE_CLUTTER) {
         augmentedMesh = ShapeDescriptor::copy::hostMeshToDevice(augmentedHostMesh);
@@ -96,7 +97,7 @@ void runQuicciDistanceFunctionBenchmark(
     ShapeDescriptor::gpu::Mesh otherSampleUnmodifiedMesh;
     if(mode == BenchmarkMode::BASELINE) {
         otherSampleUnmodifiedMesh = ShapeDescriptor::copy::hostMeshToDevice(scaledOtherSampleMesh);
-        ShapeDescriptor::cpu::freeMesh(scaledOtherSampleMesh);
+        ShapeDescriptor::free::mesh(scaledOtherSampleMesh);
     }
 
     // 8 Remove duplicate vertices

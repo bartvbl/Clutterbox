@@ -18,6 +18,7 @@
 #include <shapeDescriptor/utilities/mesh/OBJLoader.h>
 #include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>
 #include <shapeDescriptor/utilities/kernels/meshSampler.cuh>
+#include <shapeDescriptor/utilities/free/mesh.h>
 
 #include <clutterbox/clutterBoxUtilities.h>
 #include <glm/vec3.hpp>
@@ -202,7 +203,7 @@ void dumpResultsFile(
     outFile.close();
 
     for (unsigned int i = 0; i < sampleObjectCount; i++) {
-        ShapeDescriptor::cpu::freeMesh(sampleMeshes.at(i));
+        ShapeDescriptor::free::mesh(sampleMeshes.at(i));
     }
 }
 
@@ -297,7 +298,7 @@ void dumpSearchResultVisualisationMesh(const ShapeDescriptor::cpu::array<unsigne
     ShapeDescriptor::dump::mesh(hostMesh, outFilePath, textureCoords, "colourTexture.png");
 
     delete[] host_indexMapping.content;
-    ShapeDescriptor::cpu::freeMesh(hostMesh);
+    ShapeDescriptor::free::mesh(hostMesh);
 }
 
 void runClutterBoxExperiment(
@@ -398,7 +399,7 @@ void runClutterBoxExperiment(
     std::vector<ShapeDescriptor::cpu::Mesh> scaledMeshes(sampleObjectCount);
     for (unsigned int i = 0; i < sampleObjectCount; i++) {
         scaledMeshes.at(i) = ShapeDescriptor::utilities::fitMeshInsideSphereOfRadius(sampleMeshes.at(i), 1);
-        ShapeDescriptor::cpu::freeMesh(sampleMeshes.at(i));
+        ShapeDescriptor::free::mesh(sampleMeshes.at(i));
     }
 
     // 6 Copy meshes to GPU
@@ -589,7 +590,7 @@ void runClutterBoxExperiment(
 
             ShapeDescriptor::dump::mesh(hostMesh, outFilePath, 0, scaledMeshesOnGPU.at(0).vertexCount);
 
-            ShapeDescriptor::cpu::freeMesh(hostMesh);
+            ShapeDescriptor::free::mesh(hostMesh);
         }
     }
 
