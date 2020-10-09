@@ -3,7 +3,7 @@
 #include <vector>
 #include <random>
 #include <shapeDescriptor/gpu/types/Mesh.h>
-#include <shapeDescriptor/common/OrientedPoint.h>
+#include <shapeDescriptor/common/types/OrientedPoint.h>
 
 struct Transformation {
     float3 position;
