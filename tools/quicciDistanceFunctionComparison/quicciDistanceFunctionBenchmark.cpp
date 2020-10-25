@@ -5,13 +5,13 @@
 #include <iostream>
 #include <shapeDescriptor/cpu/types/Mesh.h>
 #include <shapeDescriptor/utilities/mesh/MeshScaler.h>
-#include <shapeDescriptor/utilities/mesh/OBJLoader.h>
+#include <shapeDescriptor/utilities/read/OBJLoader.h>
 #include <shapeDescriptor/common/types/OrientedPoint.h>
 #include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>
 #include <utilities/randomFileSelector.h>
 #include <cuda_runtime_api.h>
 #include <nvidia/helper_cuda.h>
-#include <shapeDescriptor/utilities/dumpers/meshDumper.h>
+#include <shapeDescriptor/utilities/dump/meshDumper.h>
 #include <shapeDescriptor/gpu/quickIntersectionCountImageGenerator.cuh>
 #include <shapeDescriptor/gpu/quickIntersectionCountImageSearcher.cuh>
 #include <cassert>

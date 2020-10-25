@@ -5,7 +5,7 @@
 #include <json.hpp>
 #include <cuda_runtime_api.h>
 
-#include <shapeDescriptor/utilities/mesh/OBJLoader.h>
+#include <shapeDescriptor/utilities/read/OBJLoader.h>
 #include <shapeDescriptor/gpu/types/Mesh.h>
 #include <shapeDescriptor/common/types/OrientedPoint.h>
 #include <clutterbox/clutterBoxUtilities.h>

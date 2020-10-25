@@ -15,7 +15,7 @@
 #include <shapeDescriptor/gpu/types/Mesh.h>
 #include <shapeDescriptor/gpu/radialIntersectionCountImageGenerator.cuh>
 #include <shapeDescriptor/gpu/3dShapeContextSearcher.cuh>
-#include <shapeDescriptor/utilities/mesh/OBJLoader.h>
+#include <shapeDescriptor/utilities/read/OBJLoader.h>
 #include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>
 #include <shapeDescriptor/utilities/kernels/meshSampler.cuh>
 #include <shapeDescriptor/utilities/free/mesh.h>
@@ -26,7 +26,7 @@
 #include <json.hpp>
 #include <tsl/ordered_map.h>
 #include <shapeDescriptor/gpu/types/PointCloud.h>
-#include <shapeDescriptor/utilities/dumpers/meshDumper.h>
+#include <shapeDescriptor/utilities/dump/meshDumper.h>
 #include <shapeDescriptor/utilities/copy/mesh.h>
 #include <utilities/randomFileSelector.h>
 
