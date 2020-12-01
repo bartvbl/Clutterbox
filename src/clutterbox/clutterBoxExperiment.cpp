@@ -162,20 +162,12 @@ void dumpResultsFile(
         }
         for(ExecutionTimes &i : sampleExecutionTimes->at(descriptorIndex)) {
             for(const auto &j : *i.getAll()) {
-                outJson["runtimes"][descriptorName + "SampleGeneration"][j.name] = {};
-            }
-            for(const auto &j : *i.getAll()) {
                 outJson["runtimes"][descriptorName + "SampleGeneration"][j.name].push_back(j.timeInSeconds);
             }
         }
         for(ExecutionTimes &i : searchExecutionTimes->at(descriptorIndex)) {
             for(const auto &j : *i.getAll()) {
-                for(const auto &j : *i.getAll()) {
-                    outJson["runtimes"][descriptorName + "Search"][j.name] = {};
-                }
-                for(const auto &j : *i.getAll()) {
-                    outJson["runtimes"][descriptorName + "Search"][j.name].push_back(j.timeInSeconds);
-                }
+                 outJson["runtimes"][descriptorName + "Search"][j.name].push_back(j.timeInSeconds);
             }
         }
     }
