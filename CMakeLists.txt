@@ -13,14 +13,14 @@ project (clutterbox CXX CUDA)
 
 OPTION (USE_OpenMP "Use OpenMP" ON)
 
-set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_STANDARD 17)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set (CMAKE_VERBOSE_MAKEFILE 0) # 1 should be used for debugging
 set (CMAKE_SUPPRESS_REGENERATION TRUE) # Suppresses ZERO_CHECK
 
 # PCL
 
-find_package(PCL 1.8.1 REQUIRED COMPONENTS common io)
+find_package(PCL 1.8.1 REQUIRED PATHS /usr NO_DEFAULT_PATH COMPONENTS common io)
 
 # Compiler Flags
 
@@ -28,7 +28,7 @@ if(MSVC)
     add_definitions("-D_SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /openmp")
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++14 -march=native -frounding-math") #  -g -pg -pg -no-pie
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -march=native -frounding-math") #  -g -pg -pg -no-pie
 endif()
 
 # OpenMP

@@ -11,7 +11,7 @@
 #include <clutterbox/clutterBoxUtilities.h>
 #include <shapeDescriptor/gpu/types/PointCloud.h>
 #include <shapeDescriptor/utilities/kernels/meshSampler.cuh>
-#include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>
+#include <shapeDescriptor/utilities/spinOriginsGenerator.h>
 #include <shapeDescriptor/utilities/mesh/MeshScaler.h>
 #include <utilities/stringUtils.h>
 #include <shapeDescriptor/utilities/copy/mesh.h>

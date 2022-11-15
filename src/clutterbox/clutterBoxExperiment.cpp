@@ -16,7 +16,7 @@
 #include <shapeDescriptor/gpu/radialIntersectionCountImageGenerator.cuh>
 #include <shapeDescriptor/gpu/3dShapeContextSearcher.cuh>
 #include <shapeDescriptor/utilities/read/OBJLoader.h>
-#include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>
+#include <shapeDescriptor/utilities/spinOriginsGenerator.h>
 #include <shapeDescriptor/utilities/kernels/meshSampler.cuh>
 #include <shapeDescriptor/utilities/free/mesh.h>
 

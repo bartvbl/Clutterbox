@@ -1,5 +1,7 @@
 #include "quicciDistanceFunctionBenchmark.h"
 #include "clutterSphereMeshAugmenter.h"
+#include "shapeDescriptor/utilities/copy/array.h"
+#include "shapeDescriptor/utilities/free/array.h"
 #include <random>
 #include <algorithm>
 #include <iostream>
@@ -7,7 +9,7 @@
 #include <shapeDescriptor/utilities/mesh/MeshScaler.h>
 #include <shapeDescriptor/utilities/read/OBJLoader.h>
 #include <shapeDescriptor/common/types/OrientedPoint.h>
-#include <shapeDescriptor/utilities/kernels/duplicateRemoval.cuh>
+#include <shapeDescriptor/utilities/spinOriginsGenerator.h>
 #include <utilities/randomFileSelector.h>
 #include <cuda_runtime_api.h>
 #include <nvidia/helper_cuda.h>
@@ -30,9 +32,9 @@ using ordered_map = tsl::ordered_map<Key, T, Hash, KeyEqual, AllocatorPair, Valu
 using json = nlohmann::basic_json<ordered_map>;
 
 void runQuicciDistanceFunctionBenchmark(
-        std::experimental::filesystem::path sourceDirectory,
-        std::experimental::filesystem::path outputDirectory,
-        std::experimental::filesystem::path objDumpFilePath,
+        std::filesystem::path sourceDirectory,
+        std::filesystem::path outputDirectory,
+        std::filesystem::path objDumpFilePath,
         bool dumpOBJ,
         size_t seed,
         std::vector<int> sphereCountList,
@@ -89,7 +91,7 @@ void runQuicciDistanceFunctionBenchmark(
     // 6 Copy meshes to GPU
     std::cout << "\tCopying meshes to device.." << std::endl;
     ShapeDescriptor::gpu::Mesh unmodifiedMesh = ShapeDescriptor::copy::hostMeshToDevice(scaledMesh);
-    ShapeDescriptor::free::mesh(scaledMesh);
+
     ShapeDescriptor::gpu::Mesh augmentedMesh;
     if(mode == BenchmarkMode::SPHERE_CLUTTER) {
         augmentedMesh = ShapeDescriptor::copy::hostMeshToDevice(augmentedHostMesh);
@@ -102,21 +104,24 @@ void runQuicciDistanceFunctionBenchmark(
 
     // 8 Remove duplicate vertices
     std::cout << "\tRemoving duplicate vertices.." << std::endl;
-    ShapeDescriptor::gpu::array<ShapeDescriptor::OrientedPoint> imageOrigins = ShapeDescriptor::utilities::computeUniqueVertices(unmodifiedMesh);
+    ShapeDescriptor::cpu::array<ShapeDescriptor::OrientedPoint> imageOrigins = ShapeDescriptor::utilities::generateUniqueSpinOriginBuffer(scaledMesh);
+    ShapeDescriptor::gpu::array<ShapeDescriptor::OrientedPoint> device_imageOrigins = ShapeDescriptor::copy::hostArrayToDevice(imageOrigins);
+    ShapeDescriptor::free::array(imageOrigins);
     size_t imageCount = imageOrigins.length;
     size_t referenceImageCount = imageCount;
     size_t sampleImageCount = 0;
     std::cout << "\t\tReduced " << unmodifiedMesh.vertexCount << " vertices to " << imageCount << "." << std::endl;
-    ShapeDescriptor::gpu::array<ShapeDescriptor::OrientedPoint> baselineOrigins;
+    ShapeDescriptor::cpu::array<ShapeDescriptor::OrientedPoint> baselineOrigins;
     if(mode == BenchmarkMode::BASELINE) {
-        baselineOrigins = ShapeDescriptor::utilities::computeUniqueVertices(otherSampleUnmodifiedMesh);
+        baselineOrigins = ShapeDescriptor::utilities::generateUniqueSpinOriginBuffer(scaledOtherSampleMesh);
         sampleImageCount = baselineOrigins.length;
     }
+    ShapeDescriptor::free::mesh(scaledMesh);
 
     std::cout << "\tGenerating reference QUICCI images.." << std::endl;
     ShapeDescriptor::gpu::array<ShapeDescriptor::QUICCIDescriptor> device_unmodifiedQuiccImages = ShapeDescriptor::gpu::generateQUICCImages(
             unmodifiedMesh,
-            imageOrigins,
+            device_imageOrigins,
             supportRadius);
 
     size_t unmodifiedVertexCount = unmodifiedMesh.vertexCount;
@@ -141,7 +146,7 @@ void runQuicciDistanceFunctionBenchmark(
             ShapeDescriptor::debug::QUICCIExecutionTimes runInfo;
             ShapeDescriptor::gpu::array<ShapeDescriptor::QUICCIDescriptor> device_augmentedQuiccImages = ShapeDescriptor::gpu::generateQUICCImages(
                     augmentedMesh,
-                    imageOrigins,
+                    device_imageOrigins,
                     supportRadius,
                     &runInfo);
 
